@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Vault v1 Prototype • Voltage Video Games</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    :root {
+      --teal: #00E5B8;
+      --yellow: #FFEB3B;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #0a0a0a;
+      color: #f0f0f0;
+    }
+
+    .heading-font {
+      font-family: 'Press Start 2P', system-ui;
+    }
+
+    .neon-text {
+      text-shadow: 0 0 12px var(--teal), 0 0 24px var(--teal), 0 0 48px var(--yellow);
+    }
+
+    .crt::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(to bottom, rgba(0,0,0,0.10) 0px, rgba(0,0,0,0.10) 2px, transparent 2px, transparent 4px);
+      pointer-events: none;
+      z-index: 10;
+      animation: flicker 0.18s infinite alternate;
+    }
+
+    @keyframes flicker {
+      0% { opacity: 0.97; }
+      100% { opacity: 1; }
+    }
+  </style>
+</head>
+<body class="crt min-h-screen flex flex-col">
+
+  <!-- NAVBAR (matches main site) -->
+  <nav class="fixed top-0 inset-x-0 z-50 bg-black/95 border-b border-[var(--teal)]/30">
+    <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+      <a href="index.html" class="flex items-center">
+        <img src="images/voltage-logo.png" alt="Voltage Video Games logo" class="h-10 md:h-12 w-auto">
+      </a>
+
+      <div class="hidden md:flex items-center gap-10 text-sm font-medium">
+        <a href="index.html#shop" class="hover:text-[var(--teal)] transition">Shop</a>
+        <a href="index.html#sell" class="hover:text-[var(--yellow)] transition">Sell / Trade</a>
+        <a href="vault.html" class="text-[var(--teal)] font-medium">Vault</a>
+        <a href="index.html#about" class="hover:text-[var(--yellow)] transition">Visit Store</a>
+      </div>
+
+      <button onclick="alert('Gamertag login coming soon.')" 
+              class="px-7 py-2.5 text-sm font-medium border border-[var(--teal)] hover:bg-[var(--teal)]/10 transition">
+        Gamertag Login
+      </button>
+    </div>
+  </nav>
+
+  <main class="flex-1 pt-24 pb-16">
+    <div class="max-w-5xl mx-auto px-6">
+      <!-- Header -->
+      <div class="text-center mb-16">
+        <h1 class="heading-font text-6xl md:text-7xl font-black tracking-wide neon-text mb-6">
+          YOUR VAULT
+        </h1>
+        <p class="text-xl text-gray-300 max-w-3xl mx-auto">
+          Track your collection. Monitor live values. Build your legacy.
+        </p>
+      </div>
+
+      <!-- Gamertag Display -->
+      <div class="bg-zinc-950 border border-[var(--teal)]/40 rounded-2xl p-8 mb-12 text-center">
+        <div class="flex items-center justify-center gap-4 mb-4">
+          <i class="fa-solid fa-user-tag text-4xl text-[var(--teal)]"></i>
+          <h2 id="gamertag-display" class="heading-font text-4xl neon-text">
+            RetroKing87
+          </h2>
+        </div>
+        <p class="text-gray-400 text-sm">
+          Your collector identity • Joined March 2026
+        </p>
+        <button onclick="alert('Gamertag editing coming soon.')" 
+                class="mt-4 px-6 py-2 bg-black border border-[var(--yellow)] text-[var(--yellow)] hover:bg-[var(--yellow)] hover:text-black transition">
+          Edit Gamertag
+        </button>
+      </div>
+
+      <!-- Add Game Form -->
+      <div class="bg-zinc-950 border border-[var(--teal)]/40 rounded-2xl p-8 mb-12">
+        <h3 class="heading-font text-3xl neon-text mb-6 text-center">Add a Game</h3>
+
+        <!-- Inline success message -->
+        <div id="success-message" class="hidden text-center py-4 mb-6 bg-black border border-[var(--teal)]/60 rounded-xl">
+          <p id="success-text" class="text-lg font-medium text-[var(--teal)]"></p>
+        </div>
+
+        <!-- Future live data note -->
+        <div class="text-center text-xs text-gray-500 mb-6">
+          Live market data integration coming soon
+        </div>
+
+        <!-- Search state UI -->
+        <div id="search-loading" class="hidden text-center py-6 text-[var(--teal)]">
+          Searching catalog...
+        </div>
+        <div id="search-error" class="hidden text-center py-6 text-red-400">
+          Something went wrong. Please try again.
+        </div>
+
+        <form id="add-game-form" class="grid md:grid-cols-2 gap-6">
+          <div>
+            <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Game Title *</label>
+            <input type="text" id="game-title" required placeholder="e.g. Chrono Trigger" 
+                   class="w-full bg-black border border-[var(--teal)]/60 p-4 text-white focus:border-[var(--yellow)] rounded-none" />
+          </div>
+
+          <div>
+            <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Platform *</label>
+            <select id="platform" required class="w-full bg-black border border-[var(--teal)]/60 p-4 text-white focus:border-[var(--yellow)] rounded-none">
+              <option value="">Select platform...</option>
+              <option>NES</option>
+              <option>SNES</option>
+              <option>N64</option>
+              <option>GameCube</option>
+              <option>Wii</option>
+              <option>Switch</option>
+              <option>Game Boy / GBA</option>
+              <option>Genesis</option>
+              <option>Dreamcast</option>
+              <option>PS1</option>
+              <option>PS2</option>
+              <option>PS3</option>
+              <option>PS4</option>
+              <option>PS5</option>
+              <option>Xbox</option>
+              <option>Xbox 360</option>
+              <option>Xbox One</option>
+              <option>Xbox Series X</option>
+              <option>Other</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Condition *</label>
+            <select id="condition" required class="w-full bg-black border border-[var(--teal)]/60 p-4 text-white focus:border-[var(--yellow)] rounded-none">
+              <option value="">Select condition...</option>
+              <option>Loose</option>
+              <option>Complete in Box (CIB)</option>
+              <option>Sealed</option>
+              <option>Graded</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Quantity</label>
+            <input type="number" id="quantity" min="1" value="1" 
+                   class="w-full bg-black border border-[var(--teal)]/60 p-4 text-white focus:border-[var(--yellow)] rounded-none" />
+          </div>
+
+          <div class="md:col-span-2">
+            <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Notes (optional)</label>
+            <textarea id="notes" rows="3" placeholder="e.g. light scratches, missing manual, graded case..." 
+                      class="w-full bg-black border border-[var(--teal)]/60 p-4 text-white focus:border-[var(--yellow)] rounded-none resize-none"></textarea>
+          </div>
+
+          <div class="md:col-span-2 mt-4">
+            <button type="button" onclick="runSearch()" 
+                    class="w-full py-5 bg-gradient-to-r from-[var(--teal)] to-[var(--yellow)] text-black font-bold text-lg hover:scale-[1.02] transition">
+              Search & Add to Vault
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Mock Search Results (appears after clicking Search) -->
+      <div id="search-results" class="hidden bg-zinc-950 border border-[var(--teal)]/40 rounded-2xl p-8 mb-12">
+        <h3 class="heading-font text-3xl neon-text mb-6 text-center">Search Results</h3>
+        <div class="grid md:grid-cols-3 gap-6" id="results-grid">
+          <!-- Results inserted via JS -->
+        </div>
+      </div>
+
+      <!-- Vault Collection Display -->
+      <div class="bg-zinc-950 border border-[var(--teal)]/40 rounded-2xl p-8">
+        <div class="flex justify-between items-center mb-8">
+          <h3 class="heading-font text-3xl neon-text">Your Vault</h3>
+          <div class="text-right">
+            <div class="text-lg">Games Tracked: <span id="game-count" class="font-bold text-[var(--yellow)]">0</span></div>
+            <div class="text-lg">Unique Titles: <span id="unique-titles" class="font-bold text-[var(--yellow)]">0</span></div>
+            <div class="text-lg">Estimated Value: <span id="total-value" class="font-bold text-[var(--teal)]">$0.00</span></div>
+            <div class="text-xs text-gray-500 mt-1">Saved locally on this device</div>
+          </div>
+        </div>
+
+        <div id="vault-list" class="space-y-6">
+          <p class="text-center text-gray-400 py-12">
+            Your Vault is empty.<br>
+            <span class="text-[var(--teal)]">Start by adding your first game above.</span>
+          </p>
+        </div>
+
+        <div class="mt-6 text-center">
+          <button onclick="clearVault()" 
+                  class="px-8 py-3 border border-red-600 text-red-400 hover:bg-red-900/30 transition">
+            Clear Vault
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- FOOTER (matches main site) -->
+  <footer class="bg-black border-t-4 border-[var(--yellow)] py-16 text-center text-sm text-gray-400">
+    Voltage Video Games • 437 S Warren Street, Syracuse, NY 13202<br>
+    © 2026 Voltage Video Games. All rights reserved.
+  </footer>
+
+  <script>
+    /* ================================================================
+       CONFIG LAYER – ready for live PriceCharting via proxy
+    ================================================================ */
+    const config = {
+      dataMode: 'mock',                    // 'mock' = current prototype | 'proxy' = future live mode via your secure endpoint
+      useMockProxyResponse: false,         // when true + dataMode='proxy': simulates proxy response using mock data (test path without backend)
+      proxySearchUrl: '/.netlify/functions/vault-search', // Netlify Functions route
+      priceChartingToken: '',              // NEVER store real token here – proxy only
+      priceChartingBaseUrl: 'https://api.pricecharting.com'
+    };
+
+    /* ================================================================
+       FUTURE ARCHITECTURE NOTES (founder-friendly)
+    ================================================================
+       Safe live flow (when ready):
+       1. User searches → frontend calls YOUR proxy (POST /api/vault-search)
+       2. Proxy (server-side) adds secret token → calls PriceCharting API
+       3. Proxy normalizes raw response → returns same shape as mock
+       4. Frontend renders identical to mock mode
+
+       Why proxy is required:
+       - Browser → PriceCharting directly = token exposed in JS (security risk)
+       - Violates PriceCharting terms (no client-side calls long-term)
+       - CORS blocks direct browser calls anyway
+
+       Proxy should:
+       - Accept POST JSON { query, platform }
+       - Use secret token (stored server-side only)
+       - Call PriceCharting search endpoint
+       - Normalize results to match our model (source, prices, etc.)
+       - Return array or { error: "message" }
+       - Add rate limiting / caching later if needed
+
+       Request shape (POST /api/vault-search):
+       {
+         "query": "Chrono Trigger",
+         "platform": "SNES"
+       }
+
+       Success response shape:
+       [
+         {
+           "source": "pricecharting",
+           "externalId": "12345",
+           "title": "Chrono Trigger",
+           "platform": "SNES",
+           "loosePrice": 185,
+           "cibPrice": 320,
+           "newPrice": 450,
+           "gradedPrice": 600,
+           "releaseDate": "1995-08-11",
+           "imageUrl": "https://...",
+           "searchScore": 98
+         }
+       ]
+
+       Error response:
+       { "error": "Search temporarily unavailable" }
+
+       Frontend keeps using same normalized model everywhere.
+    ================================================================ */
+
+    /* ================================================================
+       DATA LAYER – mock data with normalized fields
+    ================================================================ */
+    let vault = [];
+    let lastSearchResults = []; // for live condition preview updates
+    let mockGameData = [
+      { title: "Chrono Trigger", platform: "SNES", loosePrice: 185, cibPrice: 320, newPrice: 450, gradedPrice: 600 },
+      { title: "Super Mario World", platform: "SNES", loosePrice: 45, cibPrice: 68, newPrice: 120, gradedPrice: 180 },
+      { title: "The Legend of Zelda: Ocarina of Time", platform: "N64", loosePrice: 85, cibPrice: 185, newPrice: 280, gradedPrice: 420 },
+      { title: "Final Fantasy VII", platform: "PS1", loosePrice: 65, cibPrice: 145, newPrice: 220, gradedPrice: 350 }
+    ];
+
+    /* ================================================================
+       LOCALSTORAGE PERSISTENCE
+    ================================================================ */
+    const STORAGE_KEY = 'voltageVaultV1';
+
+    function saveVault() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(vault));
+      } catch (e) {
+        console.warn('Could not save vault to localStorage:', e);
+      }
+    }
+
+    function loadVault() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            vault = parsed;
+            renderVault();
+          }
+        }
+      } catch (e) {
+        console.warn('Could not load vault from localStorage:', e);
+      }
+    }
+
+    /* ================================================================
+       HELPER: escape HTML (safer version)
+    ================================================================ */
+    function escapeHtml(unsafe) {
+      return String(unsafe ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    /* ================================================================
+       NORMALIZATION LAYER
+    ================================================================ */
+    function normalizeTitle(str) {
+      return str.toLowerCase()
+                .replace(/[^a-z0-9\s]/g, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+    }
+
+    function normalizePlatform(p) {
+      const map = {
+        'nintendo 64': 'N64',
+        'n64': 'N64',
+        'super nintendo': 'SNES',
+        'snes': 'SNES',
+        'nes': 'NES',
+        'nintendo entertainment system': 'NES',
+        'playstation': 'PS1',
+        'ps1': 'PS1',
+        'ps2': 'PS2',
+        'ps3': 'PS3',
+        'ps4': 'PS4',
+        'ps5': 'PS5',
+        'xbox': 'Xbox',
+        'xbox 360': 'Xbox 360',
+        'xbox one': 'Xbox One',
+        'xbox series x': 'Xbox Series X',
+        'game boy advance': 'Game Boy / GBA',
+        'gba': 'Game Boy / GBA',
+        'game boy': 'Game Boy / GBA',
+        'gb': 'Game Boy / GBA'
+      };
+      return map[p.toLowerCase()] || p;
+    }
+
+    /* ================================================================
+       SEARCH LAYER – single entry point (future-proof)
+    ================================================================ */
+    async function searchCatalog(query, selectedPlatform) {
+      if (config.dataMode === 'mock') {
+        return searchMockCatalog(query, selectedPlatform);
+      } else if (config.dataMode === 'proxy') {
+        return await searchProxyCatalog(query, selectedPlatform);
+      }
+      return [];
+    }
+
+    function searchMockCatalog(query, selectedPlatform) {
+      if (!query) return [];
+
+      const normQuery = normalizeTitle(query);
+      const platformFilter = selectedPlatform ? normalizePlatform(selectedPlatform) : null;
+
+      return mockGameData
+        .map(game => ({
+          source: 'mock',
+          externalId: null,
+          title: game.title,
+          platform: game.platform,
+          loosePrice: game.loosePrice,
+          cibPrice: game.cibPrice,
+          newPrice: game.newPrice,
+          gradedPrice: game.gradedPrice,
+          releaseDate: null,
+          imageUrl: null,
+          searchScore: scoreResult(game, query, platformFilter)
+        }))
+        .filter(result => {
+          const titleMatch = normalizeTitle(result.title).includes(normQuery);
+          const platformMatch = !platformFilter || normalizePlatform(result.platform) === platformFilter;
+          return titleMatch && platformMatch;
+        })
+        .sort((a, b) => b.searchScore - a.searchScore);
+    }
+
+    // FUTURE PROXY CALL STUB – this is the real integration point
+    async function searchProxyCatalog(query, selectedPlatform) {
+      // Optional: simulate proxy response for testing without backend
+      if (config.useMockProxyResponse) {
+        await new Promise(resolve => setTimeout(resolve, 600)); // fake network delay
+
+        const normQuery = normalizeTitle(query);
+        const platformFilter = selectedPlatform ? normalizePlatform(selectedPlatform) : null;
+
+        const simulated = mockGameData
+          .map(game => ({
+            source: 'pricecharting', // pretend it's from real API
+            externalId: 'mock-' + Date.now(),
+            title: game.title,
+            platform: game.platform,
+            loosePrice: game.loosePrice,
+            cibPrice: game.cibPrice,
+            newPrice: game.newPrice,
+            gradedPrice: game.gradedPrice,
+            releaseDate: null,
+            imageUrl: null,
+            searchScore: scoreResult(game, query, platformFilter)
+          }))
+          .filter(result => {
+            const titleMatch = normalizeTitle(result.title).includes(normQuery);
+            const platformMatch = !platformFilter || normalizePlatform(result.platform) === platformFilter;
+            return titleMatch && platformMatch;
+          })
+          .sort((a, b) => b.searchScore - a.searchScore);
+
+        return simulated;
+      }
+
+      // Real future implementation (when proxy exists):
+      try {
+        const response = await fetch(config.proxySearchUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: query,
+            platform: selectedPlatform
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Proxy returned ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.error) {
+          throw new Error(data.error);
+        }
+
+        // Expect normalized array – same shape as mock
+        if (!Array.isArray(data)) {
+          throw new Error('Proxy response not an array');
+        }
+
+        return data;
+      } catch (err) {
+        console.error('Proxy search failed:', err);
+        throw new Error('Live search unavailable – try again later');
+      }
+    }
+
+    /* ================================================================
+       SCORING LAYER – now includes platform bonus
+    ================================================================ */
+    function scoreResult(result, query, selectedPlatform) {
+      const normTitle = normalizeTitle(result.title);
+      const normQuery = normalizeTitle(query);
+      let score = 0;
+
+      if (normTitle === normQuery) score += 100;
+      else if (normTitle.startsWith(normQuery)) score += 70;
+      else if (normTitle.includes(normQuery)) score += 40;
+
+      // Word matching bonus
+      const queryWords = normQuery.split(' ');
+      queryWords.forEach(word => {
+        if (normTitle.includes(word)) score += 10;
+      });
+
+      // Platform match bonus
+      if (selectedPlatform && normalizePlatform(result.platform) === normalizePlatform(selectedPlatform)) {
+        score += 30;
+      }
+
+      return score;
+    }
+
+    /* ================================================================
+       VAULT LAYER – merge duplicates
+    ================================================================ */
+    function addToVault(normalizedResult) {
+      const quantity = parseInt(document.getElementById('quantity').value) || 1;
+      const condition = document.getElementById('condition').value || 'Loose'; // safe fallback
+      const selectedPlatform = document.getElementById('platform').value || normalizedResult.platform;
+      const notes = document.getElementById('notes').value;
+
+      // Determine unit value from condition
+      let unitValue = 0;
+      if (condition === 'Loose') unitValue = normalizedResult.loosePrice || 0;
+      else if (condition === 'Complete in Box (CIB)') unitValue = normalizedResult.cibPrice || 0;
+      else if (condition === 'Sealed') unitValue = normalizedResult.newPrice || 0;
+      else if (condition === 'Graded') unitValue = normalizedResult.gradedPrice || normalizedResult.newPrice || 0;
+
+      // Check for exact duplicate
+      const existing = vault.find(item =>
+        item.title === normalizedResult.title &&
+        item.platform === selectedPlatform &&
+        item.condition === condition
+      );
+
+      if (existing) {
+        existing.quantity += quantity;
+        existing.totalValue = existing.unitValue * existing.quantity;
+        if (notes) existing.notes = existing.notes ? existing.notes + '; ' + notes : notes;
+      } else {
+        const newItem = {
+          id: Date.now() + Math.random().toString(36).substr(2, 9), // better uniqueness
+          source: normalizedResult.source,
+          externalId: normalizedResult.externalId,
+          title: normalizedResult.title,
+          platform: selectedPlatform,
+          condition: condition,
+          quantity: quantity,
+          unitValue: unitValue,
+          totalValue: unitValue * quantity,
+          notes: notes,
+          addedAt: new Date().toISOString()
+        };
+        vault.push(newItem);
+      }
+
+      renderVault();
+      saveVault(); // persist after every change
+      clearForm();
+      document.getElementById('search-results').classList.add('hidden');
+
+      // Inline success
+      const msg = document.getElementById('success-message');
+      const text = document.getElementById('success-text');
+      text.textContent = `Added ${quantity} × ${normalizedResult.title} to your Vault`;
+      msg.classList.remove('hidden');
+      setTimeout(() => msg.classList.add('hidden'), 3000);
+    }
+
+    /* ================================================================
+       UI LAYER
+    ================================================================ */
+    function runSearch() {
+      const title = document.getElementById('game-title').value.trim();
+      if (!title) {
+        alert("Please enter a game title.");
+        return;
+      }
+
+      const loading = document.getElementById('search-loading');
+      const errorEl = document.getElementById('search-error');
+      loading.classList.remove('hidden');
+      errorEl.classList.add('hidden');
+
+      // Show mode indicator (developer-facing)
+      const modeText = config.dataMode === 'proxy' && config.useMockProxyResponse
+        ? ' (mock proxy simulation)'
+        : config.dataMode === 'proxy'
+          ? ' (live proxy)'
+          : ' (mock)';
+      document.getElementById('search-loading').textContent = `Searching catalog${modeText}...`;
+
+      setTimeout(async () => {
+        loading.classList.add('hidden');
+
+        try {
+          const selectedPlatform = document.getElementById('platform').value;
+          const results = await searchCatalog(title, selectedPlatform);
+          lastSearchResults = results; // store for live condition updates
+
+          renderSearchResults(results, selectedPlatform);
+
+          document.getElementById('search-results').classList.remove('hidden');
+          document.getElementById('search-results').scrollIntoView({ behavior: 'smooth' });
+        } catch (err) {
+          errorEl.textContent = 'Search failed: ' + err.message;
+          errorEl.classList.remove('hidden');
+          document.getElementById('search-results').classList.add('hidden');
+        }
+      }, 420);
+    }
+
+    // Render search results with condition-aware preview
+    function renderSearchResults(results, selectedPlatform) {
+      const resultsGrid = document.getElementById('results-grid');
+      resultsGrid.innerHTML = '';
+
+      if (results.length === 0) {
+        resultsGrid.innerHTML = `
+          <p class="text-center text-gray-400 col-span-3 py-4">
+            No matches found for this platform.
+          </p>
+          <div class="text-center col-span-3 py-4">
+            <button onclick="addManualEntry()" 
+                    class="px-6 py-3 bg-black border border-[var(--teal)] text-[var(--teal)] hover:bg-[var(--teal)]/20 transition">
+              Add this game manually
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      const condition = document.getElementById('condition').value || 'Loose';
+
+      results.forEach((result, index) => {
+        const card = document.createElement('div');
+        card.className = 'relative bg-black border border-[var(--teal)]/60 rounded-xl p-6 cursor-pointer hover:border-[var(--yellow)] transition';
+
+        // Determine preview price
+        let previewPrice = 0;
+        let previewLabel = '';
+        if (condition === 'Loose') {
+          previewPrice = result.loosePrice || 0;
+          previewLabel = 'Loose';
+        } else if (condition === 'Complete in Box (CIB)') {
+          previewPrice = result.cibPrice || 0;
+          previewLabel = 'CIB';
+        } else if (condition === 'Sealed') {
+          previewPrice = result.newPrice || 0;
+          previewLabel = 'Sealed';
+        } else if (condition === 'Graded') {
+          previewPrice = result.gradedPrice || result.newPrice || 0;
+          previewLabel = 'Graded';
+        }
+
+        card.innerHTML = `
+          ${index === 0 ? '<span class="absolute top-2 right-2 px-3 py-1 text-xs font-bold bg-[var(--yellow)] text-black rounded-full">Best Match</span>' : ''}
+          <div class="font-semibold mb-2">${escapeHtml(result.title)}</div>
+          <div class="text-sm text-gray-400 mb-2">${escapeHtml(result.platform)}</div>
+          <div class="text-lg font-bold text-[var(--teal)] mb-1">${previewLabel}: $${previewPrice.toFixed(2)}</div>
+          <div class="text-xs text-gray-500">Loose: $${result.loosePrice} | CIB: $${result.cibPrice}</div>
+        `;
+        card.onclick = () => addToVault(result);
+        resultsGrid.appendChild(card);
+      });
+    }
+
+    // Manual add fallback when no results
+    function addManualEntry() {
+      const title = document.getElementById('game-title').value.trim();
+      if (!title) {
+        alert("Please enter a game title first.");
+        return;
+      }
+
+      const condition = document.getElementById('condition').value || 'Loose';
+      const platform = document.getElementById('platform').value || 'Other';
+      const quantity = parseInt(document.getElementById('quantity').value) || 1;
+      const notes = document.getElementById('notes').value;
+
+      const manualResult = {
+        source: 'manual',
+        externalId: null,
+        title: title,
+        platform: platform,
+        loosePrice: 0,
+        cibPrice: 0,
+        newPrice: 0,
+        gradedPrice: 0,
+        releaseDate: null,
+        imageUrl: null,
+        searchScore: 0
+      };
+
+      addToVault(manualResult);
+      document.getElementById('search-results').classList.add('hidden');
+    }
+
+    // Live update preview prices when condition changes (if results visible)
+    document.getElementById('condition').addEventListener('change', () => {
+      if (!document.getElementById('search-results').classList.contains('hidden')) {
+        const selectedPlatform = document.getElementById('platform').value;
+        renderSearchResults(lastSearchResults, selectedPlatform);
+      }
+    });
+
+    function clearForm() {
+      document.getElementById('game-title').value = '';
+      document.getElementById('notes').value = '';
+      document.getElementById('quantity').value = 1;
+    }
+
+    function renderVault() {
+      const list = document.getElementById('vault-list');
+      list.innerHTML = '';
+
+      if (vault.length === 0) {
+        list.innerHTML = `
+          <p class="text-center text-gray-400 py-12">
+            Your Vault is empty.<br>
+            <span class="text-[var(--teal)]">Start by adding your first game above.</span>
+          </p>
+        `;
+
+        document.getElementById('game-count').textContent = '0';
+        document.getElementById('unique-titles').textContent = '0';
+        document.getElementById('total-value').textContent = '$0.00';
+
+        return;
+      }
+
+      vault.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'bg-black border border-[var(--teal)]/40 rounded-xl p-6 flex justify-between items-center';
+        card.innerHTML = `
+          <div>
+            <div class="font-semibold">${escapeHtml(item.title)}</div>
+            <div class="text-sm text-gray-400">${escapeHtml(item.platform)} • ${escapeHtml(item.condition)} × ${item.quantity}</div>
+            <div class="text-sm text-gray-500">${item.notes ? 'Note: ' + escapeHtml(item.notes) : ''}</div>
+            <div class="text-xs text-gray-500 mt-1">Unit value: $${Number(item.unitValue || 0).toFixed(2)}</div>
+          </div>
+          <div class="text-right">
+            <div class="text-lg font-bold text-[var(--teal)]">$${Number(item.totalValue || 0).toFixed(2)}</div>
+            <button onclick="removeFromVault('${item.id}')" class="text-xs text-red-400 hover:text-red-300 mt-1">Remove</button>
+          </div>
+        `;
+        list.appendChild(card);
+      });
+
+      const totalGames = vault.reduce((sum, item) => sum + item.quantity, 0);
+      const uniqueTitles = vault.length;
+      const totalValueSum = vault.reduce((sum, item) => sum + Number(item.totalValue || 0), 0);
+
+      document.getElementById('game-count').textContent = totalGames;
+      document.getElementById('unique-titles').textContent = uniqueTitles;
+      document.getElementById('total-value').textContent = `$${totalValueSum.toFixed(2)}`;
+    }
+
+    function removeFromVault(id) {
+      vault = vault.filter(item => item.id !== id);
+      renderVault();
+      saveVault();
+    }
+
+    function clearVault() {
+      if (confirm("Are you sure you want to clear your entire Vault?")) {
+        vault = [];
+        saveVault();
+        renderVault();
+      }
+    }
+
+    // Mock Gamertag
+    document.getElementById('gamertag-display').textContent = "RetroKing87";
+
+    // Restore Enter-to-search behavior
+    document.getElementById('game-title').addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        runSearch();
+      }
+    });
+
+    // Load saved vault after all functions are defined
+    loadVault();
+  </script>
+</body>
+</html>

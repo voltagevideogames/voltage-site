@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="Voltage Video Games – Syracuse's trusted retro & modern game store since 2012. Buy, sell, trade games and consoles. Fair offers, nationwide shipping. Building Voltage 2.0 – the serious collector ecosystem." />
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="Voltage Video Games | Syracuse • Collector Platform" />
+  <meta property="og:description" content="Buy, sell, trade retro & modern games. Fair offers. Nationwide shipping. Voltage 2.0 is coming – your personal collection vault and community." />
+  <meta property="og:image" content="images/voltage-logo.png" />
+  <meta property="og:url" content="https://voltagevideogames.com" />
+  <meta property="og:type" content="website" />
+
+  <title>Voltage Video Games • Syracuse, NY</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    :root {
+      --teal: #00E5B8;
+      --yellow: #FFEB3B;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #0a0a0a;
+      color: #f0f0f0;
+    }
+
+    .heading-font {
+      font-family: 'Press Start 2P', system-ui;
+    }
+
+    .neon-text {
+      text-shadow: 0 0 12px var(--teal), 0 0 24px var(--teal), 0 0 48px var(--yellow);
+    }
+
+    .crt::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(to bottom, rgba(0,0,0,0.10) 0px, rgba(0,0,0,0.10) 2px, transparent 2px, transparent 4px);
+      pointer-events: none;
+      z-index: 10;
+      animation: flicker 0.18s infinite alternate;
+    }
+
+    @keyframes flicker {
+      0% { opacity: 0.97; }
+      100% { opacity: 1; }
+    }
+  </style>
+</head>
+<body class="crt">
+
+  <!-- NAVBAR -->
+  <nav class="fixed top-0 inset-x-0 z-50 bg-black/95 border-b border-[var(--teal)]/30">
+    <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+      <a href="#" class="flex items-center">
+        <img src="images/voltage-logo.png" alt="Voltage Video Games logo" class="h-10 md:h-12 w-auto">
+      </a>
+
+      <div class="hidden md:flex items-center gap-10 text-sm font-medium">
+        <a href="https://1ndfvw-zk.myshopify.com" target="_blank" rel="noopener noreferrer" class="hover:text-[var(--teal)] transition">Shop</a>
+        <a href="#sell" class="hover:text-[var(--yellow)] transition">Sell / Trade</a>
+        <a href="#gamertag" class="hover:text-[var(--teal)] transition">Gamertag</a>
+        <a href="#about" class="hover:text-[var(--yellow)] transition">Visit Store</a>
+      </div>
+
+      <button onclick="gamertagLoginClick()" 
+              class="px-7 py-2.5 text-sm font-medium border border-[var(--teal)] hover:bg-[var(--teal)]/10 transition">
+        Gamertag Login
+      </button>
+    </div>
+  </nav>
+
+  <!-- 1. HERO -->
+  <header class="min-h-screen flex items-center relative pt-20">
+    <div class="max-w-6xl mx-auto px-6 text-center">
+      <img src="images/voltage-logo.png" alt="Voltage Video Games logo" class="mx-auto h-32 md:h-48 lg:h-64 w-auto mb-12">
+
+      <p class="text-[var(--yellow)] text-2xl md:text-3xl mb-8">Syracuse, NY • Est. 2012</p>
+      <p class="max-w-3xl mx-auto text-xl text-gray-300 mb-12">
+        Trusted buy/sell/trade store for retro & modern games.<br>
+        Fair offers. Nationwide shipping.<br>
+        Building <span class="text-[var(--teal)]">Voltage 2.0</span> — the collector platform for those who control the inventory.
+      </p>
+
+      <div class="flex flex-col sm:flex-row gap-6 justify-center">
+        <a href="https://1ndfvw-zk.myshopify.com" target="_blank" rel="noopener noreferrer" class="px-12 py-5 bg-black border-2 border-[var(--yellow)] text-[var(--yellow)] font-medium hover:bg-[var(--yellow)] hover:text-black transition">Browse Inventory</a>
+        <a href="#sell" class="px-12 py-5 border-2 border-[var(--teal)] text-[var(--teal)] font-medium hover:bg-[var(--teal)] hover:text-black transition">Get an Offer</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- 2. STORE CREDIBILITY / LOCATION / STORE PHOTO -->
+  <section id="about" class="py-20 bg-black border-t border-[var(--teal)]/20">
+    <div class="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
+      <div>
+        <h2 class="heading-font text-5xl font-bold neon-text mb-8">Downtown Syracuse Since 2012</h2>
+        <p class="text-lg text-gray-300 leading-relaxed mb-8">
+          Voltage Video Games is Central New York's destination for honest buy/sell/trade. We specialize in retro and modern gaming — from sealed classics to current-gen consoles and rare collectibles.
+        </p>
+        <div class="flex items-center gap-8 text-sm">
+          <div>
+            <div class="text-[var(--teal)] font-semibold">437 S Warren St</div>
+            <div class="text-gray-400">Syracuse, NY 13202</div>
+          </div>
+          <div class="h-12 w-px bg-gray-700"></div>
+          <div class="text-[var(--yellow)]">
+            Open 6 days a week<br>
+            <span class="text-gray-400">11am – 7pm</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="rounded-2xl overflow-hidden border border-[var(--teal)]/50 aspect-video bg-zinc-900">
+        <img src="images/inside-store.jpg" alt="Inside Voltage Video Games store in Syracuse, NY" class="w-full h-full object-cover">
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. FEATURED INVENTORY / SHOP -->
+  <section id="shop" class="py-20 bg-[#0a0a0a] border-t border-[var(--teal)]/20">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="flex justify-between items-end mb-12">
+        <h2 class="heading-font text-5xl font-bold neon-text">Featured Games</h2>
+        <a href="#" class="text-[var(--yellow)] text-sm flex items-center gap-2 hover:underline">
+          VIEW FULL CATALOG <span class="text-xl">→</span>
+        </a>
+      </div>
+      
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div class="bg-black border border-[var(--teal)] p-6 rounded-xl hover:border-[var(--yellow)] transition">
+          <div class="text-6xl mb-6">🎮</div>
+          <div class="font-semibold">Chrono Trigger</div>
+          <div class="text-xs text-gray-400">SNES • CIB</div>
+          <div class="text-2xl font-bold text-[var(--teal)] mt-4">$320</div>
+        </div>
+        <div class="bg-black border border-[var(--teal)] p-6 rounded-xl hover:border-[var(--yellow)] transition">
+          <div class="text-6xl mb-6">🎮</div>
+          <div class="font-semibold">Super Mario World</div>
+          <div class="text-xs text-gray-400">SNES • CIB</div>
+          <div class="text-2xl font-bold text-[var(--teal)] mt-4">$68</div>
+        </div>
+        <div class="bg-black border border-[var(--teal)] p-6 rounded-xl hover:border-[var(--yellow)] transition">
+          <div class="text-6xl mb-6">🎮</div>
+          <div class="font-semibold">Zelda: Ocarina of Time</div>
+          <div class="text-xs text-gray-400">N64 • CIB</div>
+          <div class="text-2xl font-bold text-[var(--teal)] mt-4">$185</div>
+        </div>
+        <div class="bg-black border border-[var(--teal)] p-6 rounded-xl hover:border-[var(--yellow)] transition">
+          <div class="text-6xl mb-6">🎮</div>
+          <div class="font-semibold">Final Fantasy VII</div>
+          <div class="text-xs text-gray-400">PS1 • CIB</div>
+          <div class="text-2xl font-bold text-[var(--teal)] mt-4">$145</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. SELL / TRADE – UPGRADED FUNNEL -->
+  <section id="sell" class="py-20 bg-black border-t border-[var(--teal)]/20">
+    <div class="max-w-5xl mx-auto px-6">
+      <!-- Updated heading and intro -->
+      <div class="text-center mb-16">
+        <h2 class="heading-font text-5xl font-bold neon-text mb-4">Sell Your Games to Voltage</h2>
+        <p class="text-xl text-[var(--yellow)] mb-4">Fast Offers • Fair Prices • Nationwide Buying</p>
+        <p class="text-lg text-gray-300 max-w-3xl mx-auto">
+          We buy retro and modern games, consoles, sealed games, graded games, and entire collections.<br>
+          Get a cash or store credit offer from a trusted collector game store in Syracuse, NY.
+        </p>
+      </div>
+
+      <!-- New “How It Works” section -->
+      <div class="grid md:grid-cols-3 gap-8 mb-16">
+        <div class="bg-zinc-950 border border-[var(--teal)]/30 rounded-2xl p-8 text-center">
+          <div class="text-4xl mb-4 text-[var(--yellow)]">1</div>
+          <h3 class="text-xl font-semibold mb-3">Submit Your Games</h3>
+          <p class="text-gray-400">Tell us what you have and upload photos.</p>
+        </div>
+
+        <div class="bg-zinc-950 border border-[var(--teal)]/30 rounded-2xl p-8 text-center">
+          <div class="text-4xl mb-4 text-[var(--yellow)]">2</div>
+          <h3 class="text-xl font-semibold mb-3">Receive an Offer</h3>
+          <p class="text-gray-400">We review condition, completeness, and market value.</p>
+        </div>
+
+        <div class="bg-zinc-950 border border-[var(--teal)]/30 rounded-2xl p-8 text-center">
+          <div class="text-4xl mb-4 text-[var(--yellow)]">3</div>
+          <h3 class="text-xl font-semibold mb-3">Get Paid</h3>
+          <p class="text-gray-400">Choose cash or higher-value store credit.</p>
+        </div>
+      </div>
+
+      <!-- Trust signals block -->
+      <div class="grid md:grid-cols-3 gap-6 mb-12 text-center">
+        <div class="bg-black border border-[var(--teal)]/40 p-6 rounded-xl">
+          <i class="fa-solid fa-store text-3xl text-[var(--teal)] mb-4"></i>
+          <p class="font-medium">Real brick-and-mortar store in Syracuse, NY since 2012</p>
+        </div>
+        <div class="bg-black border border-[var(--teal)]/40 p-6 rounded-xl">
+          <i class="fa-solid fa-user-check text-3xl text-[var(--teal)] mb-4"></i>
+          <p class="font-medium">Trusted by collectors</p>
+        </div>
+        <div class="bg-black border border-[var(--teal)]/40 p-6 rounded-xl">
+          <i class="fa-solid fa-coins text-3xl text-[var(--yellow)] mb-4"></i>
+          <p class="font-medium">Store credit offers pay more</p>
+        </div>
+      </div>
+
+      <!-- Form - Connected to Formspree, no custom JS blocking submission -->
+      <form id="sell-form" action="https://formspree.io/f/xqeyyolz" method="POST" enctype="multipart/form-data" class="grid md:grid-cols-2 gap-8">
+
+  <!-- Hidden Fields -->
+  <input type="hidden" name="_subject" value="Voltage Sell Submission">
+  <input type="hidden" name="_next" value="https://voltagevideogames.com/thank-you.html">
+
+  <div class="space-y-6">
+          <div>
+            <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Game Title(s) or Collection Description *</label>
+            <textarea name="games_description" rows="4" required placeholder="e.g. Chrono Trigger CIB, full Pokémon Gen 1 set loose, PS5 bundle..." 
+                      class="w-full bg-black border border-[var(--teal)]/60 p-4 text-white focus:border-[var(--yellow)] rounded-none resize-none"></textarea>
+          </div>
+
+          <div>
+            <label class="block text-sm mb-2 text-[var(--teal)] font-medium">System / Platform *</label>
+            <select name="platform" required class="w-full bg-black border border-[var(--teal)]/60 p-4 text-white focus:border-[var(--yellow)] rounded-none">
+              <option value="">Select platform...</option>
+              <option>NES</option>
+              <option>SNES</option>
+              <option>N64</option>
+              <option>GameCube</option>
+              <option>Wii</option>
+              <option>Switch</option>
+              <option>Game Boy / GBA</option>
+              <option>Genesis</option>
+              <option>Dreamcast</option>
+              <option>PS1</option>
+              <option>PS2</option>
+              <option>PS3</option>
+              <option>PS4</option>
+              <option>PS5</option>
+              <option>Xbox</option>
+              <option>Xbox 360</option>
+              <option>Xbox One</option>
+              <option>Xbox Series X</option>
+              <option>Other</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Condition *</label>
+            <select name="condition" required class="w-full bg-black border border-[var(--teal)]/60 p-4 text-white focus:border-[var(--yellow)] rounded-none">
+              <option value="">Select condition...</option>
+              <option>Loose</option>
+              <option>Complete in Box (CIB)</option>
+              <option>Sealed</option>
+              <option>Graded</option>
+              <option>Mixed / Collection</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Email *</label>
+            <input type="email" name="email" required placeholder="you@example.com" 
+                   class="w-full bg-black border border-[var(--teal)]/60 p-4 text-white focus:border-[var(--yellow)] rounded-none" />
+          </div>
+        </div>
+
+        <div class="space-y-6">
+          <div>
+            <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Preferred Payout *</label>
+            <select name="preferred_payout" required class="w-full bg-black border border-[var(--teal)]/60 p-4 text-white focus:border-[var(--yellow)] rounded-none">
+              <option>Cash (PayPal / Venmo / Check)</option>
+              <option>Store Credit (higher value)</option>
+              <option>Hybrid (split)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Photos (strongly recommended)</label>
+            <div class="border-2 border-dashed border-[var(--teal)]/40 p-10 text-center rounded-none">
+              <p class="text-gray-400 mb-2">Drag & drop or click to upload photos</p>
+              <p class="text-xs text-gray-500">Front, back, disc/cart, box, any damage – helps us give the best offer faster</p>
+              <input type="file" name="photos" multiple accept="image/*" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Notes / Additional Details</label>
+            <textarea name="notes" rows="4" placeholder="e.g. light scratches on disc, missing manual page, sealed but corner ding..." 
+                      class="w-full bg-black border border-[var(--teal)]/60 p-4 text-white focus:border-[var(--yellow)] rounded-none resize-none"></textarea>
+          </div>
+        </div>
+
+        <div class="md:col-span-2 mt-6">
+          <button type="submit" 
+                  class="w-full py-6 bg-gradient-to-r from-[var(--teal)] to-[var(--yellow)] text-black font-bold text-xl hover:scale-[1.02] transition">
+            REQUEST MY OFFER
+          </button>
+          <p class="text-center text-sm text-gray-400 mt-4">
+            Most offers are sent within 24 hours. Large collections may take slightly longer to evaluate.
+          </p>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- 5. COLLECTOR VAULT PREVIEW -->
+  <section id="gamertag" class="py-20 bg-gradient-to-b from-black to-[#111] border-t border-[var(--teal)]/20">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="text-center mb-16">
+        <h2 class="heading-font text-5xl font-bold neon-text mb-4">Voltage 2.0 — Gamertag & Collector Vault</h2>
+        <p class="text-xl text-gray-300 max-w-3xl mx-auto">
+          Create your Gamertag. Track your collection in your personal Vault. Monitor real-time game values. Share your collection with the community.
+        </p>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-12 items-center">
+        <div>
+          <div class="space-y-8">
+            <div class="flex gap-5">
+              <i class="fa-solid fa-user-tag text-3xl text-[var(--teal)]"></i>
+              <div>
+                <h3 class="text-xl font-semibold">Create Your Gamertag</h3>
+                <p class="text-gray-400">Your collector identity across the platform.</p>
+              </div>
+            </div>
+            <div class="flex gap-5">
+              <i class="fa-solid fa-box-archive text-3xl text-[var(--teal)]"></i>
+              <div>
+                <h3 class="text-xl font-semibold">Track Your Collection in Your Vault</h3>
+                <p class="text-gray-400">Loose, CIB, graded, sealed — every era, every system.</p>
+              </div>
+            </div>
+            <div class="flex gap-5">
+              <i class="fa-solid fa-chart-line text-3xl text-[var(--yellow)]"></i>
+              <div>
+                <h3 class="text-xl font-semibold">Live Market Values</h3>
+                <p class="text-gray-400">Powered by trusted sources. Know what your games are worth today.</p>
+              </div>
+            </div>
+            <div class="flex gap-5">
+              <i class="fa-solid fa-share-nodes text-3xl text-[var(--teal)]"></i>
+              <div>
+                <h3 class="text-xl font-semibold">Share Your Collection</h3>
+                <p class="text-gray-400">Showcase your Vault with the community.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-10 flex flex-col sm:flex-row gap-5">
+            <button onclick="gamertagLoginClick()" class="px-10 py-4 border border-[var(--teal)] text-[var(--teal)] font-medium hover:bg-[var(--teal)]/10 transition">
+              Gamertag Login
+            </button>
+            <button onclick="gamertagLoginClick()" class="px-10 py-4 bg-gradient-to-r from-[var(--teal)] to-[var(--yellow)] text-black font-semibold hover:scale-[1.02] transition">
+              Join Waitlist
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-zinc-950 border border-[var(--teal)] rounded-3xl p-8">
+          <div class="bg-black rounded-2xl p-6">
+            <div class="heading-font text-2xl neon-text mb-6">GAMERTAG PREVIEW</div>
+            <div class="space-y-4 text-sm">
+              <div class="flex justify-between items-center">
+                <span class="text-gray-400">Gamertag</span>
+                <span class="font-semibold text-[var(--yellow)]">RetroKing87</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-gray-400">Vault Value</span>
+                <span class="font-bold text-[var(--teal)]">$5,734</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-gray-400">Games Tracked</span>
+                <span class="font-bold text-[var(--teal)]">126</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-gray-400">Rarest Item</span>
+                <span class="font-bold text-[var(--yellow)] break-words">Chrono Trigger (SNES CIB)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. COLLECTOR SPOTLIGHT / COMMUNITY PREVIEW -->
+  <section class="py-20 bg-black border-t border-[var(--teal)]/20">
+    <div class="max-w-6xl mx-auto px-6">
+      <h2 class="heading-font text-5xl font-bold neon-text text-center mb-12">Collector Spotlight</h2>
+      <div class="grid md:grid-cols-3 gap-8">
+        <div class="bg-zinc-950 border border-[var(--teal)]/30 rounded-3xl p-8">
+          <h3 class="text-xl font-semibold mb-4">Featured Vault</h3>
+          <p class="text-gray-400 text-sm">A complete Generation 1 Pokémon collection, fully documented and valued in real time.</p>
+        </div>
+        <div class="bg-zinc-950 border border-[var(--yellow)]/30 rounded-3xl p-8">
+          <h3 class="text-xl font-semibold mb-4">Rare Find of the Month</h3>
+          <p class="text-gray-400 text-sm">Nintendo World Championships 1990 — one of the rarest pieces in the community.</p>
+        </div>
+        <div class="bg-zinc-950 border border-[var(--teal)]/30 rounded-3xl p-8">
+          <h3 class="text-xl font-semibold mb-4">Community Milestone</h3>
+          <p class="text-gray-400 text-sm">Members reaching 1,000+ tracked titles and earning preservation badges.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. TRUST SIGNALS -->
+  <section class="py-16 bg-black border-t border-[var(--teal)]/20">
+    <div class="max-w-6xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+      <div class="border border-[var(--teal)] p-8">
+        <i class="fa-solid fa-truck text-4xl text-[var(--teal)] mb-4"></i>
+        <div class="font-medium">Nationwide Shipping</div>
+      </div>
+      <div class="border border-[var(--yellow)] p-8">
+        <i class="fa-solid fa-handshake text-4xl text-[var(--yellow)] mb-4"></i>
+        <div class="font-medium">Fair Cash & Credit Offers</div>
+      </div>
+      <div class="border border-[var(--teal)] p-8">
+        <i class="fa-solid fa-shield-halved text-4xl text-[var(--teal)] mb-4"></i>
+        <div class="font-medium">Serving Syracuse Since 2012</div>
+      </div>
+      <div class="border border-[var(--yellow)] p-8">
+        <i class="fa-solid fa-star text-4xl text-[var(--yellow)] mb-4"></i>
+        <div class="font-medium">Trusted by Collectors</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. FOOTER -->
+  <footer class="bg-black border-t-4 border-[var(--yellow)] py-16 text-center text-sm text-gray-400">
+    Voltage Video Games • 437 S Warren Street, Syracuse, NY 13202<br>
+    © 2026 Voltage Video Games. All rights reserved.
+  </footer>
+
+  <script>
+    // Gamertag login teaser only (no form JS)
+    function gamertagLoginClick() {
+      alert("Gamertag login & Collector Vault access coming soon.\n\nSign up for updates below to be notified when Voltage 2.0 launches.");
+    }
+  </script>
+</body>
+</html>
