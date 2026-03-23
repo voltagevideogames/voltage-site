@@ -626,11 +626,13 @@
   ? '<span class="absolute top-2 right-2 px-3 py-1 text-xs font-bold bg-[var(--yellow)] text-black rounded-full">Best Match</span>'
   : '';
 
-const imageHtml = result.imageUrl
-  ? '<div class="mb-4 flex items-center justify-center bg-zinc-950 rounded-lg p-3 min-h-[180px]">' +
-      '<img src="' + escapeHtml(result.imageUrl) + '" alt="' + escapeHtml(result.title) + '" class="max-h-40 w-auto object-contain" loading="lazy">' +
-    '</div>'
-  : '';
+const imageSrc = result.imageUrl || 'images/vault-placeholder.png';
+
+const imageHtml = `
+  <div class="mb-4 flex items-center justify-center bg-zinc-950 rounded-lg p-3 min-h-[180px]">
+    <img src="${imageSrc}" alt="${escapeHtml(result.title)}" class="max-h-40 w-auto object-contain" loading="lazy">
+  </div>
+`;
 
 card.innerHTML = `
   ${bestMatchBadge}
