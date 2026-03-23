@@ -243,53 +243,13 @@
 
     /* ================================================================
        FUTURE ARCHITECTURE NOTES (founder-friendly)
-    ================================================================
+    ================================================================ */
+    /* ================================================================
        Safe live flow (when ready):
-       1. User searches → frontend calls YOUR proxy (POST /api/vault-search)
+       1. User searches → frontend calls YOUR proxy (POST /.netlify/functions/vault-search)
        2. Proxy (server-side) adds secret token → calls PriceCharting API
-       3. Proxy normalizes raw response → returns same shape as mock
-       4. Frontend renders identical to mock mode
-
-       Why proxy is required:
-       - Browser → PriceCharting directly = token exposed in JS (security risk)
-       - Violates PriceCharting terms (no client-side calls long-term)
-       - CORS blocks direct browser calls anyway
-
-       Proxy should:
-       - Accept POST JSON { query, platform }
-       - Use secret token (stored server-side only)
-       - Call PriceCharting search endpoint
-       - Normalize results to match our model (source, prices, etc.)
-       - Return array or { error: "message" }
-       - Add rate limiting / caching later if needed
-
-       Request shape (POST /api/vault-search):
-       {
-         "query": "Chrono Trigger",
-         "platform": "SNES"
-       }
-
-       Success response shape:
-       [
-         {
-           "source": "pricecharting",
-           "externalId": "12345",
-           "title": "Chrono Trigger",
-           "platform": "SNES",
-           "loosePrice": 185,
-           "cibPrice": 320,
-           "newPrice": 450,
-           "gradedPrice": 600,
-           "releaseDate": "1995-08-11",
-           "imageUrl": "https://...",
-           "searchScore": 98
-         }
-       ]
-
-       Error response:
-       { "error": "Search temporarily unavailable" }
-
-       Frontend keeps using same normalized model everywhere.
+       3. Proxy normalizes raw response → returns { success, query, count, results }
+       4. Frontend extracts results array and normalizes platform field
     ================================================================ */
 
     /* ================================================================
@@ -453,7 +413,7 @@
         return simulated;
       }
 
-      // Real future implementation (when proxy exists):
+      // Real live proxy path
       try {
         const response = await fetch(config.proxySearchUrl, {
           method: 'POST',
@@ -464,22 +424,29 @@
           })
         });
 
-        if (!response.ok) {
-          throw new Error(`Proxy returned ${response.status}`);
-        }
-
         const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || `Proxy returned ${response.status}`);
+        }
 
         if (data.error) {
           throw new Error(data.error);
         }
 
-        // Expect normalized array – same shape as mock
-        if (!Array.isArray(data)) {
-          throw new Error('Proxy response not an array');
+        // Extract the actual array we need
+        const resultsArray = data.results || [];
+
+        if (!Array.isArray(resultsArray)) {
+          throw new Error('Proxy "results" field is not an array');
         }
 
-        return data;
+        // Final safe normalization: ensure every result has .platform
+        // (backend uses .console, but rest of app expects .platform)
+        return resultsArray.map(result => ({
+          ...result,
+          platform: result.platform || result.console || 'Other'
+        }));
       } catch (err) {
         console.error('Proxy search failed:', err);
         throw new Error('Live search unavailable – try again later');
