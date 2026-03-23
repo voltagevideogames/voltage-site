@@ -622,22 +622,17 @@
           previewLabel = 'Graded';
         }
 
-       card.innerHTML = `
-  ${index === 0 ? '<span class="absolute top-2 right-2 px-3 py-1 text-xs font-bold bg-[var(--yellow)] text-black rounded-full">Best Match</span>' : ''}
-  ${result.imageUrl ? `
-    <div class="mb-4 flex items-center justify-center bg-zinc-950 rounded-lg p-3 min-h-[180px]">
-      <img src="${escapeHtml(result.imageUrl)}" alt="${escapeHtml(result.title)}" class="max-h-40 w-auto object-contain" loading="lazy">
-    </div>
-  ` : ''}
-  <div class="font-semibold mb-2">${escapeHtml(result.title)}</div>
-  <div class="text-sm text-gray-400 mb-2">${escapeHtml(result.platform)}</div>
-  <div class="text-lg font-bold text-[var(--teal)] mb-1">${previewLabel}: $${Number(previewPrice || 0).toFixed(2)}</div>
-  <div class="text-xs text-gray-500">
-    Loose: $${Number(result.loosePrice || 0).toFixed(2)} | CIB: $${Number(result.cibPrice || 0).toFixed(2)}
-  </div>
-`;
-card.onclick = () => addToVault(result);
-resultsGrid.appendChild(card);
+        card.innerHTML = `
+          ${index === 0 ? '<span class="absolute top-2 right-2 px-3 py-1 text-xs font-bold bg-[var(--yellow)] text-black rounded-full">Best Match</span>' : ''}
+          <div class="font-semibold mb-2">${escapeHtml(result.title)}</div>
+          <div class="text-sm text-gray-400 mb-2">${escapeHtml(result.platform)}</div>
+          <div class="text-lg font-bold text-[var(--teal)] mb-1">${previewLabel}: $${previewPrice.toFixed(2)}</div>
+          <div class="text-xs text-gray-500">Loose: $${result.loosePrice} | CIB: $${result.cibPrice}</div>
+        `;
+        card.onclick = () => addToVault(result);
+        resultsGrid.appendChild(card);
+      });
+    }
 
     // Manual add fallback when no results
     function addManualEntry() {
