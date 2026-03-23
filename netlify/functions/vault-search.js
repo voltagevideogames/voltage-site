@@ -1,83 +1,128 @@
 // netlify/functions/vault-search.js
-// Simple Netlify serverless proxy for PriceCharting search
-// Token stays secret here — never in frontend
+// Netlify serverless proxy for PriceCharting search
+// Keeps API token secret on the server
 
 exports.handler = async (event) => {
-  // Only allow POST
-  if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      body: JSON.stringify({ error: 'Method not allowed' })
-    };
-  }
-
   try {
-    // Parse JSON body
-    const body = JSON.parse(event.body || '{}');
-    const { query, platform } = body;
-
-    if (!query || typeof query !== 'string' || query.trim() === '') {
+    // Only allow POST
+    if (event.httpMethod !== 'POST') {
       return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Missing or invalid query' })
+        statusCode: 405,
+        body: JSON.stringify({ error: 'Method not allowed' }),
       };
     }
 
-    // Get secret token from Netlify env var (set in dashboard)
-    const token = process.env.PRICECHARTING_API_KEY;
-    if (!token) {
+    // Read API key from Netlify environment variable
+    const apiKey = process.env.PRICECHARTING_API_KEY;
+
+    if (!apiKey) {
       console.error('Missing PRICECHARTING_API_KEY');
       return {
         statusCode: 500,
-        body: JSON.stringify({ error: 'Server configuration error' })
+        body: JSON.stringify({ error: 'Server configuration error' }),
       };
     }
 
-    // Build real PriceCharting search URL (GET request)
-    const searchUrl = new URL('https://www.pricecharting.com/api/products');
-    searchUrl.searchParams.set('t', token);           // token param = 't'
-    // Simple v1 platform inclusion: append to query string
-    // This helps filter results without needing exact console param mapping yet
-    const fullQuery = platform && platform.trim() !== ''
-      ? `${query.trim()} ${platform.trim()}`
-      : query.trim();
-    searchUrl.searchParams.set('q', fullQuery);
+    // Parse incoming request body
+    const body = JSON.parse(event.body || '{}');
+    const query = (body.query || '').trim();
+    const platform = (body.platform || '').trim();
 
-    const pcResponse = await fetch(searchUrl.toString());
-
-    if (!pcResponse.ok) {
-      throw new Error(`PriceCharting API returned ${pcResponse.status}`);
+    if (!query) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Search query is required' }),
+      };
     }
 
-    const pcData = await pcResponse.json();
+    // Build search text
+    const fullQuery = platform ? `${query} ${platform}` : query;
 
-    // Normalize to Vault's exact expected shape using real field names
-    const results = (pcData.products || []).map(item => ({
+    // Build PriceCharting search URL
+    const searchUrl = new URL('https://www.pricecharting.com/api/products');
+    searchUrl.searchParams.set('t', apiKey);
+    searchUrl.searchParams.set('q', fullQuery);
+
+    console.log('Vault search query:', fullQuery);
+    console.log(
+      'Request URL:',
+      searchUrl.toString().replace(apiKey, '[HIDDEN_API_KEY]')
+    );
+
+    // Call PriceCharting
+    const pcResponse = await fetch(searchUrl.toString(), {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+      },
+    });
+
+    const rawText = await pcResponse.text();
+    console.log('PriceCharting status:', pcResponse.status);
+    console.log('PriceCharting raw response:', rawText);
+
+    let pcData;
+    try {
+      pcData = JSON.parse(rawText);
+    } catch (parseError) {
+      console.error('Failed to parse PriceCharting JSON:', parseError);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({
+          error: 'PriceCharting returned invalid JSON',
+          raw: rawText,
+        }),
+      };
+    }
+
+    // Handle API-level errors
+    if (!pcResponse.ok || pcData.status === 'error') {
+      return {
+        statusCode: pcResponse.status || 500,
+        body: JSON.stringify({
+          error: pcData['error-message'] || 'PriceCharting search failed',
+          details: pcData,
+        }),
+      };
+    }
+
+    // Normalize results for your Vault frontend
+    const results = (pcData.products || []).map((item) => ({
       source: 'pricecharting',
       externalId: item.id || null,
-      title: item['product-name'] || 'Unknown Title',
-      platform: item['console-name'] || platform || 'Unknown',
-      loosePrice: Number(item['loose-price']) || 0,
-      cibPrice: Number(item['cib-price']) || 0,
-      newPrice: Number(item['new-price']) || 0,
-      gradedPrice: Number(item['graded-price']) || Number(item['new-price']) || 0,
-      releaseDate: item['release-date'] || null,
-      imageUrl: item['image-url'] || null,
-      searchScore: 0  // can compute client-side or here later
+      title: item['product-name'] || '',
+      console: item['console-name'] || '',
+      loosePrice: item['loose-price'] ?? null,
+      cibPrice: item['cib-price'] ?? null,
+      newPrice: item['new-price'] ?? null,
+      boxOnlyPrice: item['box-only-price'] ?? null,
+      manualOnlyPrice: item['manual-only-price'] ?? null,
+      releaseDate: item['release-date'] || '',
+      imageUrl: item.image || item['image-url'] || item['photo'] || '',
+      raw: item,
     }));
 
     return {
       statusCode: 200,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(results)
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        success: true,
+        query: fullQuery,
+        count: results.length,
+        results,
+      }),
     };
+  } catch (error) {
+    console.error('Vault search function failed:', error);
 
-  } catch (err) {
-    console.error('Proxy error:', err.message);
     return {
       statusCode: 500,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ error: 'Search failed – try again later' })
+      body: JSON.stringify({
+        error: 'Search failed – try again later',
+        details: error.message,
+      }),
     };
   }
 };
