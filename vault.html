@@ -517,6 +517,7 @@
           quantity: quantity,
           unitValue: unitValue,
           totalValue: unitValue * quantity,
+          imageUrl: normalizedResult.imageUrl || 'images/vault-placeholder.png',
           notes: notes,
           addedAt: new Date().toISOString()
         };
@@ -714,20 +715,28 @@ card.innerHTML = `
       }
 
       vault.forEach(item => {
-        const card = document.createElement('div');
-        card.className = 'bg-black border border-[var(--teal)]/40 rounded-xl p-6 flex justify-between items-center';
-        card.innerHTML = `
-          <div>
-            <div class="font-semibold">${escapeHtml(item.title)}</div>
-            <div class="text-sm text-gray-400">${escapeHtml(item.platform)} • ${escapeHtml(item.condition)} × ${item.quantity}</div>
-            <div class="text-sm text-gray-500">${item.notes ? 'Note: ' + escapeHtml(item.notes) : ''}</div>
-            <div class="text-xs text-gray-500 mt-1">Unit value: $${Number(item.unitValue || 0).toFixed(2)}</div>
-          </div>
-          <div class="text-right">
-            <div class="text-lg font-bold text-[var(--teal)]">$${Number(item.totalValue || 0).toFixed(2)}</div>
-            <button onclick="removeFromVault('${item.id}')" class="text-xs text-red-400 hover:text-red-300 mt-1">Remove</button>
-          </div>
-        `;
+      const card = document.createElement('div');
+card.className = 'bg-gradient-to-br from-black to-zinc-900 border border-[var(--teal)]/30 rounded-xl p-5 flex justify-between items-center hover:scale-[1.02] transition shadow-lg';
+
+card.innerHTML = `
+  <div class="flex items-center gap-4">
+    <div class="bg-black border border-[var(--teal)]/20 rounded-lg p-2 w-20 h-20 flex items-center justify-center">
+      <img src="${item.imageUrl || 'images/vault-placeholder.png'}" class="max-h-full object-contain" />
+    </div>
+
+    <div>
+      <div class="text-lg font-semibold text-white">${escapeHtml(item.title)}</div>
+      <div class="text-sm text-gray-400">${escapeHtml(item.platform)} • ${escapeHtml(item.condition)} × ${item.quantity}</div>
+      ${item.notes ? `<div class="text-xs text-gray-500 mt-1">${escapeHtml(item.notes)}</div>` : ''}
+    </div>
+  </div>
+
+  <div class="text-right">
+    <div class="text-2xl font-bold text-[var(--teal)]">$${Number(item.totalValue || 0).toFixed(2)}</div>
+    <div class="text-xs text-gray-500">Unit: $${Number(item.unitValue || 0).toFixed(2)}</div>
+    <button onclick="removeFromVault('${item.id}')" class="text-xs text-red-400 hover:text-red-300 mt-2">Remove</button>
+  </div>
+`;
         list.appendChild(card);
       });
 
