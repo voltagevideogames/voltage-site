@@ -87,20 +87,21 @@ exports.handler = async (event) => {
     }
 
     // Normalize results for your Vault frontend
-    const results = (pcData.products || []).map((item) => ({
-      source: 'pricecharting',
-      externalId: item.id || null,
-      title: item['product-name'] || '',
-      console: item['console-name'] || '',
-      loosePrice: item['loose-price'] ?? null,
-      cibPrice: item['cib-price'] ?? null,
-      newPrice: item['new-price'] ?? null,
-      boxOnlyPrice: item['box-only-price'] ?? null,
-      manualOnlyPrice: item['manual-only-price'] ?? null,
-      releaseDate: item['release-date'] || '',
-      imageUrl: item.image || item['image-url'] || item['photo'] || '',
-      raw: item,
-    }));
+const results = (pcData.products || []).map((item) => ({
+  source: 'pricecharting',
+  externalId: item.id || null,
+  title: item['product-name'] || '',
+  console: item['console-name'] || '',
+  loosePrice: item['loose-price'] != null ? item['loose-price'] / 100 : null,
+  cibPrice: item['cib-price'] != null ? item['cib-price'] / 100 : null,
+  newPrice: item['new-price'] != null ? item['new-price'] / 100 : null,
+  boxOnlyPrice: item['box-only-price'] != null ? item['box-only-price'] / 100 : null,
+  manualOnlyPrice: item['manual-only-price'] != null ? item['manual-only-price'] / 100 : null,
+  gradedPrice: item['graded-price'] != null ? item['graded-price'] / 100 : null,
+  releaseDate: item['release-date'] || '',
+  imageUrl: item.image || item['image-url'] || item['photo'] || '',
+  raw: item,
+}));
 
     return {
       statusCode: 200,
