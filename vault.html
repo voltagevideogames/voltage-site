@@ -234,7 +234,7 @@
        CONFIG LAYER – ready for live PriceCharting via proxy
     ================================================================ */
     const config = {
-      dataMode: 'mock',                    // 'mock' = current prototype | 'proxy' = future live mode via your secure endpoint
+      dataMode: 'proxy',                    // 'mock' = current prototype | 'proxy' = future live mode via your secure endpoint
       useMockProxyResponse: false,         // when true + dataMode='proxy': simulates proxy response using mock data (test path without backend)
       proxySearchUrl: '/.netlify/functions/vault-search', // Netlify Functions route
       priceChartingToken: '',              // NEVER store real token here – proxy only
