@@ -33,8 +33,10 @@ export async function handler(event) {
 
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
-
-    const response = await fetch(`${supabaseUrl}/rest/v1/submissions`, {
+console.log("SUPABASE URL:", supabaseUrl);
+console.log("SUPABASE KEY EXISTS:", !!supabaseKey);
+    
+const response = await fetch(`${supabaseUrl}/rest/v1/submissions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -59,13 +61,13 @@ export async function handler(event) {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ error: errorText })
-      };
-    }
-
+  const errorText = await response.text();
+  console.error("SUPABASE ERROR:", errorText);
+  return {
+    statusCode: 500,
+    body: JSON.stringify({ error: errorText })
+  };
+}
     return {
       statusCode: 200,
       body: JSON.stringify({
@@ -74,10 +76,10 @@ export async function handler(event) {
       })
     };
 
-  } catch (err) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: err.message })
-    };
-  }
+ } catch (err) {
+  console.error("FUNCTION ERROR:", err);
+  return {
+    statusCode: 500,
+    body: JSON.stringify({ error: err.message })
+  };
 }
