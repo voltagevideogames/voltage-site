@@ -100,7 +100,7 @@
         </button>
       </div>
 
-      <!-- Add Game Form -->
+      <!-- Add Game Form (with optional purchase price) -->
       <div class="bg-zinc-950 border border-[var(--teal)]/40 rounded-2xl p-8 mb-12">
         <h3 class="heading-font text-3xl neon-text mb-6 text-center">Add a Game</h3>
 
@@ -166,6 +166,13 @@
           <div>
             <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Quantity</label>
             <input type="number" id="quantity" min="1" value="1" 
+                   class="w-full bg-black border border-[var(--teal)]/60 p-4 text-white focus:border-[var(--yellow)] rounded-none" />
+          </div>
+
+          <!-- Optional purchase price -->
+          <div>
+            <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Purchase Price (Optional)</label>
+            <input type="number" id="purchase-price" min="0" step="0.01" placeholder="e.g. 45.00" 
                    class="w-full bg-black border border-[var(--teal)]/60 p-4 text-white focus:border-[var(--yellow)] rounded-none" />
           </div>
 
@@ -240,14 +247,25 @@
         <div class="flex flex-col md:flex-row gap-4 mb-8">
           <input type="text" id="vault-search" placeholder="Search your vault..." 
                  class="flex-1 bg-black border border-[var(--teal)]/60 p-4 text-white focus:border-[var(--yellow)] rounded-none" 
-                 onkeyup="filterVault()">
-          <select id="vault-sort" onchange="filterVault()" 
+                 onkeyup="filterAndSortVault()">
+
+          <select id="vault-sort" onchange="filterAndSortVault()" 
                   class="bg-black border border-[var(--teal)]/60 p-4 text-white focus:border-[var(--yellow)] rounded-none">
-            <option value="title">Sort by Title</option>
-            <option value="value-desc">Value (High to Low)</option>
-            <option value="value-asc">Value (Low to High)</option>
-            <option value="added">Date Added</option>
+            <option value="added-desc">Recently Added</option>
+            <option value="title-asc">Title A-Z</option>
+            <option value="title-desc">Title Z-A</option>
+            <option value="value-desc">Highest Current Value</option>
+            <option value="value-asc">Lowest Current Value</option>
+            <option value="gain-desc">Biggest Gain</option>
+            <option value="loss-desc">Biggest Loss</option>
+            <option value="platform-asc">Platform A-Z</option>
           </select>
+
+          <select id="vault-platform-filter" onchange="filterAndSortVault()" 
+                  class="bg-black border border-[var(--teal)]/60 p-4 text-white focus:border-[var(--yellow)] rounded-none">
+            <option value="">All Platforms</option>
+          </select>
+
           <button onclick="exportVault()" 
                   class="px-8 py-4 border border-[var(--yellow)] text-[var(--yellow)] hover:bg-[var(--yellow)] hover:text-black transition">
             EXPORT CSV
@@ -321,7 +339,6 @@
       return map[p.toLowerCase()] || p;
     }
 
-    /* Helper for condition mapping */
     function getConditionValue(result, condition) {
       if (!result) return 0;
       if (condition === 'Loose') return result.loosePrice || 0;
@@ -433,8 +450,23 @@
       const platform = document.getElementById('platform').value || 'Other';
       const quantity = parseInt(document.getElementById('quantity').value) || 1;
       const notes = document.getElementById('notes').value;
-      const manualResult = { source: 'manual', externalId: null, title: title, platform: platform, loosePrice: 0, cibPrice: 0, newPrice: 0, gradedPrice: 0, releaseDate: null, imageUrl: null, searchScore: 0 };
-      addToVault(manualResult);
+      const purchasePriceInput = document.getElementById('purchase-price').value.trim() ? parseFloat(document.getElementById('purchase-price').value) : null;
+
+      const manualResult = { 
+        source: 'manual', 
+        externalId: null, 
+        title: title, 
+        platform: platform, 
+        loosePrice: 0, 
+        cibPrice: 0, 
+        newPrice: 0, 
+        gradedPrice: 0, 
+        releaseDate: null, 
+        imageUrl: null, 
+        searchScore: 0 
+      };
+
+      addToVault(manualResult, purchasePriceInput);
       document.getElementById('search-results').classList.add('hidden');
     }
 
@@ -449,12 +481,14 @@
       document.getElementById('game-title').value = '';
       document.getElementById('notes').value = '';
       document.getElementById('quantity').value = 1;
+      const purchaseInput = document.getElementById('purchase-price');
+      if (purchaseInput) purchaseInput.value = '';
     }
 
     /* ================================================================
-       addToVault
+       addToVault - safe optional purchase price
     ================================================================ */
-    function addToVault(normalizedResult) {
+    function addToVault(normalizedResult, purchasePriceInput = null) {
       const quantity = parseInt(document.getElementById('quantity').value) || 1;
       const condition = document.getElementById('condition').value || 'Loose';
       const selectedPlatform = document.getElementById('platform').value || normalizedResult.platform;
@@ -476,6 +510,9 @@
         existing.quantity += quantity;
         existing.totalValue = existing.unitValue * existing.quantity;
         if (notes) existing.notes = existing.notes ? existing.notes + '; ' + notes : notes;
+        if (purchasePriceInput !== null && Number.isFinite(purchasePriceInput)) {
+          existing.purchasePrice = purchasePriceInput;
+        }
       } else {
         const newItem = {
           id: Date.now() + Math.random().toString(36).substr(2,9),
@@ -487,7 +524,7 @@
           quantity: quantity,
           unitValue: unitValue,
           totalValue: unitValue * quantity,
-          purchasePrice: unitValue,
+          purchasePrice: (purchasePriceInput !== null && Number.isFinite(purchasePriceInput)) ? purchasePriceInput : unitValue,
           imageUrl: normalizedResult.imageUrl || 'images/vault-placeholder.png',
           notes: notes,
           addedAt: new Date().toISOString()
@@ -507,25 +544,76 @@
     }
 
     /* ================================================================
-       VAULT RENDER + SUMMARY
+       VAULT RENDER + SUMMARY + FILTER/SORT
     ================================================================ */
     function renderVault() {
+      filterAndSortVault();
+      populatePlatformFilter();
+    }
+
+    function filterAndSortVault() {
       const list = document.getElementById('vault-list');
       list.innerHTML = '';
 
-      if (vault.length === 0) {
-        list.innerHTML = `<p class="text-center text-gray-400 py-12">Your Vault is empty.<br><span class="text-[var(--teal)]">Start by adding your first game above.</span></p>`;
+      let filtered = [...vault];
+
+      // Search filter
+      const searchTerm = (document.getElementById('vault-search').value || '').toLowerCase().trim();
+      if (searchTerm) {
+        filtered = filtered.filter(item => 
+          (item.title || '').toLowerCase().includes(searchTerm) ||
+          (item.platform || '').toLowerCase().includes(searchTerm) ||
+          (item.condition || '').toLowerCase().includes(searchTerm)
+        );
+      }
+
+      // Platform filter
+      const selectedPlatformFilter = document.getElementById('vault-platform-filter').value;
+      if (selectedPlatformFilter) {
+        filtered = filtered.filter(item => item.platform === selectedPlatformFilter);
+      }
+
+      // Sort
+      const sortValue = document.getElementById('vault-sort').value;
+      if (sortValue === 'added-desc') {
+        filtered.sort((a, b) => new Date(b.addedAt || 0) - new Date(a.addedAt || 0));
+      } else if (sortValue === 'title-asc') {
+        filtered.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+      } else if (sortValue === 'title-desc') {
+        filtered.sort((a, b) => (b.title || '').localeCompare(a.title || ''));
+      } else if (sortValue === 'value-desc') {
+        filtered.sort((a, b) => {
+          const va = a.currentTotalValue !== undefined ? a.currentTotalValue : a.totalValue || 0;
+          const vb = b.currentTotalValue !== undefined ? b.currentTotalValue : b.totalValue || 0;
+          return vb - va;
+        });
+      } else if (sortValue === 'value-asc') {
+        filtered.sort((a, b) => {
+          const va = a.currentTotalValue !== undefined ? a.currentTotalValue : a.totalValue || 0;
+          const vb = b.currentTotalValue !== undefined ? b.currentTotalValue : b.totalValue || 0;
+          return va - vb;
+        });
+      } else if (sortValue === 'gain-desc') {
+        filtered.sort((a, b) => (b.valueChangeAmount || 0) - (a.valueChangeAmount || 0));
+      } else if (sortValue === 'loss-desc') {
+        filtered.sort((a, b) => (a.valueChangeAmount || 0) - (b.valueChangeAmount || 0));
+      } else if (sortValue === 'platform-asc') {
+        filtered.sort((a, b) => (a.platform || '').localeCompare(b.platform || ''));
+      }
+
+      if (filtered.length === 0) {
+        list.innerHTML = `<p class="text-center text-gray-400 py-12">No matching items found.</p>`;
         updateSummaryStats();
         return;
       }
 
-      vault.forEach(item => {
+      filtered.forEach(item => {
         const currentUnit = item.currentUnitValue !== undefined ? item.currentUnitValue : item.unitValue;
         const currentTotal = item.currentTotalValue !== undefined ? item.currentTotalValue : item.totalValue;
         const changeAmount = item.valueChangeAmount !== undefined ? item.valueChangeAmount : 0;
         const changePercent = item.valueChangePercent !== undefined ? item.valueChangePercent : 0;
         const lastUpdated = item.lastPriceUpdated || "Not refreshed yet";
-        const purchasePrice = item.purchasePrice || item.unitValue || 0;
+        const purchasePrice = item.purchasePrice !== undefined && Number.isFinite(item.purchasePrice) ? item.purchasePrice : (item.unitValue || 0);
         const imageSrc = item.imageUrl || 'images/vault-placeholder.png';
 
         const snapshotTotal = (purchasePrice * item.quantity) || item.totalValue || 0;
@@ -588,7 +676,7 @@
       const totalGames = vault.reduce((sum, item) => sum + item.quantity, 0);
       const uniqueTitles = new Set(vault.map(item => item.title)).size;
       const originalValue = vault.reduce((sum, item) => {
-        const unit = item.purchasePrice !== undefined ? item.purchasePrice : item.unitValue || 0;
+        const unit = item.purchasePrice !== undefined && Number.isFinite(item.purchasePrice) ? item.purchasePrice : (item.unitValue || 0);
         return sum + (unit * item.quantity);
       }, 0);
       const currentValue = vault.reduce((sum, item) => {
@@ -608,7 +696,7 @@
     }
 
     /* ================================================================
-       LIVE MARKET REFRESH - Uses externalId when available
+       LIVE MARKET REFRESH
     ================================================================ */
     async function refreshMarketValues() {
       const button = document.querySelector('button[onclick="refreshMarketValues()"]');
@@ -622,13 +710,10 @@
 
       for (let i = 0; i < vault.length; i++) {
         const item = vault[i];
-        
         if (!item.externalId && !item.title) continue;
 
         try {
           let response;
-
-          // Prefer externalId lookup when available
           if (item.externalId) {
             response = await fetch(config.proxySearchUrl, {
               method: 'POST',
@@ -636,7 +721,6 @@
               body: JSON.stringify({ externalId: item.externalId })
             });
           } else {
-            // Fallback to title + platform
             response = await fetch(config.proxySearchUrl, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -645,22 +729,15 @@
           }
 
           const data = await response.json();
-          if (!response.ok || data.error || !data.results || data.results.length === 0) {
-            console.warn(`No live data for ${item.title || item.externalId}`);
-            continue;
-          }
+          if (!response.ok || data.error || !data.results || data.results.length === 0) continue;
 
           const freshResult = data.results[0];
-
           const liveUnitValue = getConditionValue(freshResult, item.condition);
           const liveTotalValue = liveUnitValue * item.quantity;
-
-          const snapshotTotal = (item.purchasePrice || item.unitValue || 0) * item.quantity;
-
+          const snapshotTotal = (item.purchasePrice !== undefined && Number.isFinite(item.purchasePrice) ? item.purchasePrice : (item.unitValue || 0)) * item.quantity;
           const changeAmount = liveTotalValue - snapshotTotal;
           const changePercent = snapshotTotal > 0 ? Math.round((changeAmount / snapshotTotal) * 100) : 0;
 
-          // Update ONLY live fields
           item.currentUnitValue = liveUnitValue;
           item.currentTotalValue = liveTotalValue;
           item.valueChangeAmount = changeAmount;
@@ -690,7 +767,7 @@
     }
 
     /* Placeholder functions */
-    function filterVault() { console.log('Vault filter triggered (placeholder)'); }
+    function filterVault() { filterAndSortVault(); }
     function exportVault() { alert('Export CSV coming soon (placeholder)'); }
     function viewItem(id) { alert('View detailed item coming soon (placeholder)'); }
 
@@ -708,14 +785,38 @@
       }
     }
 
+    // Populate platform filter dynamically
+    function populatePlatformFilter() {
+      const select = document.getElementById('vault-platform-filter');
+      const currentValue = select.value; // preserve current selection if possible
+      // Clear existing options except "All Platforms"
+      while (select.options.length > 1) {
+        select.remove(1);
+      }
+
+      const platforms = new Set(vault.map(item => item.platform).filter(Boolean));
+      platforms.forEach(platform => {
+        const option = document.createElement('option');
+        option.value = platform;
+        option.textContent = platform;
+        select.appendChild(option);
+      });
+
+      // Restore previous selection if still valid
+      if (currentValue && Array.from(select.options).some(opt => opt.value === currentValue)) {
+        select.value = currentValue;
+      }
+    }
+
     // Gamertag + Enter key
     document.getElementById('gamertag-display').textContent = "RetroKing87";
     document.getElementById('game-title').addEventListener('keypress', function (e) {
       if (e.key === 'Enter') { e.preventDefault(); runSearch(); }
     });
 
-    // Load vault
+    // Load vault and populate filter
     loadVault();
+    populatePlatformFilter();
   </script>
 </body>
 </html>
