@@ -486,13 +486,19 @@
     }
 
     /* ================================================================
-       addToVault - safe optional purchase price
+       addToVault - safe optional purchase price (works for both search clicks and manual add)
     ================================================================ */
     function addToVault(normalizedResult, purchasePriceInput = null) {
       const quantity = parseInt(document.getElementById('quantity').value) || 1;
       const condition = document.getElementById('condition').value || 'Loose';
       const selectedPlatform = document.getElementById('platform').value || normalizedResult.platform;
       const notes = document.getElementById('notes').value;
+
+      // Read purchase price from the form field if not passed (for search result clicks)
+      if (purchasePriceInput === null) {
+        const fieldValue = document.getElementById('purchase-price').value.trim();
+        purchasePriceInput = fieldValue ? parseFloat(fieldValue) : null;
+      }
 
       let unitValue = 0;
       if (condition === 'Loose') unitValue = normalizedResult.loosePrice || 0;
@@ -788,11 +794,8 @@
     // Populate platform filter dynamically
     function populatePlatformFilter() {
       const select = document.getElementById('vault-platform-filter');
-      const currentValue = select.value; // preserve current selection if possible
-      // Clear existing options except "All Platforms"
-      while (select.options.length > 1) {
-        select.remove(1);
-      }
+      const currentValue = select.value;
+      while (select.options.length > 1) select.remove(1);
 
       const platforms = new Set(vault.map(item => item.platform).filter(Boolean));
       platforms.forEach(platform => {
@@ -802,7 +805,6 @@
         select.appendChild(option);
       });
 
-      // Restore previous selection if still valid
       if (currentValue && Array.from(select.options).some(opt => opt.value === currentValue)) {
         select.value = currentValue;
       }
