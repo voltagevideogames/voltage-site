@@ -32,8 +32,9 @@ exports.handler = async (event) => {
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
 
-    console.log("SUPABASE URL:", supabaseUrl);
-    console.log("SUPABASE KEY EXISTS:", !!supabaseKey);
+    console.log("SUPABASE URL RAW:", JSON.stringify(supabaseUrl));
+console.log("SUPABASE INSERT URL:", `${supabaseUrl}/rest/v1/submissions`);    
+console.log("SUPABASE KEY EXISTS:", !!supabaseKey);
 
     const response = await fetch(`${supabaseUrl}/rest/v1/submissions`, {
       method: "POST",
