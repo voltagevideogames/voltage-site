@@ -39,13 +39,22 @@ exports.handler = async (event) => {
     const submission = {
       customer_email: String(body.email || '').trim(),
       game_title_or_description: String(
-        body.gameTitleOrDescription || body.title || ''
-      ).trim(),
+  body.gameTitleOrDescription ||
+  body.games_description ||
+  body.game_title_or_description ||
+  body.title ||
+  ''
+).trim(),
       platform: String(body.platform || '').trim(),
       condition: String(body.condition || '').trim(),
       completeness: String(body.completeness || '').trim(),
       quantity: safePositiveInt(body.quantity, 1),
-      preferred_payout: String(body.preferredPayout || 'cash').trim().toLowerCase(),
+      preferred_payout: String(
+  body.preferredPayout ||
+  body.preferred_payout ||
+  body.payout_type ||
+  'cash'
+).trim().toLowerCase(),
       notes: String(body.notes || '').trim(),
       photo_urls: [], // keep safe for now since your DB column is text today
       status: 'pending',
