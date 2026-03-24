@@ -239,10 +239,10 @@ exports.handler = async (event) => {
       external_id: externalId || null,
     };
 
-    const { data, error } = await supabase
+   const { data, error } = await supabase
   .from('submissions')
   .insert(insertPayload)
-  .select('submission_id')
+  .select('id')
   .single();
 
 if (error) {
@@ -253,7 +253,7 @@ if (error) {
   });
 }
 
-const submissionId = data.submission_id;
+const submissionId = data.id;
     // ------------------------------------------------------------
     // Return response to frontend
     // ------------------------------------------------------------
