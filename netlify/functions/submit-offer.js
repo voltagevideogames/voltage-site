@@ -240,21 +240,20 @@ exports.handler = async (event) => {
     };
 
     const { data, error } = await supabase
-      .from('submissions')
-      .insert(insertPayload)
-      .select('id')
-      .single();
+  .from('submissions')
+  .insert(insertPayload)
+  .select('submission_id')
+  .single();
 
-    if (error) {
-      console.error('Supabase insert error:', error);
-      return jsonResponse(500, {
-        error: 'Failed to save submission',
-        details: error.message,
-      });
-    }
+if (error) {
+  console.error('Supabase insert error:', error);
+  return jsonResponse(500, {
+    error: 'Failed to save submission',
+    details: error.message,
+  });
+}
 
-    const submissionId = data.id;
-
+const submissionId = data.submission_id;
     // ------------------------------------------------------------
     // Return response to frontend
     // ------------------------------------------------------------
