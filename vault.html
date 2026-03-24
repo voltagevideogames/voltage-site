@@ -49,7 +49,7 @@
 </head>
 <body class="crt min-h-screen flex flex-col">
 
-  <!-- NAVBAR (matches main site) -->
+  <!-- NAVBAR -->
   <nav class="fixed top-0 inset-x-0 z-50 bg-black/95 border-b border-[var(--teal)]/30">
     <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
       <a href="index.html" class="flex items-center">
@@ -103,17 +103,14 @@
       <div class="bg-zinc-950 border border-[var(--teal)]/40 rounded-2xl p-8 mb-12">
         <h3 class="heading-font text-3xl neon-text mb-6 text-center">Add a Game</h3>
 
-        <!-- Inline success message -->
         <div id="success-message" class="hidden text-center py-4 mb-6 bg-black border border-[var(--teal)]/60 rounded-xl">
           <p id="success-text" class="text-lg font-medium text-[var(--teal)]"></p>
         </div>
 
-        <!-- Future live data note -->
         <div class="text-center text-xs text-gray-500 mb-6">
           Live market data integration coming soon
         </div>
 
-        <!-- Search state UI -->
         <div id="search-loading" class="hidden text-center py-6 text-[var(--teal)]">
           Searching catalog...
         </div>
@@ -186,34 +183,80 @@
         </form>
       </div>
 
-      <!-- Mock Search Results (appears after clicking Search) -->
+      <!-- Search Results -->
       <div id="search-results" class="hidden bg-zinc-950 border border-[var(--teal)]/40 rounded-2xl p-8 mb-12">
         <h3 class="heading-font text-3xl neon-text mb-6 text-center">Search Results</h3>
-        <div class="grid md:grid-cols-3 gap-6" id="results-grid">
-          <!-- Results inserted via JS -->
-        </div>
+        <div class="grid md:grid-cols-3 gap-6" id="results-grid"></div>
       </div>
 
-      <!-- Vault Collection Display -->
+      <!-- Vault Collection Display - Premium Dashboard -->
       <div class="bg-zinc-950 border border-[var(--teal)]/40 rounded-2xl p-8">
-        <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-6 mb-8">
-          <h3 class="heading-font text-3xl neon-text">Your Vault</h3>
-          <div class="text-left md:text-right">
-            <div class="text-lg">Games Tracked: <span id="game-count" class="font-bold text-[var(--yellow)]">0</span></div>
-            <div class="text-lg">Unique Titles: <span id="unique-titles" class="font-bold text-[var(--yellow)]">0</span></div>
-            <div class="text-lg">Estimated Value: <span id="total-value" class="font-bold text-[var(--teal)]">$0.00</span></div>
-            <div class="text-xs text-gray-500 mt-1">Saved locally on this device</div>
+        <div class="mb-10">
+          <h2 class="heading-font text-5xl neon-text tracking-wider">YOUR VAULT</h2>
+          <p class="text-gray-400 mt-2">Track • Value • Build your legacy</p>
+        </div>
+
+        <!-- Summary Stats -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-10">
+          <div class="bg-black border border-[var(--teal)]/30 rounded-xl p-5">
+            <div class="text-xs text-gray-500">GAMES TRACKED</div>
+            <div id="stat-games" class="text-3xl font-bold text-[var(--yellow)]">0</div>
+          </div>
+          <div class="bg-black border border-[var(--teal)]/30 rounded-xl p-5">
+            <div class="text-xs text-gray-500">UNIQUE TITLES</div>
+            <div id="stat-unique" class="text-3xl font-bold text-[var(--yellow)]">0</div>
+          </div>
+          <div class="bg-black border border-[var(--teal)]/30 rounded-xl p-5">
+            <div class="text-xs text-gray-500">ORIGINAL VALUE</div>
+            <div id="stat-original" class="text-3xl font-bold text-[var(--yellow)]">$0</div>
+          </div>
+          <div class="bg-black border border-[var(--teal)]/30 rounded-xl p-5">
+            <div class="text-xs text-gray-500">CURRENT VALUE</div>
+            <div id="stat-current" class="text-3xl font-bold text-[var(--teal)]">$0</div>
+          </div>
+          <div class="bg-black border border-[var(--teal)]/30 rounded-xl p-5">
+            <div class="text-xs text-gray-500">TOTAL CHANGE</div>
+            <div id="stat-change" class="text-3xl font-bold">+0%</div>
           </div>
         </div>
 
-        <div id="vault-list" class="space-y-6">
-          <p class="text-center text-gray-400 py-12">
-            Your Vault is empty.<br>
-            <span class="text-[var(--teal)]">Start by adding your first game above.</span>
-          </p>
+        <!-- Refresh Panel -->
+        <div class="bg-black border border-[var(--teal)]/30 rounded-xl p-6 mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div class="heading-font text-xl neon-text">REFRESH MARKET VALUES</div>
+            <div class="text-sm text-gray-400">Pull latest PriceCharting data for your collection</div>
+          </div>
+          <div class="flex items-center gap-4">
+            <button onclick="refreshMarketValues()" 
+                    class="px-8 py-3 bg-gradient-to-r from-[var(--teal)] to-[var(--yellow)] text-black font-bold rounded-lg hover:scale-105 transition">
+              REFRESH NOW
+            </button>
+            <div id="refresh-status" class="text-xs text-gray-500">Last updated: never</div>
+          </div>
         </div>
 
-        <div class="mt-6 text-center">
+        <!-- Toolbar -->
+        <div class="flex flex-col md:flex-row gap-4 mb-8">
+          <input type="text" id="vault-search" placeholder="Search your vault..." 
+                 class="flex-1 bg-black border border-[var(--teal)]/60 p-4 text-white focus:border-[var(--yellow)] rounded-none" 
+                 onkeyup="filterVault()">
+          <select id="vault-sort" onchange="filterVault()" 
+                  class="bg-black border border-[var(--teal)]/60 p-4 text-white focus:border-[var(--yellow)] rounded-none">
+            <option value="title">Sort by Title</option>
+            <option value="value-desc">Value (High to Low)</option>
+            <option value="value-asc">Value (Low to High)</option>
+            <option value="added">Date Added</option>
+          </select>
+          <button onclick="exportVault()" 
+                  class="px-8 py-4 border border-[var(--yellow)] text-[var(--yellow)] hover:bg-[var(--yellow)] hover:text-black transition">
+            EXPORT CSV
+          </button>
+        </div>
+
+        <!-- Collection Cards -->
+        <div id="vault-list" class="space-y-6"></div>
+
+        <div class="mt-8 text-center">
           <button onclick="clearVault()" 
                   class="px-8 py-3 border border-red-600 text-red-400 hover:bg-red-900/30 transition">
             Clear Vault
@@ -223,7 +266,7 @@
     </div>
   </main>
 
-  <!-- FOOTER (matches main site) -->
+  <!-- FOOTER -->
   <footer class="bg-black border-t-4 border-[var(--yellow)] py-16 text-center text-sm text-gray-400">
     Voltage Video Games • 437 S Warren Street, Syracuse, NY 13202<br>
     © 2026 Voltage Video Games. All rights reserved.
@@ -231,32 +274,16 @@
 
   <script>
     /* ================================================================
-       CONFIG LAYER – ready for live PriceCharting via proxy
+       CONFIG + DATA LAYER
     ================================================================ */
     const config = {
-      dataMode: 'proxy',                    // 'mock' = current prototype | 'proxy' = future live mode via your secure endpoint
-      useMockProxyResponse: false,         // when true + dataMode='proxy': simulates proxy response using mock data (test path without backend)
-      proxySearchUrl: '/.netlify/functions/vault-search', // Netlify Functions route
-      priceChartingToken: '',              // NEVER store real token here – proxy only
-      priceChartingBaseUrl: 'https://api.pricecharting.com'
+      dataMode: 'proxy',
+      useMockProxyResponse: false,
+      proxySearchUrl: '/.netlify/functions/vault-search'
     };
 
-    /* ================================================================
-       FUTURE ARCHITECTURE NOTES (founder-friendly)
-    ================================================================ */
-    /* ================================================================
-       Safe live flow (when ready):
-       1. User searches → frontend calls YOUR proxy (POST /.netlify/functions/vault-search)
-       2. Proxy (server-side) adds secret token → calls PriceCharting API
-       3. Proxy normalizes raw response → returns { success, query, count, results }
-       4. Frontend extracts results array and normalizes platform field
-    ================================================================ */
-
-    /* ================================================================
-       DATA LAYER – mock data with normalized fields
-    ================================================================ */
     let vault = [];
-    let lastSearchResults = []; // for live condition preview updates
+    let lastSearchResults = [];
     let mockGameData = [
       { title: "Chrono Trigger", platform: "SNES", loosePrice: 185, cibPrice: 320, newPrice: 450, gradedPrice: 600 },
       { title: "Super Mario World", platform: "SNES", loosePrice: 45, cibPrice: 68, newPrice: 120, gradedPrice: 180 },
@@ -264,17 +291,10 @@
       { title: "Final Fantasy VII", platform: "PS1", loosePrice: 65, cibPrice: 145, newPrice: 220, gradedPrice: 350 }
     ];
 
-    /* ================================================================
-       LOCALSTORAGE PERSISTENCE
-    ================================================================ */
     const STORAGE_KEY = 'voltageVaultV1';
 
     function saveVault() {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(vault));
-      } catch (e) {
-        console.warn('Could not save vault to localStorage:', e);
-      }
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(vault)); } catch(e) {}
     }
 
     function loadVault() {
@@ -282,220 +302,159 @@
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
           const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed)) {
-            vault = parsed;
-            renderVault();
-          }
+          if (Array.isArray(parsed)) { vault = parsed; renderVault(); }
         }
-      } catch (e) {
-        console.warn('Could not load vault from localStorage:', e);
-      }
+      } catch(e) {}
     }
 
-    /* ================================================================
-       HELPER: escape HTML (safer version)
-    ================================================================ */
     function escapeHtml(unsafe) {
-      return String(unsafe ?? '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
+      return String(unsafe ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
     }
 
-    /* ================================================================
-       NORMALIZATION LAYER
-    ================================================================ */
     function normalizeTitle(str) {
-      return str.toLowerCase()
-                .replace(/[^a-z0-9\s]/g, '')
-                .replace(/\s+/g, ' ')
-                .trim();
+      return str.toLowerCase().replace(/[^a-z0-9\s]/g,'').replace(/\s+/g,' ').trim();
     }
 
     function normalizePlatform(p) {
-      const map = {
-        'nintendo 64': 'N64',
-        'n64': 'N64',
-        'super nintendo': 'SNES',
-        'snes': 'SNES',
-        'nes': 'NES',
-        'nintendo entertainment system': 'NES',
-        'playstation': 'PS1',
-        'ps1': 'PS1',
-        'ps2': 'PS2',
-        'ps3': 'PS3',
-        'ps4': 'PS4',
-        'ps5': 'PS5',
-        'xbox': 'Xbox',
-        'xbox 360': 'Xbox 360',
-        'xbox one': 'Xbox One',
-        'xbox series x': 'Xbox Series X',
-        'game boy advance': 'Game Boy / GBA',
-        'gba': 'Game Boy / GBA',
-        'game boy': 'Game Boy / GBA',
-        'gb': 'Game Boy / GBA'
-      };
+      const map = {'nintendo 64':'N64','n64':'N64','super nintendo':'SNES','snes':'SNES','nes':'NES','playstation':'PS1','ps1':'PS1','ps2':'PS2','ps3':'PS3','ps4':'PS4','ps5':'PS5','xbox':'Xbox','xbox 360':'Xbox 360','xbox one':'Xbox One','xbox series x':'Xbox Series X','game boy advance':'Game Boy / GBA','gba':'Game Boy / GBA','game boy':'Game Boy / GBA','gb':'Game Boy / GBA'};
       return map[p.toLowerCase()] || p;
     }
 
     /* ================================================================
-       SEARCH LAYER – single entry point (future-proof)
+       SEARCH FLOW
     ================================================================ */
     async function searchCatalog(query, selectedPlatform) {
-      if (config.dataMode === 'mock') {
-        return searchMockCatalog(query, selectedPlatform);
-      } else if (config.dataMode === 'proxy') {
-        return await searchProxyCatalog(query, selectedPlatform);
-      }
+      if (config.dataMode === 'mock') return searchMockCatalog(query, selectedPlatform);
+      if (config.dataMode === 'proxy') return await searchProxyCatalog(query, selectedPlatform);
       return [];
     }
 
     function searchMockCatalog(query, selectedPlatform) {
       if (!query) return [];
-
       const normQuery = normalizeTitle(query);
       const platformFilter = selectedPlatform ? normalizePlatform(selectedPlatform) : null;
-
-      return mockGameData
-        .map(game => ({
-          source: 'mock',
-          externalId: null,
-          title: game.title,
-          platform: game.platform,
-          loosePrice: game.loosePrice,
-          cibPrice: game.cibPrice,
-          newPrice: game.newPrice,
-          gradedPrice: game.gradedPrice,
-          releaseDate: null,
-          imageUrl: null,
-          searchScore: scoreResult(game, query, platformFilter)
-        }))
-        .filter(result => {
-          const titleMatch = normalizeTitle(result.title).includes(normQuery);
-          const platformMatch = !platformFilter || normalizePlatform(result.platform) === platformFilter;
-          return titleMatch && platformMatch;
-        })
-        .sort((a, b) => b.searchScore - a.searchScore);
+      return mockGameData.map(game => ({
+        source:'mock', externalId:null, title:game.title, platform:game.platform,
+        loosePrice:game.loosePrice, cibPrice:game.cibPrice, newPrice:game.newPrice,
+        gradedPrice:game.gradedPrice, releaseDate:null, imageUrl:null,
+        searchScore:0
+      })).filter(r => normalizeTitle(r.title).includes(normQuery)).sort((a,b)=>b.searchScore-a.searchScore);
     }
 
-    // FUTURE PROXY CALL STUB – this is the real integration point
     async function searchProxyCatalog(query, selectedPlatform) {
-      // Optional: simulate proxy response for testing without backend
       if (config.useMockProxyResponse) {
-        await new Promise(resolve => setTimeout(resolve, 600)); // fake network delay
-
-        const normQuery = normalizeTitle(query);
-        const platformFilter = selectedPlatform ? normalizePlatform(selectedPlatform) : null;
-
-        const simulated = mockGameData
-          .map(game => ({
-            source: 'pricecharting', // pretend it's from real API
-            externalId: 'mock-' + Date.now(),
-            title: game.title,
-            platform: game.platform,
-            loosePrice: game.loosePrice,
-            cibPrice: game.cibPrice,
-            newPrice: game.newPrice,
-            gradedPrice: game.gradedPrice,
-            releaseDate: null,
-            imageUrl: null,
-            searchScore: scoreResult(game, query, platformFilter)
-          }))
-          .filter(result => {
-            const titleMatch = normalizeTitle(result.title).includes(normQuery);
-            const platformMatch = !platformFilter || normalizePlatform(result.platform) === platformFilter;
-            return titleMatch && platformMatch;
-          })
-          .sort((a, b) => b.searchScore - a.searchScore);
-
-        return simulated;
+        await new Promise(r => setTimeout(r,600));
+        return searchMockCatalog(query, selectedPlatform);
       }
-
-      // Real live proxy path
       try {
-        const response = await fetch(config.proxySearchUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            query: query,
-            platform: selectedPlatform
-          })
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || `Proxy returned ${response.status}`);
-        }
-
-        if (data.error) {
-          throw new Error(data.error);
-        }
-
-        // Extract the actual array we need
-        const resultsArray = data.results || [];
-
-        if (!Array.isArray(resultsArray)) {
-          throw new Error('Proxy "results" field is not an array');
-        }
-
-        // Final safe normalization: ensure every result has .platform
-        // (backend uses .console, but rest of app expects .platform)
-        return resultsArray.map(result => ({
-          ...result,
-          platform: result.platform || result.console || 'Other'
-        }));
-      } catch (err) {
-        console.error('Proxy search failed:', err);
-        throw new Error('Live search unavailable – try again later');
+        const res = await fetch(config.proxySearchUrl, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({query, platform:selectedPlatform})});
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || 'Proxy error');
+        const arr = data.results || [];
+        return arr.map(r => ({...r, platform: r.platform || r.console || 'Other'}));
+      } catch(e) {
+        console.error(e);
+        throw new Error('Live search unavailable');
       }
     }
 
-    /* ================================================================
-       SCORING LAYER – now includes platform bonus
-    ================================================================ */
-    function scoreResult(result, query, selectedPlatform) {
-      const normTitle = normalizeTitle(result.title);
-      const normQuery = normalizeTitle(query);
-      let score = 0;
+    function runSearch() {
+      const title = document.getElementById('game-title').value.trim();
+      if (!title) { alert("Please enter a game title."); return; }
 
-      if (normTitle === normQuery) score += 100;
-      else if (normTitle.startsWith(normQuery)) score += 70;
-      else if (normTitle.includes(normQuery)) score += 40;
+      const loading = document.getElementById('search-loading');
+      const errorEl = document.getElementById('search-error');
+      loading.classList.remove('hidden'); 
+      errorEl.classList.add('hidden');
 
-      // Word matching bonus
-      const queryWords = normQuery.split(' ');
-      queryWords.forEach(word => {
-        if (normTitle.includes(word)) score += 10;
+      const modeText = config.dataMode === 'proxy' && config.useMockProxyResponse ? ' (mock proxy simulation)' : config.dataMode === 'proxy' ? ' (live proxy)' : ' (mock)';
+      document.getElementById('search-loading').textContent = `Searching catalog${modeText}...`;
+
+      setTimeout(async () => {
+        loading.classList.add('hidden');
+        try {
+          const selectedPlatform = document.getElementById('platform').value;
+          const results = await searchCatalog(title, selectedPlatform);
+          lastSearchResults = results;
+          renderSearchResults(results, selectedPlatform);
+          document.getElementById('search-results').classList.remove('hidden');
+          document.getElementById('search-results').scrollIntoView({ behavior: 'smooth' });
+        } catch (err) {
+          errorEl.textContent = 'Search failed: ' + err.message;
+          errorEl.classList.remove('hidden');
+          document.getElementById('search-results').classList.add('hidden');
+        }
+      }, 420);
+    }
+
+    function renderSearchResults(results, selectedPlatform) {
+      const resultsGrid = document.getElementById('results-grid');
+      resultsGrid.innerHTML = '';
+      if (results.length === 0) {
+        resultsGrid.innerHTML = `<p class="text-center text-gray-400 col-span-3 py-4">No matches found for this platform.</p><div class="text-center col-span-3 py-4"><button onclick="addManualEntry()" class="px-6 py-3 bg-black border border-[var(--teal)] text-[var(--teal)] hover:bg-[var(--teal)]/20 transition">Add this game manually</button></div>`;
+        return;
+      }
+      const condition = document.getElementById('condition').value || 'Loose';
+      results.forEach((result, index) => {
+        const card = document.createElement('div');
+        card.className = 'relative bg-black border border-[var(--teal)]/60 rounded-xl p-6 cursor-pointer hover:border-[var(--yellow)] transition';
+        let previewPrice = 0; let previewLabel = '';
+        if (condition === 'Loose') { previewPrice = result.loosePrice || 0; previewLabel = 'Loose'; }
+        else if (condition === 'Complete in Box (CIB)') { previewPrice = result.cibPrice || 0; previewLabel = 'CIB'; }
+        else if (condition === 'Sealed') { previewPrice = result.newPrice || 0; previewLabel = 'Sealed'; }
+        else if (condition === 'Graded') { previewPrice = result.gradedPrice || result.newPrice || 0; previewLabel = 'Graded'; }
+        card.innerHTML = `
+          ${index === 0 ? '<span class="absolute top-2 right-2 px-3 py-1 text-xs font-bold bg-[var(--yellow)] text-black rounded-full">Best Match</span>' : ''}
+          <div class="font-semibold mb-2">${escapeHtml(result.title)}</div>
+          <div class="text-sm text-gray-400 mb-2">${escapeHtml(result.platform)}</div>
+          <div class="text-lg font-bold text-[var(--teal)] mb-1">${previewLabel}: $${Math.round(previewPrice)}</div>
+          <div class="text-xs text-gray-500">Loose: $${Math.round(result.loosePrice || 0)} | CIB: $${Math.round(result.cibPrice || 0)}</div>
+        `;
+        card.onclick = () => addToVault(result);
+        resultsGrid.appendChild(card);
       });
+    }
 
-      // Platform match bonus
-      if (selectedPlatform && normalizePlatform(result.platform) === normalizePlatform(selectedPlatform)) {
-        score += 30;
+    function addManualEntry() {
+      const title = document.getElementById('game-title').value.trim();
+      if (!title) { alert("Please enter a game title first."); return; }
+      const condition = document.getElementById('condition').value || 'Loose';
+      const platform = document.getElementById('platform').value || 'Other';
+      const quantity = parseInt(document.getElementById('quantity').value) || 1;
+      const notes = document.getElementById('notes').value;
+      const manualResult = { source: 'manual', externalId: null, title: title, platform: platform, loosePrice: 0, cibPrice: 0, newPrice: 0, gradedPrice: 0, releaseDate: null, imageUrl: null, searchScore: 0 };
+      addToVault(manualResult);
+      document.getElementById('search-results').classList.add('hidden');
+    }
+
+    document.getElementById('condition').addEventListener('change', () => {
+      if (!document.getElementById('search-results').classList.contains('hidden')) {
+        const selectedPlatform = document.getElementById('platform').value;
+        renderSearchResults(lastSearchResults, selectedPlatform);
       }
+    });
 
-      return score;
+    function clearForm() {
+      document.getElementById('game-title').value = '';
+      document.getElementById('notes').value = '';
+      document.getElementById('quantity').value = 1;
     }
 
     /* ================================================================
-       VAULT LAYER – merge duplicates
+       addToVault - fully restored
     ================================================================ */
     function addToVault(normalizedResult) {
       const quantity = parseInt(document.getElementById('quantity').value) || 1;
-      const condition = document.getElementById('condition').value || 'Loose'; // safe fallback
+      const condition = document.getElementById('condition').value || 'Loose';
       const selectedPlatform = document.getElementById('platform').value || normalizedResult.platform;
       const notes = document.getElementById('notes').value;
 
-      // Determine unit value from condition
       let unitValue = 0;
       if (condition === 'Loose') unitValue = normalizedResult.loosePrice || 0;
       else if (condition === 'Complete in Box (CIB)') unitValue = normalizedResult.cibPrice || 0;
       else if (condition === 'Sealed') unitValue = normalizedResult.newPrice || 0;
       else if (condition === 'Graded') unitValue = normalizedResult.gradedPrice || normalizedResult.newPrice || 0;
 
-      // Check for exact duplicate
       const existing = vault.find(item =>
         item.title === normalizedResult.title &&
         item.platform === selectedPlatform &&
@@ -508,7 +467,7 @@
         if (notes) existing.notes = existing.notes ? existing.notes + '; ' + notes : notes;
       } else {
         const newItem = {
-          id: Date.now() + Math.random().toString(36).substr(2, 9), // better uniqueness
+          id: Date.now() + Math.random().toString(36).substr(2,9),
           source: normalizedResult.source,
           externalId: normalizedResult.externalId,
           title: normalizedResult.title,
@@ -526,212 +485,127 @@
       }
 
       renderVault();
-      saveVault(); // persist after every change
+      saveVault();
       clearForm();
       document.getElementById('search-results').classList.add('hidden');
 
-      // Inline success
       const msg = document.getElementById('success-message');
-      const text = document.getElementById('success-text');
-      text.textContent = `Added ${quantity} × ${normalizedResult.title} to your Vault`;
+      document.getElementById('success-text').textContent = `Added ${quantity} × ${normalizedResult.title} to your Vault`;
       msg.classList.remove('hidden');
       setTimeout(() => msg.classList.add('hidden'), 3000);
     }
 
     /* ================================================================
-       UI LAYER
+       VAULT RENDER + SUMMARY
     ================================================================ */
-    function runSearch() {
-      const title = document.getElementById('game-title').value.trim();
-      if (!title) {
-        alert("Please enter a game title.");
-        return;
-      }
-
-      const loading = document.getElementById('search-loading');
-      const errorEl = document.getElementById('search-error');
-      loading.classList.remove('hidden');
-      errorEl.classList.add('hidden');
-
-      // Show mode indicator (developer-facing)
-      const modeText = config.dataMode === 'proxy' && config.useMockProxyResponse
-        ? ' (mock proxy simulation)'
-        : config.dataMode === 'proxy'
-          ? ' (live proxy)'
-          : ' (mock)';
-      document.getElementById('search-loading').textContent = `Searching catalog${modeText}...`;
-
-      setTimeout(async () => {
-        loading.classList.add('hidden');
-
-        try {
-          const selectedPlatform = document.getElementById('platform').value;
-          const results = await searchCatalog(title, selectedPlatform);
-          lastSearchResults = results; // store for live condition updates
-
-          renderSearchResults(results, selectedPlatform);
-
-          document.getElementById('search-results').classList.remove('hidden');
-          document.getElementById('search-results').scrollIntoView({ behavior: 'smooth' });
-        } catch (err) {
-          errorEl.textContent = 'Search failed: ' + err.message;
-          errorEl.classList.remove('hidden');
-          document.getElementById('search-results').classList.add('hidden');
-        }
-      }, 420);
-    }
-
-    // Render search results with condition-aware preview
-    function renderSearchResults(results, selectedPlatform) {
-      const resultsGrid = document.getElementById('results-grid');
-      resultsGrid.innerHTML = '';
-
-      if (results.length === 0) {
-        resultsGrid.innerHTML = `
-          <p class="text-center text-gray-400 col-span-3 py-4">
-            No matches found for this platform.
-          </p>
-          <div class="text-center col-span-3 py-4">
-            <button onclick="addManualEntry()" 
-                    class="px-6 py-3 bg-black border border-[var(--teal)] text-[var(--teal)] hover:bg-[var(--teal)]/20 transition">
-              Add this game manually
-            </button>
-          </div>
-        `;
-        return;
-      }
-
-      const condition = document.getElementById('condition').value || 'Loose';
-
-      results.forEach((result, index) => {
-        const card = document.createElement('div');
-        card.className = 'relative bg-black border border-[var(--teal)]/60 rounded-xl p-6 cursor-pointer hover:border-[var(--yellow)] transition';
-
-        // Determine preview price
-        let previewPrice = 0;
-        let previewLabel = '';
-        if (condition === 'Loose') {
-          previewPrice = result.loosePrice || 0;
-          previewLabel = 'Loose';
-        } else if (condition === 'Complete in Box (CIB)') {
-          previewPrice = result.cibPrice || 0;
-          previewLabel = 'CIB';
-        } else if (condition === 'Sealed') {
-          previewPrice = result.newPrice || 0;
-          previewLabel = 'Sealed';
-        } else if (condition === 'Graded') {
-          previewPrice = result.gradedPrice || result.newPrice || 0;
-          previewLabel = 'Graded';
-        }
-
-        card.innerHTML = `
-          ${index === 0 ? '<span class="absolute top-2 right-2 px-3 py-1 text-xs font-bold bg-[var(--yellow)] text-black rounded-full">Best Match</span>' : ''}
-          <div class="font-semibold mb-2">${escapeHtml(result.title)}</div>
-          <div class="text-sm text-gray-400 mb-2">${escapeHtml(result.platform)}</div>
-          <div class="text-lg font-bold text-[var(--teal)] mb-1">${previewLabel}: $${Math.round(previewPrice)}</div>
-          <div class="text-xs text-gray-500">Loose: $${Math.round(result.loosePrice || 0)} | CIB: $${Math.round(result.cibPrice || 0)}</div>
-        `;
-        card.onclick = () => addToVault(result);
-        resultsGrid.appendChild(card);
-      });
-    }
-
-    // Manual add fallback when no results
-    function addManualEntry() {
-      const title = document.getElementById('game-title').value.trim();
-      if (!title) {
-        alert("Please enter a game title first.");
-        return;
-      }
-
-      const condition = document.getElementById('condition').value || 'Loose';
-      const platform = document.getElementById('platform').value || 'Other';
-      const quantity = parseInt(document.getElementById('quantity').value) || 1;
-      const notes = document.getElementById('notes').value;
-
-      const manualResult = {
-        source: 'manual',
-        externalId: null,
-        title: title,
-        platform: platform,
-        loosePrice: 0,
-        cibPrice: 0,
-        newPrice: 0,
-        gradedPrice: 0,
-        releaseDate: null,
-        imageUrl: null,
-        searchScore: 0
-      };
-
-      addToVault(manualResult);
-      document.getElementById('search-results').classList.add('hidden');
-    }
-
-    // Live update preview prices when condition changes (if results visible)
-    document.getElementById('condition').addEventListener('change', () => {
-      if (!document.getElementById('search-results').classList.contains('hidden')) {
-        const selectedPlatform = document.getElementById('platform').value;
-        renderSearchResults(lastSearchResults, selectedPlatform);
-      }
-    });
-
-    function clearForm() {
-      document.getElementById('game-title').value = '';
-      document.getElementById('notes').value = '';
-      document.getElementById('quantity').value = 1;
-    }
-
     function renderVault() {
       const list = document.getElementById('vault-list');
       list.innerHTML = '';
 
       if (vault.length === 0) {
-        list.innerHTML = `
-          <p class="text-center text-gray-400 py-12">
-            Your Vault is empty.<br>
-            <span class="text-[var(--teal)]">Start by adding your first game above.</span>
-          </p>
-        `;
-
-        document.getElementById('game-count').textContent = '0';
-        document.getElementById('unique-titles').textContent = '0';
-        document.getElementById('total-value').textContent = '$0.00';
-
+        list.innerHTML = `<p class="text-center text-gray-400 py-12">Your Vault is empty.<br><span class="text-[var(--teal)]">Start by adding your first game above.</span></p>`;
+        updateSummaryStats();
         return;
       }
 
       vault.forEach(item => {
+        const currentUnit = item.currentUnitValue !== undefined ? item.currentUnitValue : item.unitValue;
+        const currentTotal = item.currentTotalValue !== undefined ? item.currentTotalValue : item.totalValue;
+        const changeAmount = item.valueChangeAmount !== undefined ? item.valueChangeAmount : 0;
+        const changePercent = item.valueChangePercent !== undefined ? item.valueChangePercent : 0;
+        const lastUpdated = item.lastPriceUpdated || "Not refreshed yet";
+        const purchasePrice = item.purchasePrice || item.unitValue || 0;
+        const imageSrc = item.imageUrl || 'images/vault-placeholder.png';
+
+        const snapshotTotal = (purchasePrice * item.quantity) || item.totalValue || 0;
+        const displayCurrentTotal = currentTotal || (currentUnit * item.quantity) || 0;
+
+        const changeClass = changePercent >= 0 ? 'text-green-400' : 'text-red-400';
+        const changeSign = changePercent >= 0 ? '+' : '';
+
         const card = document.createElement('div');
-        card.className = 'bg-black border border-[var(--teal)]/40 rounded-xl p-6 flex flex-col md:flex-row md:justify-between md:items-center gap-4';
+        card.className = 'bg-black border border-[var(--teal)]/40 rounded-2xl overflow-hidden hover:border-[var(--yellow)] transition-all';
+
         card.innerHTML = `
-          <div class="flex items-center gap-4 w-full md:w-auto">
-            <div class="bg-black border border-[var(--teal)]/20 rounded-lg p-2 w-20 h-20 flex items-center justify-center shrink-0 overflow-hidden">
-              <img src="${item.imageUrl || 'images/vault-placeholder.png'}" class="w-full h-full object-contain" />
+          <div class="flex flex-col md:flex-row gap-6 p-6">
+            <div class="relative w-28 h-28 md:w-32 md:h-32 flex-shrink-0 bg-zinc-950 border border-[var(--teal)]/30 rounded-xl overflow-hidden">
+              <img src="${imageSrc}" alt="${escapeHtml(item.title)}" class="w-full h-full object-contain p-2">
+              <div class="absolute bottom-2 left-2 bg-black/90 text-[var(--teal)] text-xs font-bold px-2.5 py-0.5 rounded border border-[var(--teal)]/50">
+                ${escapeHtml(item.platform)}
+              </div>
             </div>
 
-            <div>
-              <div class="font-semibold">${escapeHtml(item.title)}</div>
-              <div class="text-sm text-gray-400">${escapeHtml(item.platform)} • ${escapeHtml(item.condition)} × ${item.quantity}</div>
-              ${item.notes ? `<div class="text-sm text-gray-500">${escapeHtml(item.notes)}</div>` : ''}
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-xl mb-1">${escapeHtml(item.title)}</div>
+              <div class="text-sm text-gray-400 mb-3">${escapeHtml(item.platform)} • ${escapeHtml(item.condition)} × ${item.quantity}</div>
+              ${item.notes ? `<div class="text-xs text-gray-500 mb-4">${escapeHtml(item.notes)}</div>` : ''}
+              <div class="grid grid-cols-2 gap-x-8 text-sm">
+                <div><span class="text-gray-500">Added:</span> ${new Date(item.addedAt || Date.now()).toLocaleDateString()}</div>
+                <div><span class="text-gray-500">Purchase:</span> <span class="text-[var(--yellow)]">$${Math.round(purchasePrice)}</span></div>
+              </div>
             </div>
-          </div>
 
-          <div class="text-left md:text-right w-full md:w-auto">
-            <div class="text-lg font-bold text-[var(--teal)]">$${Math.round(Number(item.totalValue || 0))}</div>
-            <button onclick="removeFromVault('${item.id}')" class="text-xs text-red-400 hover:text-red-300 mt-1">Remove</button>
+            <div class="md:text-right md:min-w-[200px]">
+              <div class="text-xs text-gray-500">Added at (total)</div>
+              <div class="text-2xl font-bold text-[var(--yellow)]">$${Math.round(snapshotTotal)}</div>
+              
+              <div class="mt-4">
+                <div class="text-xs text-gray-500">Current Value (total)</div>
+                <div class="text-3xl font-bold text-[var(--teal)]">$${Math.round(displayCurrentTotal)}</div>
+              </div>
+
+              <div class="mt-4 inline-flex items-center gap-2 bg-black/70 px-4 py-1 rounded-full border border-[var(--teal)]/30">
+                <span class="${changeClass} font-medium">${changeSign}$${Math.round(Math.abs(changeAmount))} (${changeSign}${changePercent}%)</span>
+              </div>
+
+              <div class="text-xs text-gray-500 mt-3">Last updated: ${lastUpdated}</div>
+
+              <div class="mt-6 flex gap-3 justify-end">
+                <button onclick="viewItem('${item.id}')" class="px-5 py-2 text-xs border border-[var(--teal)] hover:bg-[var(--teal)]/10 transition">VIEW</button>
+                <button onclick="removeFromVault('${item.id}')" class="px-5 py-2 text-xs border border-red-600 text-red-400 hover:bg-red-900/30 transition">REMOVE</button>
+              </div>
+            </div>
           </div>
         `;
         list.appendChild(card);
       });
 
-      const totalGames = vault.reduce((sum, item) => sum + item.quantity, 0);
-      const uniqueTitles = vault.length;
-      const totalValueSum = vault.reduce((sum, item) => sum + Number(item.totalValue || 0), 0);
-
-      document.getElementById('game-count').textContent = totalGames;
-      document.getElementById('unique-titles').textContent = uniqueTitles;
-      document.getElementById('total-value').textContent = `$${Math.round(totalValueSum)}`;
+      updateSummaryStats();
     }
+
+    function updateSummaryStats() {
+      const totalGames = vault.reduce((sum, item) => sum + item.quantity, 0);
+      const uniqueTitles = new Set(vault.map(item => item.title)).size;
+      const originalValue = vault.reduce((sum, item) => {
+        const unit = item.purchasePrice !== undefined ? item.purchasePrice : item.unitValue || 0;
+        return sum + (unit * item.quantity);
+      }, 0);
+      const currentValue = vault.reduce((sum, item) => {
+        return sum + (item.currentTotalValue !== undefined ? item.currentTotalValue : item.totalValue || 0);
+      }, 0);
+      const totalChange = currentValue - originalValue;
+      const changePercent = originalValue > 0 ? Math.round((totalChange / originalValue) * 100) : 0;
+
+      document.getElementById('stat-games').textContent = totalGames;
+      document.getElementById('stat-unique').textContent = uniqueTitles;
+      document.getElementById('stat-original').textContent = '$' + Math.round(originalValue);
+      document.getElementById('stat-current').textContent = '$' + Math.round(currentValue);
+      
+      const changeEl = document.getElementById('stat-change');
+      changeEl.textContent = (totalChange >= 0 ? '+' : '') + Math.round(totalChange) + ' (' + (totalChange >= 0 ? '+' : '') + changePercent + '%)';
+      changeEl.className = totalChange >= 0 ? 'text-3xl font-bold text-green-400' : 'text-3xl font-bold text-red-400';
+    }
+
+    /* Placeholder functions */
+    function refreshMarketValues() {
+      const status = document.getElementById('refresh-status');
+      status.textContent = 'Refreshing...';
+      setTimeout(() => { status.textContent = 'Just now'; renderVault(); }, 1200);
+    }
+
+    function filterVault() { console.log('Vault filter triggered (placeholder)'); }
+    function exportVault() { alert('Export CSV coming soon (placeholder)'); }
+    function viewItem(id) { alert('View detailed item coming soon (placeholder)'); }
 
     function removeFromVault(id) {
       vault = vault.filter(item => item.id !== id);
@@ -747,18 +621,13 @@
       }
     }
 
-    // Mock Gamertag
+    // Gamertag + Enter key
     document.getElementById('gamertag-display').textContent = "RetroKing87";
-
-    // Restore Enter-to-search behavior
     document.getElementById('game-title').addEventListener('keypress', function (e) {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        runSearch();
-      }
+      if (e.key === 'Enter') { e.preventDefault(); runSearch(); }
     });
 
-    // Load saved vault after all functions are defined
+    // Load vault
     loadVault();
   </script>
 </body>
