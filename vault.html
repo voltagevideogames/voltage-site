@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
 <head>
@@ -320,6 +321,16 @@
       return map[p.toLowerCase()] || p;
     }
 
+    /* Helper for condition mapping */
+    function getConditionValue(result, condition) {
+      if (!result) return 0;
+      if (condition === 'Loose') return result.loosePrice || 0;
+      if (condition === 'Complete in Box (CIB)' || condition === 'CIB') return result.cibPrice || 0;
+      if (condition === 'Sealed' || condition === 'New') return result.newPrice || 0;
+      if (condition === 'Graded') return result.gradedPrice || result.newPrice || 0;
+      return result.loosePrice || 0;
+    }
+
     /* ================================================================
        SEARCH FLOW
     ================================================================ */
@@ -441,7 +452,7 @@
     }
 
     /* ================================================================
-       addToVault - fully restored
+       addToVault
     ================================================================ */
     function addToVault(normalizedResult) {
       const quantity = parseInt(document.getElementById('quantity').value) || 1;
@@ -596,13 +607,89 @@
       changeEl.className = totalChange >= 0 ? 'text-3xl font-bold text-green-400' : 'text-3xl font-bold text-red-400';
     }
 
-    /* Placeholder functions */
-    function refreshMarketValues() {
-      const status = document.getElementById('refresh-status');
-      status.textContent = 'Refreshing...';
-      setTimeout(() => { status.textContent = 'Just now'; renderVault(); }, 1200);
+    /* ================================================================
+       LIVE MARKET REFRESH - Uses externalId when available
+    ================================================================ */
+    async function refreshMarketValues() {
+      const button = document.querySelector('button[onclick="refreshMarketValues()"]');
+      const statusEl = document.getElementById('refresh-status');
+
+      if (button) button.disabled = true;
+      statusEl.textContent = 'Refreshing market values...';
+
+      let updatedCount = 0;
+      const totalItems = vault.length;
+
+      for (let i = 0; i < vault.length; i++) {
+        const item = vault[i];
+        
+        if (!item.externalId && !item.title) continue;
+
+        try {
+          let response;
+
+          // Prefer externalId lookup when available
+          if (item.externalId) {
+            response = await fetch(config.proxySearchUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ externalId: item.externalId })
+            });
+          } else {
+            // Fallback to title + platform
+            response = await fetch(config.proxySearchUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ query: item.title, platform: item.platform })
+            });
+          }
+
+          const data = await response.json();
+          if (!response.ok || data.error || !data.results || data.results.length === 0) {
+            console.warn(`No live data for ${item.title || item.externalId}`);
+            continue;
+          }
+
+          const freshResult = data.results[0];
+
+          const liveUnitValue = getConditionValue(freshResult, item.condition);
+          const liveTotalValue = liveUnitValue * item.quantity;
+
+          const snapshotTotal = (item.purchasePrice || item.unitValue || 0) * item.quantity;
+
+          const changeAmount = liveTotalValue - snapshotTotal;
+          const changePercent = snapshotTotal > 0 ? Math.round((changeAmount / snapshotTotal) * 100) : 0;
+
+          // Update ONLY live fields
+          item.currentUnitValue = liveUnitValue;
+          item.currentTotalValue = liveTotalValue;
+          item.valueChangeAmount = changeAmount;
+          item.valueChangePercent = changePercent;
+          item.lastPriceUpdated = new Date().toLocaleString();
+
+          updatedCount++;
+        } catch (err) {
+          console.warn(`Refresh failed for ${item.title || item.externalId}:`, err.message);
+        }
+      }
+
+      saveVault();
+      renderVault();
+
+      if (button) button.disabled = false;
+
+      if (updatedCount > 0) {
+        statusEl.textContent = `Updated ${updatedCount} of ${totalItems} items • Just now`;
+      } else {
+        statusEl.textContent = 'No items could be refreshed • Just now';
+      }
+
+      setTimeout(() => {
+        if (statusEl.textContent.includes('Just now')) statusEl.textContent = 'Last updated: Just now';
+      }, 5000);
     }
 
+    /* Placeholder functions */
     function filterVault() { console.log('Vault filter triggered (placeholder)'); }
     function exportVault() { alert('Export CSV coming soon (placeholder)'); }
     function viewItem(id) { alert('View detailed item coming soon (placeholder)'); }
