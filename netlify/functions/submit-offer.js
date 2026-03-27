@@ -96,6 +96,9 @@ document.getElementById('sell-form').addEventListener('submit', async function(e
   const formData = new FormData(form);
   const data = Object.fromEntries(formData.entries());
 
+// FIX email mapping
+data.email = formData.get('customer_email');
+data.preferredPayout = formData.get('preferred_payout');
   try {
     const response = await fetch('/.netlify/functions/submit-offer', {
       method: 'POST',
