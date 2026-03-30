@@ -389,12 +389,15 @@ function showOfferResults(result) {
     titleEl.textContent = "🎮 Instant Offer Ready!";
     html += `
       <div class="text-center py-10 border-y border-[var(--teal)]/30 my-8">
-        <div class="text-6xl font-bold text-[var(--teal)]">$${result.cash_amount || 0}</div>
+        <div class="text-6xl font-bold text-[var(--teal)]">$${Math.ceil(result.cash_amount || 0)}</div>
         <div class="text-gray-400 mt-3">Cash Offer</div>
-        <div class="text-3xl text-[var(--yellow)] mt-8">or $${result.credit_amount || 0} Store Credit</div>
+        <div class="text-3xl text-[var(--yellow)] mt-8">or $${Math.ceil(result.credit_amount || 0)} Store Credit</div>
       </div>
-      <p class="text-center text-gray-300">Based on current market value ≈ $${result.market_value || 0}</p>
-      <p class="text-xs text-gray-500 mt-10 text-center">This offer is good for 72 hours.</p>
+    <p class="text-center text-gray-300">Based on current market value ≈ $${Math.ceil(result.market_value || 0)}</p>
+<p class="text-xs text-gray-500 mt-10 text-center">This offer is good for 72 hours.</p>
+<p class="text-xs text-gray-500 mt-6 text-center">
+  All online offers are preliminary and subject to final verification of condition, completeness, and authenticity.
+</p>
     `;
   } 
   else if (result.offer_type === 'instant_range') {
@@ -402,15 +405,15 @@ function showOfferResults(result) {
     html += `
       <div class="grid grid-cols-1 md:grid-cols-2 gap-10 my-10">
         <div class="text-center">
-          <div class="text-5xl font-bold text-[var(--teal)]">$${result.cash_low || 0} – $${result.cash_high || 0}</div>
+          <div class="text-5xl font-bold text-[var(--teal)]">$${Math.ceil(result.cash_low || 0)} – $${Math.ceil(result.cash_high || 0)}</div>
           <div class="text-gray-400">Cash Range</div>
         </div>
         <div class="text-center">
-          <div class="text-5xl font-bold text-[var(--yellow)]">$${result.credit_low || 0} – $${result.credit_high || 0}</div>
+          <div class="text-5xl font-bold text-[var(--yellow)]">$${Math.ceil(result.credit_low || 0)} – $${Math.ceil(result.credit_high || 0)}</div>
           <div class="text-gray-400">Store Credit Range</div>
         </div>
       </div>
-      <p class="text-center text-gray-300">Estimated market value ≈ $${result.market_value || 0}</p>
+      <p class="text-center text-gray-300">Estimated market value ≈ $${Math.ceil(result.market_value || 0)}</p>
     `;
   } 
   else {
