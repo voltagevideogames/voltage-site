@@ -165,152 +165,291 @@
   </section>
 
   <!-- 4. SELL / TRADE – UPGRADED FUNNEL -->
-  <section id="sell" class="py-20 bg-black border-t border-[var(--teal)]/20">
-    <div class="max-w-5xl mx-auto px-6">
-      <!-- Updated heading and intro -->
-      <div class="text-center mb-16">
-        <h2 class="heading-font text-5xl font-bold neon-text mb-4">Sell Your Games to Voltage</h2>
-        <p class="text-xl text-[var(--yellow)] mb-4">Fast Offers • Fair Prices • Nationwide Buying</p>
-        <p class="text-lg text-gray-300 max-w-3xl mx-auto">
-          We buy retro and modern games, consoles, sealed games, graded games, and entire collections.<br>
-          Get a cash or store credit offer from a trusted collector game store in Syracuse, NY.
+<section id="sell" class="py-20 bg-black border-t border-[var(--teal)]/20">
+  <div class="max-w-5xl mx-auto px-6">
+    <!-- Updated heading and intro -->
+    <div class="text-center mb-16">
+      <h2 class="heading-font text-5xl font-bold neon-text mb-4">Sell Your Games to Voltage</h2>
+      <p class="text-xl text-[var(--yellow)] mb-4">Fast Offers • Fair Prices • Nationwide Buying</p>
+      <p class="text-lg text-gray-300 max-w-3xl mx-auto">
+        We buy retro and modern games, consoles, sealed games, graded games, and entire collections.<br>
+        Get a cash or store credit offer from a trusted collector game store in Syracuse, NY.
+      </p>
+    </div>
+
+    <!-- How It Works -->
+    <div class="grid md:grid-cols-3 gap-8 mb-16">
+      <div class="bg-zinc-950 border border-[var(--teal)]/30 rounded-2xl p-8 text-center">
+        <div class="text-4xl mb-4 text-[var(--yellow)]">1</div>
+        <h3 class="text-xl font-semibold mb-3">Submit Your Games</h3>
+        <p class="text-gray-400">Tell us what you have and upload photos.</p>
+      </div>
+      <div class="bg-zinc-950 border border-[var(--teal)]/30 rounded-2xl p-8 text-center">
+        <div class="text-4xl mb-4 text-[var(--yellow)]">2</div>
+        <h3 class="text-xl font-semibold mb-3">Receive an Offer</h3>
+        <p class="text-gray-400">We review condition, completeness, and market value.</p>
+      </div>
+      <div class="bg-zinc-950 border border-[var(--teal)]/30 rounded-2xl p-8 text-center">
+        <div class="text-4xl mb-4 text-[var(--yellow)]">3</div>
+        <h3 class="text-xl font-semibold mb-3">Get Paid</h3>
+        <p class="text-gray-400">Choose cash or higher-value store credit.</p>
+      </div>
+    </div>
+
+    <!-- Trust signals -->
+    <div class="grid md:grid-cols-3 gap-6 mb-12 text-center">
+      <div class="bg-black border border-[var(--teal)]/40 p-6 rounded-xl">
+        <i class="fa-solid fa-store text-3xl text-[var(--teal)] mb-4"></i>
+        <p class="font-medium">Real brick-and-mortar store in Syracuse, NY since 2012</p>
+      </div>
+      <div class="bg-black border border-[var(--teal)]/40 p-6 rounded-xl">
+        <i class="fa-solid fa-user-check text-3xl text-[var(--teal)] mb-4"></i>
+        <p class="font-medium">Trusted by collectors</p>
+      </div>
+      <div class="bg-black border border-[var(--teal)]/40 p-6 rounded-xl">
+        <i class="fa-solid fa-coins text-3xl text-[var(--yellow)] mb-4"></i>
+        <p class="font-medium">Store credit offers pay more</p>
+      </div>
+    </div>
+
+    <!-- Form - Now pointing to your Supabase-backed Netlify function -->
+    <form id="sell-form" action="/.netlify/functions/submit-offer" method="POST" class="grid md:grid-cols-2 gap-8">
+
+      <!-- Hidden Fields -->
+      <input type="hidden" name="_subject" value="Voltage Sell Submission">
+
+      <div class="space-y-6">
+        <div>
+          <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Game Title(s) or Collection Description *</label>
+          <textarea name="games_description" rows="4" required placeholder="e.g. Chrono Trigger CIB, full Pokémon Gen 1 set loose, PS5 bundle..." 
+                    class="w-full bg-black border border-[var(--teal)]/60 p-4 text-white focus:border-[var(--yellow)] rounded-none resize-none"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-sm mb-2 text-[var(--teal)] font-medium">System / Platform *</label>
+          <select name="platform" required class="w-full bg-black border border-[var(--teal)]/60 p-4 text-white focus:border-[var(--yellow)] rounded-none">
+            <option value="">Select platform...</option>
+            <option>NES</option>
+            <option>SNES</option>
+            <option>N64</option>
+            <option>GameCube</option>
+            <option>Wii</option>
+            <option>Switch</option>
+            <option>Game Boy / GBA</option>
+            <option>Genesis</option>
+            <option>Dreamcast</option>
+            <option>PS1</option>
+            <option>PS2</option>
+            <option>PS3</option>
+            <option>PS4</option>
+            <option>PS5</option>
+            <option>Xbox</option>
+            <option>Xbox 360</option>
+            <option>Xbox One</option>
+            <option>Xbox Series X</option>
+            <option>Other</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Condition *</label>
+          <select name="condition" required class="w-full bg-black border border-[var(--teal)]/60 p-4 text-white focus:border-[var(--yellow)] rounded-none">
+            <option value="">Select condition...</option>
+            <option>Loose</option>
+            <option>Complete in Box (CIB)</option>
+            <option>Sealed</option>
+            <option>Graded</option>
+            <option>Mixed / Collection</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Email *</label>
+          <input type="email" name="email" required placeholder="you@example.com" 
+                 class="w-full bg-black border border-[var(--teal)]/60 p-4 text-white focus:border-[var(--yellow)] rounded-none" />
+        </div>
+      </div>
+
+      <div class="space-y-6">
+        <div>
+          <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Preferred Payout *</label>
+          <select name="preferred_payout" required class="w-full bg-black border border-[var(--teal)]/60 p-4 text-white focus:border-[var(--yellow)] rounded-none">
+            <option>Cash (PayPal / Venmo / Check)</option>
+            <option>Store Credit (higher value)</option>
+            <option>Hybrid (split)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Photos (strongly recommended)</label>
+          <div class="border-2 border-dashed border-[var(--teal)]/40 p-10 text-center rounded-none">
+            <p class="text-gray-400 mb-2">Drag & drop or click to upload photos</p>
+            <p class="text-xs text-gray-500">Front, back, disc/cart, box, any damage – helps us give the best offer faster</p>
+            <input type="file" name="photos" multiple accept="image/*" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Notes / Additional Details</label>
+          <textarea name="notes" rows="4" placeholder="e.g. light scratches on disc, missing manual page, sealed but corner ding..." 
+                    class="w-full bg-black border border-[var(--teal)]/60 p-4 text-white focus:border-[var(--yellow)] rounded-none resize-none"></textarea>
+        </div>
+      </div>
+
+      <div class="md:col-span-2 mt-6">
+        <button type="submit" 
+                class="w-full py-6 bg-gradient-to-r from-[var(--teal)] to-[var(--yellow)] text-black font-bold text-xl hover:scale-[1.02] transition">
+          REQUEST MY OFFER
+        </button>
+        <p class="text-center text-sm text-gray-400 mt-4">
+          Most offers are sent within 24 hours. Large collections may take slightly longer to evaluate.
         </p>
       </div>
+    </form>
 
-      <!-- New “How It Works” section -->
-      <div class="grid md:grid-cols-3 gap-8 mb-16">
-        <div class="bg-zinc-950 border border-[var(--teal)]/30 rounded-2xl p-8 text-center">
-          <div class="text-4xl mb-4 text-[var(--yellow)]">1</div>
-          <h3 class="text-xl font-semibold mb-3">Submit Your Games</h3>
-          <p class="text-gray-400">Tell us what you have and upload photos.</p>
-        </div>
-
-        <div class="bg-zinc-950 border border-[var(--teal)]/30 rounded-2xl p-8 text-center">
-          <div class="text-4xl mb-4 text-[var(--yellow)]">2</div>
-          <h3 class="text-xl font-semibold mb-3">Receive an Offer</h3>
-          <p class="text-gray-400">We review condition, completeness, and market value.</p>
-        </div>
-
-        <div class="bg-zinc-950 border border-[var(--teal)]/30 rounded-2xl p-8 text-center">
-          <div class="text-4xl mb-4 text-[var(--yellow)]">3</div>
-          <h3 class="text-xl font-semibold mb-3">Get Paid</h3>
-          <p class="text-gray-400">Choose cash or higher-value store credit.</p>
-        </div>
+    <!-- ====================== OFFER RESULTS PANEL ====================== -->
+    <div id="offer-results" class="hidden mt-16 bg-zinc-950 border-4 border-[var(--teal)] rounded-2xl p-10">
+      <div class="flex justify-between items-center mb-8">
+        <h3 id="result-title" class="heading-font text-4xl neon-text">Your Offer</h3>
+        <button onclick="hideOfferResults()" 
+                class="px-8 py-3 bg-zinc-900 hover:bg-zinc-800 border border-[var(--teal)]/50 rounded-xl text-sm transition">
+          Close & Submit Another
+        </button>
       </div>
 
-      <!-- Trust signals block -->
-      <div class="grid md:grid-cols-3 gap-6 mb-12 text-center">
-        <div class="bg-black border border-[var(--teal)]/40 p-6 rounded-xl">
-          <i class="fa-solid fa-store text-3xl text-[var(--teal)] mb-4"></i>
-          <p class="font-medium">Real brick-and-mortar store in Syracuse, NY since 2012</p>
-        </div>
-        <div class="bg-black border border-[var(--teal)]/40 p-6 rounded-xl">
-          <i class="fa-solid fa-user-check text-3xl text-[var(--teal)] mb-4"></i>
-          <p class="font-medium">Trusted by collectors</p>
-        </div>
-        <div class="bg-black border border-[var(--teal)]/40 p-6 rounded-xl">
-          <i class="fa-solid fa-coins text-3xl text-[var(--yellow)] mb-4"></i>
-          <p class="font-medium">Store credit offers pay more</p>
-        </div>
+      <div id="result-content" class="space-y-8"></div>
+
+      <div class="mt-12 pt-8 border-t border-[var(--teal)]/30 text-center">
+        <p class="text-gray-400">Thank you for submitting to Voltage Video Games.<br>
+        We'll follow up by email if we need more details.</p>
       </div>
-
-      <!-- Form - Connected to Formspree, no custom JS blocking submission -->
-      <form id="sell-form" action="https://formspree.io/f/xqeyyolz" method="POST" enctype="multipart/form-data" class="grid md:grid-cols-2 gap-8">
-
-  <!-- Hidden Fields -->
-  <input type="hidden" name="_subject" value="Voltage Sell Submission">
-  <input type="hidden" name="_next" value="https://voltagevideogames.com/thank-you.html">
-
-  <div class="space-y-6">
-          <div>
-            <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Game Title(s) or Collection Description *</label>
-            <textarea name="games_description" rows="4" required placeholder="e.g. Chrono Trigger CIB, full Pokémon Gen 1 set loose, PS5 bundle..." 
-                      class="w-full bg-black border border-[var(--teal)]/60 p-4 text-white focus:border-[var(--yellow)] rounded-none resize-none"></textarea>
-          </div>
-
-          <div>
-            <label class="block text-sm mb-2 text-[var(--teal)] font-medium">System / Platform *</label>
-            <select name="platform" required class="w-full bg-black border border-[var(--teal)]/60 p-4 text-white focus:border-[var(--yellow)] rounded-none">
-              <option value="">Select platform...</option>
-              <option>NES</option>
-              <option>SNES</option>
-              <option>N64</option>
-              <option>GameCube</option>
-              <option>Wii</option>
-              <option>Switch</option>
-              <option>Game Boy / GBA</option>
-              <option>Genesis</option>
-              <option>Dreamcast</option>
-              <option>PS1</option>
-              <option>PS2</option>
-              <option>PS3</option>
-              <option>PS4</option>
-              <option>PS5</option>
-              <option>Xbox</option>
-              <option>Xbox 360</option>
-              <option>Xbox One</option>
-              <option>Xbox Series X</option>
-              <option>Other</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Condition *</label>
-            <select name="condition" required class="w-full bg-black border border-[var(--teal)]/60 p-4 text-white focus:border-[var(--yellow)] rounded-none">
-              <option value="">Select condition...</option>
-              <option>Loose</option>
-              <option>Complete in Box (CIB)</option>
-              <option>Sealed</option>
-              <option>Graded</option>
-              <option>Mixed / Collection</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Email *</label>
-            <input type="email" name="email" required placeholder="you@example.com" 
-                   class="w-full bg-black border border-[var(--teal)]/60 p-4 text-white focus:border-[var(--yellow)] rounded-none" />
-          </div>
-        </div>
-
-        <div class="space-y-6">
-          <div>
-            <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Preferred Payout *</label>
-            <select name="preferred_payout" required class="w-full bg-black border border-[var(--teal)]/60 p-4 text-white focus:border-[var(--yellow)] rounded-none">
-              <option>Cash (PayPal / Venmo / Check)</option>
-              <option>Store Credit (higher value)</option>
-              <option>Hybrid (split)</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Photos (strongly recommended)</label>
-            <div class="border-2 border-dashed border-[var(--teal)]/40 p-10 text-center rounded-none">
-              <p class="text-gray-400 mb-2">Drag & drop or click to upload photos</p>
-              <p class="text-xs text-gray-500">Front, back, disc/cart, box, any damage – helps us give the best offer faster</p>
-              <input type="file" name="photos" multiple accept="image/*" />
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Notes / Additional Details</label>
-            <textarea name="notes" rows="4" placeholder="e.g. light scratches on disc, missing manual page, sealed but corner ding..." 
-                      class="w-full bg-black border border-[var(--teal)]/60 p-4 text-white focus:border-[var(--yellow)] rounded-none resize-none"></textarea>
-          </div>
-        </div>
-
-        <div class="md:col-span-2 mt-6">
-          <button type="submit" 
-                  class="w-full py-6 bg-gradient-to-r from-[var(--teal)] to-[var(--yellow)] text-black font-bold text-xl hover:scale-[1.02] transition">
-            REQUEST MY OFFER
-          </button>
-          <p class="text-center text-sm text-gray-400 mt-4">
-            Most offers are sent within 24 hours. Large collections may take slightly longer to evaluate.
-          </p>
-        </div>
-      </form>
     </div>
-  </section>
+  </div>
+</section>
+
+<script>
+// Handle form submission to your Netlify function (Supabase backend)
+document.getElementById('sell-form').addEventListener('submit', async function(e) {
+  e.preventDefault();   // We handle it ourselves so we can show nice results
+
+  const form = this;
+  const submitBtn = form.querySelector('button[type="submit"]');
+  const originalText = submitBtn.textContent;
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Processing your offer...";
+
+  const formData = new FormData(form);
+  const data = Object.fromEntries(formData.entries());
+
+  try {
+    const response = await fetch('/.netlify/functions/submit-offer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      showOfferResults(result);
+      form.reset();
+    } else {
+      showErrorResult(result.error || "There was a problem processing your submission.");
+    }
+  } catch (err) {
+    showErrorResult("Connection error. Please try again.");
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = originalText;
+  }
+});
+
+function showOfferResults(result) {
+  const panel = document.getElementById('offer-results');
+  const content = document.getElementById('result-content');
+  const titleEl = document.getElementById('result-title');
+
+  content.innerHTML = '';
+
+  let html = `
+    <div class="bg-black border border-[var(--teal)]/40 rounded-2xl p-8">
+      <div class="flex justify-between items-center mb-6 text-sm">
+        <span class="text-gray-400">Submission ID</span>
+        <span class="font-mono text-[var(--yellow)]">${result.submission_id || '—'}</span>
+      </div>
+  `;
+
+  if (result.offer_type === 'instant_offer') {
+    titleEl.textContent = "🎮 Instant Offer Ready!";
+    html += `
+      <div class="text-center py-10 border-y border-[var(--teal)]/30 my-8">
+        <div class="text-6xl font-bold text-[var(--teal)]">$${result.cash_amount || 0}</div>
+        <div class="text-gray-400 mt-3">Cash Offer</div>
+        <div class="text-3xl text-[var(--yellow)] mt-8">or $${result.credit_amount || 0} Store Credit</div>
+      </div>
+      <p class="text-center text-gray-300">Based on current market value ≈ $${result.market_value || 0}</p>
+      <p class="text-xs text-gray-500 mt-10 text-center">This offer is good for 72 hours.</p>
+    `;
+  } 
+  else if (result.offer_type === 'instant_range') {
+    titleEl.textContent = "🎮 Instant Offer Range";
+    html += `
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-10 my-10">
+        <div class="text-center">
+          <div class="text-5xl font-bold text-[var(--teal)]">$${result.cash_low || 0} – $${result.cash_high || 0}</div>
+          <div class="text-gray-400">Cash Range</div>
+        </div>
+        <div class="text-center">
+          <div class="text-5xl font-bold text-[var(--yellow)]">$${result.credit_low || 0} – $${result.credit_high || 0}</div>
+          <div class="text-gray-400">Store Credit Range</div>
+        </div>
+      </div>
+      <p class="text-center text-gray-300">Estimated market value ≈ $${result.market_value || 0}</p>
+    `;
+  } 
+  else {
+    titleEl.textContent = "📋 Manual Review Needed";
+    html += `
+      <div class="text-center py-12">
+        <div class="text-6xl mb-6">🔍</div>
+        <p class="text-2xl text-gray-300">Thank you for your detailed submission.</p>
+        <p class="mt-6 max-w-lg mx-auto text-gray-400">Your items require a quick manual review by our team.</p>
+        ${result.manual_review_reason ? `<p class="mt-8 text-amber-400 italic">"${result.manual_review_reason}"</p>` : ''}
+      </div>
+      <p class="text-center text-sm text-gray-500">We’ll email you within 24–48 hours with a personalized fair offer.</p>
+    `;
+  }
+
+  html += `</div>`;
+  content.innerHTML = html;
+  panel.classList.remove('hidden');
+  panel.scrollIntoView({ behavior: 'smooth' });
+}
+
+function showErrorResult(message) {
+  const panel = document.getElementById('offer-results');
+  const content = document.getElementById('result-content');
+  const titleEl = document.getElementById('result-title');
+
+  content.innerHTML = `
+    <div class="bg-red-950/50 border border-red-500/50 rounded-2xl p-10 text-center">
+      <div class="text-5xl mb-4">⚠️</div>
+      <p class="text-xl text-red-400">${message}</p>
+      <button onclick="hideOfferResults()" class="mt-8 px-8 py-3 bg-zinc-800 hover:bg-zinc-700 rounded-xl">
+        Try Again
+      </button>
+    </div>
+  `;
+  titleEl.textContent = "Submission Issue";
+  panel.classList.remove('hidden');
+  panel.scrollIntoView({ behavior: 'smooth' });
+}
+
+function hideOfferResults() {
+  document.getElementById('offer-results').classList.add('hidden');
+}
+</script>
 
   <!-- 5. COLLECTOR VAULT PREVIEW -->
   <section id="gamertag" class="py-20 bg-gradient-to-b from-black to-[#111] border-t border-[var(--teal)]/20">
