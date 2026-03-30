@@ -1,3 +1,313 @@
+// netlify/functions/submit-offer.js
+// Voltage 2.0 Offer Engine Phase 2
+// Safe full replacement:
+// - preserves working submission flow
+// - adds PriceCharting lookup
+// - calculates market value
+// - classifies offer
+// - saves pricing fields to Supabase
+// - returns structured frontend response
+
+const { createClient } = require('@supabase/supabase-js');
+
+exports.handler = async (event) => {
+  try {
+    // ------------------------------------------------------------
+    // Only allow POST
+    // ------------------------------------------------------------
+    if (event.httpMethod !== 'POST') {
+      return jsonResponse(405, { error: 'Method not allowed' });
+    }
+
+    // ------------------------------------------------------------
+    // Environment variables
+    // ------------------------------------------------------------
+    const apiKey = process.env.PRICECHARTING_API_KEY;
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
+
+    if (!apiKey || !supabaseUrl || !supabaseServiceKey) {
+      console.error('Missing required environment variables');
+      return jsonResponse(500, { error: 'Server configuration error' });
+    }
+
+    // ------------------------------------------------------------
+    // Parse incoming request
+    // ------------------------------------------------------------
+    const body = JSON.parse(event.body || '{}');
+
+    const submission = {
+      customer_email: String(body.email || '').trim(),
+      game_title_or_description: String(
+  body.gameTitleOrDescription ||
+  body.games_description ||
+  body.game_title_or_description ||
+  body.title ||
+  ''
+).trim(),
+      platform: String(body.platform || '').trim(),
+      condition: String(body.condition || '').trim(),
+      completeness: String(body.completeness || '').trim(),
+      quantity: safePositiveInt(body.quantity, 1),
+      preferred_payout: String(
+  body.preferredPayout ||
+  body.preferred_payout ||
+  body.payout_type ||
+  'cash'
+).trim().toLowerCase(),
+      notes: String(body.notes || '').trim(),
+      photo_urls: [], // keep safe for now since your DB column is text today
+      status: 'pending',
+    };
+
+    const externalId = String(body.externalId || '').trim();
+
+    if (!submission.game_title_or_description) {
+      return jsonResponse(400, { error: 'Game title or description is required' });
+    }
+
+    // ------------------------------------------------------------
+    // Business constants
+    // ------------------------------------------------------------
+    const CASH_PERCENT_UNDER_30 = 0.30;
+    const CASH_PERCENT_30_TO_100 = 0.35;
+    const CREDIT_MULTIPLIER = 1.2;
+
+    // ------------------------------------------------------------
+    // Offer state defaults
+    // ------------------------------------------------------------
+    let freshResult = null;
+    let offerType = 'manual_review';
+    let inventoryClass = 'unclassified';
+
+    let marketValue = null;
+    let unitValue = null;
+
+    let cashAmount = null;
+    let creditAmount = null;
+
+    let cashLow = null;
+    let cashHigh = null;
+    let creditLow = null;
+    let creditHigh = null;
+
+    let pricingSource = 'none';
+    let manualReviewReason = null;
+
+    // ------------------------------------------------------------
+    // PriceCharting lookup
+    // ------------------------------------------------------------
+    try {
+      let pcResponse;
+      let pcData = null;
+
+      if (externalId) {
+        const productUrl = new URL('https://www.pricecharting.com/api/product');
+        productUrl.searchParams.set('t', apiKey);
+        productUrl.searchParams.set('id', externalId);
+
+        pcResponse = await fetch(productUrl.toString(), {
+          method: 'GET',
+          headers: { Accept: 'application/json' },
+        });
+
+        if (pcResponse.ok) {
+          pcData = await pcResponse.json();
+          if (pcData && pcData.id) {
+            freshResult = pcData;
+            pricingSource = 'pricecharting_product';
+          }
+        }
+      } else {
+        const fullQuery = submission.platform
+          ? `${submission.game_title_or_description} ${submission.platform}`
+          : submission.game_title_or_description;
+
+        const searchUrl = new URL('https://www.pricecharting.com/api/products');
+        searchUrl.searchParams.set('t', apiKey);
+        searchUrl.searchParams.set('q', fullQuery);
+
+        pcResponse = await fetch(searchUrl.toString(), {
+          method: 'GET',
+          headers: { Accept: 'application/json' },
+        });
+
+        if (pcResponse.ok) {
+          pcData = await pcResponse.json();
+
+          if (pcData && Array.isArray(pcData.products) && pcData.products.length > 0) {
+            freshResult = chooseBestProductMatch(
+              pcData.products,
+              submission.game_title_or_description,
+              submission.platform
+            );
+            pricingSource = 'pricecharting_search';
+          }
+        }
+      }
+    } catch (lookupError) {
+      console.warn('PriceCharting lookup failed:', lookupError.message);
+    }
+
+    // ------------------------------------------------------------
+    // Determine market value
+    // ------------------------------------------------------------
+    if (freshResult) {
+      unitValue = getBestUnitValue(
+        freshResult,
+        submission.condition,
+        submission.completeness
+      );
+
+      if (unitValue > 0) {
+        marketValue = roundMoney(unitValue * submission.quantity);
+      } else {
+        manualReviewReason = 'No usable price found for selected condition/completeness';
+      }
+    } else {
+      manualReviewReason = 'No PriceCharting match found';
+    }
+
+    // ------------------------------------------------------------
+    // Manual review ALWAYS wins
+    // ------------------------------------------------------------
+    const manualTrigger = getManualReviewReason(submission, marketValue);
+
+    if (manualTrigger) {
+      offerType = 'manual_review';
+      inventoryClass = marketValue > 100 ? 'strategic' : 'review';
+      manualReviewReason = manualTrigger;
+    } else if (marketValue === null || marketValue <= 0) {
+      offerType = 'manual_review';
+      inventoryClass = 'review';
+      manualReviewReason = manualReviewReason || 'Unable to determine market value';
+    } else if (marketValue < 30) {
+      offerType = 'instant_offer';
+      inventoryClass = 'common';
+
+      cashAmount = roundMoney(marketValue * CASH_PERCENT_UNDER_30);
+      creditAmount = roundMoney(cashAmount * CREDIT_MULTIPLIER);
+    } else if (marketValue <= 100) {
+      offerType = 'instant_range';
+      inventoryClass = 'evergreen';
+
+      const baseCash = roundMoney(marketValue * CASH_PERCENT_30_TO_100);
+      cashAmount = baseCash;
+      creditAmount = roundMoney(baseCash * CREDIT_MULTIPLIER);
+
+      cashLow = roundMoney(baseCash * 0.9);
+      cashHigh = roundMoney(baseCash * 1.1);
+      creditLow = roundMoney(cashLow * CREDIT_MULTIPLIER);
+      creditHigh = roundMoney(cashHigh * CREDIT_MULTIPLIER);
+    } else {
+      offerType = 'manual_review';
+      inventoryClass = 'strategic';
+      manualReviewReason = 'Market value exceeds auto-offer threshold';
+    }
+
+    // ------------------------------------------------------------
+    // Save to Supabase
+    // ------------------------------------------------------------
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    const insertPayload = {
+      customer_email: submission.customer_email,
+      game_title_or_description: submission.game_title_or_description,
+      platform: submission.platform,
+      condition: submission.condition,
+      completeness: submission.completeness,
+      quantity: submission.quantity,
+      preferred_payout: submission.preferred_payout,
+      notes: submission.notes,
+      photo_urls: JSON.stringify(submission.photo_urls), // your DB column is text
+      status: submission.status,
+
+      // Phase 2 fields
+      pricecharting_snapshot: freshResult || null,
+      pricing_source: pricingSource,
+      inventory_class: inventoryClass,
+      offer_type: offerType,
+      market_value: marketValue,
+      unit_value: unitValue,
+      cash_amount: cashAmount,
+      credit_amount: creditAmount,
+      cash_low: cashLow,
+      cash_high: cashHigh,
+      credit_low: creditLow,
+      credit_high: creditHigh,
+      manual_review_reason: manualReviewReason,
+      external_id: externalId || null,
+    };
+
+   const { data, error } = await supabase
+  .from('submissions')
+  .insert(insertPayload)
+  .select('id')
+  .single();
+
+if (error) {
+  console.error('Supabase insert error:', error);
+  return jsonResponse(500, {
+    error: 'Failed to save submission',
+    details: error.message,
+  });
+}
+
+const submissionId = data.id;
+    // ------------------------------------------------------------
+    // Return response to frontend
+    // ------------------------------------------------------------
+    const responseBody = {
+      success: true,
+      submission_id: submissionId,
+      offer_type: offerType,
+      inventory_class: inventoryClass,
+      market_value: marketValue,
+      unit_value: unitValue,
+      pricing_source: pricingSource,
+      manual_review_reason: manualReviewReason,
+    };
+
+    if (offerType === 'instant_offer') {
+      responseBody.cash_amount = cashAmount;
+      responseBody.credit_amount = creditAmount;
+    }
+
+    if (offerType === 'instant_range') {
+      responseBody.cash_amount = cashAmount;
+      responseBody.credit_amount = creditAmount;
+      responseBody.cash_low = cashLow;
+      responseBody.cash_high = cashHigh;
+      responseBody.credit_low = creditLow;
+      responseBody.credit_high = creditHigh;
+    }
+
+    return jsonResponse(200, responseBody);
+  } catch (error) {
+    console.error('submit-offer function failed:', error);
+    return jsonResponse(500, {
+      error: 'Submission failed – try again later',
+      details: error.message,
+    });
+  }
+};
+
+// ============================================================================
+// Helpers
+// ============================================================================
+
+function jsonResponse(statusCode, payload) {
+  return {
+    statusCode,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  };
+}
+
+function safePositiveInt(value, fallback = 1) {
+  const parsed = parseInt(value, 10);
+  if (Number.isNaN(parsed) || parsed < 1) return fallback;
+  return parsed;
 }
 
 function roundMoney(value) {
