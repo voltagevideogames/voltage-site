@@ -274,10 +274,10 @@
         <div>
           <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Preferred Payout *</label>
           <select name="preferred_payout" required class="w-full bg-black border border-[var(--teal)]/60 p-4 text-white focus:border-[var(--yellow)] rounded-none">
-            <option>Cash (PayPal / Venmo / Check)</option>
-            <option>Store Credit (higher value)</option>
-            <option>Hybrid (split)</option>
-          </select>
+  <option value="cash">Cash (PayPal / Venmo / Check)</option>
+  <option value="credit">Store Credit (higher value)</option>
+  <option value="hybrid">Hybrid (split)</option>
+</select>
         </div>
 
         <div>
@@ -340,7 +340,12 @@ document.getElementById('sell-form').addEventListener('submit', async function(e
   submitBtn.textContent = "Processing your offer...";
 
   const formData = new FormData(form);
-  const data = Object.fromEntries(formData.entries());
+const data = Object.fromEntries(formData.entries());
+
+// SAFE compatibility mapping (prevents backend mismatch issues)
+data.email = formData.get('email');
+data.preferredPayout = formData.get('preferred_payout');
+data.gameTitleOrDescription = formData.get('games_description');
 
   try {
     const response = await fetch('/.netlify/functions/submit-offer', {
