@@ -339,10 +339,12 @@ function renderQueue() {
     });
   });
 }
-
 function renderSelectedPanel() {
   const item = state.filteredSubmissions.find(sub => sub.id === state.selectedId)
     || state.submissions.find(sub => sub.id === state.selectedId);
+
+  const finalCashInput = document.getElementById('final-cash-input');
+  const finalCreditInput = document.getElementById('final-credit-input');
 
   if (!item) {
     selectedIdEl.textContent = '—';
@@ -354,8 +356,21 @@ function renderSelectedPanel() {
     selectedOfferAmountEl.textContent = '—';
     selectedOfferTypeEl.textContent = '—';
     selectedRiskEl.textContent = '—';
-    selectedStatusEl.value = 'pending';
+
+    if (selectedStatusEl) {
+      selectedStatusEl.value = 'pending';
+    }
+
     selectedInternalNotesEl.value = '';
+
+    if (finalCashInput) {
+      finalCashInput.value = '';
+    }
+
+    if (finalCreditInput) {
+      finalCreditInput.value = '';
+    }
+
     return;
   }
 
@@ -372,19 +387,20 @@ function renderSelectedPanel() {
   selectedOfferTypeEl.textContent = safeText(item.offer_type);
   selectedRiskEl.textContent = risk.label;
   selectedRiskEl.className = `mt-1 font-semibold ${risk.className}`;
+
   if (selectedStatusEl) {
-  selectedStatusEl.value = (item.status || 'pending').toLowerCase();
-}
+    selectedStatusEl.value = (item.status || 'pending').toLowerCase();
+  }
+
   selectedInternalNotesEl.value = item.internal_notes || '';
-const finalCashInput = document.getElementById('final-cash-input');
-const finalCreditInput = document.getElementById('final-credit-input');
 
-if (finalCashInput) {
-  finalCashInput.value = item.final_cash_offer ?? '';
-}
+  if (finalCashInput) {
+    finalCashInput.value = item.final_cash_offer ?? '';
+  }
 
-if (finalCreditInput) {
-  finalCreditInput.value = item.final_credit_offer ?? '';
+  if (finalCreditInput) {
+    finalCreditInput.value = item.final_credit_offer ?? '';
+  }
 }
 
 async function loadSubmissions() {
@@ -421,7 +437,7 @@ async function saveSelectedSubmission(customStatus = null, customNoteAppend = ''
     return;
   }
 
- const finalStatus = customStatus || (selectedStatusEl ? selectedStatusEl.value : 'pending');
+  const finalStatus = customStatus || (selectedStatusEl ? selectedStatusEl.value : 'pending');
   let notesValue = selectedInternalNotesEl.value || '';
 
   if (customNoteAppend) {
@@ -431,6 +447,19 @@ async function saveSelectedSubmission(customStatus = null, customNoteAppend = ''
     selectedInternalNotesEl.value = notesValue;
   }
 
+  const finalCashInput = document.getElementById('final-cash-input');
+  const finalCreditInput = document.getElementById('final-credit-input');
+
+  const finalCashOffer =
+    finalCashInput && finalCashInput.value !== ''
+      ? Number(finalCashInput.value)
+      : null;
+
+  const finalCreditOffer =
+    finalCreditInput && finalCreditInput.value !== ''
+      ? Number(finalCreditInput.value)
+      : null;
+
   const originalText = saveSelectedBtn.textContent;
   saveSelectedBtn.disabled = true;
   saveSelectedBtn.textContent = 'Saving...';
@@ -439,17 +468,15 @@ async function saveSelectedSubmission(customStatus = null, customNoteAppend = ''
     const response = await fetch('/.netlify/functions/update-submission', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-     body: JSON.stringify({
-  id: selected.id,
-  status: finalStatus,
-  internal_notes: notesValue,
-  final_cash_offer: document.getElementById('final-cash-input')?.value !== ''
-    ? Number(document.getElementById('final-cash-input').value)
-    : null,
-  final_credit_offer: document.getElementById('final-credit-input')?.value !== ''
-    ? Number(document.getElementById('final-credit-input').value)
-    : null
-})
+      body: JSON.stringify({
+        id: selected.id,
+        status: finalStatus,
+        internal_notes: notesValue,
+        final_cash_offer: finalCashOffer,
+        final_credit_offer: finalCreditOffer
+      })
+    });
+
     const data = await response.json();
 
     if (!response.ok) {
