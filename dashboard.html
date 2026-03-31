@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Voltage Offer Intake Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    :root {
+      --teal: #00E5B8;
+      --yellow: #FFEB3B;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #0a0a0a;
+      color: #f0f0f0;
+    }
+
+    .heading-font {
+      font-family: 'Press Start 2P', system-ui;
+    }
+
+    .neon-text {
+      text-shadow: 0 0 12px var(--teal), 0 0 24px rgba(0,229,184,0.5), 0 0 32px rgba(255,235,59,0.25);
+    }
+
+    .queue-item-active {
+      background: rgba(24, 24, 27, 0.9);
+      border-left: 4px solid var(--teal);
+    }
+
+    .filter-btn.active-filter {
+      border-color: rgba(0,229,184,0.4);
+      background: rgba(24, 24, 27, 1);
+      color: var(--teal);
+    }
+
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 9999px;
+      padding: 0.25rem 0.75rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border-width: 1px;
+    }
+
+    .status-pending {
+      background: rgba(16, 185, 129, 0.15);
+      color: #86efac;
+      border-color: rgba(52, 211, 153, 0.30);
+    }
+
+    .status-review {
+      background: rgba(234, 179, 8, 0.15);
+      color: #fde047;
+      border-color: rgba(250, 204, 21, 0.30);
+    }
+
+    .status-accepted {
+      background: rgba(0, 229, 184, 0.15);
+      color: var(--teal);
+      border-color: rgba(0,229,184,0.25);
+    }
+
+    .status-completed {
+      background: rgba(59, 130, 246, 0.15);
+      color: #93c5fd;
+      border-color: rgba(96, 165, 250, 0.30);
+    }
+
+    .status-rejected {
+      background: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+      border-color: rgba(248, 113, 113, 0.30);
+    }
+
+    .risk-low {
+      color: #86efac;
+    }
+
+    .risk-medium {
+      color: #fde047;
+    }
+
+    .risk-high {
+      color: #fca5a5;
+    }
+
+    .loading-pulse {
+      animation: pulse 1.35s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.45; }
+      50% { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="min-h-screen p-6 md:p-10">
+    <div class="max-w-7xl mx-auto space-y-6">
+      <!-- Header -->
+      <header class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-6">
+        <div>
+          <div class="text-sm uppercase tracking-[0.35em] text-[var(--teal)]">Voltage 2.0 Internal</div>
+          <h1 class="heading-font text-2xl md:text-4xl mt-4 neon-text">Offer Intake Dashboard</h1>
+          <p class="text-gray-400 mt-4 max-w-2xl">
+            Review offer submissions, verify condition, track statuses, and move valuable inventory into store workflow.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 w-full xl:w-auto">
+          <div class="bg-zinc-950 border border-[var(--teal)]/20 rounded-2xl p-4 min-w-[150px]">
+            <div class="text-sm text-gray-400">New Today</div>
+            <div id="stat-new-today" class="text-2xl font-bold text-[var(--teal)] mt-1">0</div>
+          </div>
+          <div class="bg-zinc-950 border border-[var(--teal)]/20 rounded-2xl p-4 min-w-[150px]">
+            <div class="text-sm text-gray-400">Manual Review</div>
+            <div id="stat-manual-review" class="text-2xl font-bold text-[var(--yellow)] mt-1">0</div>
+          </div>
+          <div class="bg-zinc-950 border border-[var(--teal)]/20 rounded-2xl p-4 min-w-[150px]">
+            <div class="text-sm text-gray-400">Accepted</div>
+            <div id="stat-accepted" class="text-2xl font-bold text-[var(--teal)] mt-1">0</div>
+          </div>
+          <div class="bg-zinc-950 border border-[var(--teal)]/20 rounded-2xl p-4 min-w-[150px]">
+            <div class="text-sm text-gray-400">Potential Buy Cost</div>
+            <div id="stat-potential-buy-cost" class="text-2xl font-bold text-[var(--yellow)] mt-1">$0</div>
+          </div>
+        </div>
+      </header>
+
+      <div id="global-message" class="hidden rounded-2xl border px-4 py-3 text-sm"></div>
+
+      <!-- Main 3-column grid -->
+      <div class="grid grid-cols-1 xl:grid-cols-[280px_minmax(0,1fr)_360px] gap-6">
+        <!-- Left Sidebar -->
+        <aside class="bg-zinc-950 border border-[var(--teal)]/20 rounded-3xl p-5 space-y-6">
+          <section>
+            <h2 class="text-sm text-gray-400 mb-3">Quick Filters</h2>
+            <div class="space-y-2">
+              <button class="filter-btn active-filter w-full text-left rounded-xl border border-zinc-800 px-4 py-3 hover:border-[var(--teal)]/40 hover:bg-zinc-900 transition" data-filter="all">
+                All Submissions
+              </button>
+              <button class="filter-btn w-full text-left rounded-xl border border-zinc-800 px-4 py-3 hover:border-[var(--teal)]/40 hover:bg-zinc-900 transition" data-filter="instant">
+                Instant Offers
+              </button>
+              <button class="filter-btn w-full text-left rounded-xl border border-zinc-800 px-4 py-3 hover:border-[var(--teal)]/40 hover:bg-zinc-900 transition" data-filter="range">
+                Range Offers
+              </button>
+              <button class="filter-btn w-full text-left rounded-xl border border-zinc-800 px-4 py-3 hover:border-[var(--teal)]/40 hover:bg-zinc-900 transition" data-filter="manual">
+                Manual Review
+              </button>
+              <button class="filter-btn w-full text-left rounded-xl border border-zinc-800 px-4 py-3 hover:border-[var(--teal)]/40 hover:bg-zinc-900 transition" data-filter="accepted">
+                Accepted
+              </button>
+              <button class="filter-btn w-full text-left rounded-xl border border-zinc-800 px-4 py-3 hover:border-[var(--teal)]/40 hover:bg-zinc-900 transition" data-filter="completed">
+                Completed
+              </button>
+            </div>
+          </section>
+
+          <section>
+            <h2 class="text-sm text-gray-400 mb-3">Staff Actions</h2>
+            <div class="space-y-3">
+              <button id="mark-reviewed-btn" class="w-full rounded-xl bg-[var(--teal)]/10 text-[var(--teal)] border border-[var(--teal)]/20 px-4 py-3 text-left hover:bg-[var(--teal)]/15 transition">
+                Mark Reviewed
+              </button>
+              <button id="request-photos-btn" class="w-full rounded-xl bg-[var(--yellow)]/10 text-[var(--yellow)] border border-[var(--yellow)]/20 px-4 py-3 text-left hover:bg-[var(--yellow)]/15 transition">
+                Request More Photos
+              </button>
+              <button id="send-counteroffer-btn" class="w-full rounded-xl bg-zinc-900 border border-zinc-800 px-4 py-3 text-left hover:border-[var(--teal)]/25 transition">
+                Send Counteroffer
+              </button>
+              <button id="refresh-dashboard-btn" class="w-full rounded-xl bg-zinc-900 border border-zinc-800 px-4 py-3 text-left hover:border-[var(--teal)]/25 transition">
+                Refresh Dashboard
+              </button>
+            </div>
+          </section>
+        </aside>
+
+        <!-- Queue -->
+        <main class="bg-zinc-950 border border-[var(--teal)]/20 rounded-3xl overflow-hidden">
+          <div class="p-5 border-b border-zinc-800 flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+            <div class="text-lg font-semibold">Submissions Queue</div>
+            <div class="flex flex-col md:flex-row gap-3">
+              <input
+                id="search-input"
+                class="bg-black border border-zinc-800 rounded-xl px-4 py-2 text-sm w-full md:w-64"
+                placeholder="Search by game, email, ID..."
+              />
+              <select id="sort-select" class="bg-black border border-zinc-800 rounded-xl px-4 py-2 text-sm">
+                <option value="newest">Newest First</option>
+                <option value="highest_value">Highest Value</option>
+                <option value="needs_review">Needs Review</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="queue-loading" class="p-5 space-y-3">
+            <div class="h-20 rounded-2xl bg-zinc-900 loading-pulse"></div>
+            <div class="h-20 rounded-2xl bg-zinc-900 loading-pulse"></div>
+            <div class="h-20 rounded-2xl bg-zinc-900 loading-pulse"></div>
+          </div>
+
+          <div id="queue-empty" class="hidden p-8 text-center text-gray-400">
+            No submissions found.
+          </div>
+
+          <div id="queue-list" class="divide-y divide-zinc-800 hidden"></div>
+        </main>
+
+        <!-- Right Panel -->
+        <aside class="bg-zinc-950 border border-[var(--teal)]/20 rounded-3xl p-6 space-y-5">
+          <div>
+            <div class="text-sm text-gray-400">Selected Submission</div>
+            <div id="selected-id" class="text-2xl font-bold mt-1">—</div>
+          </div>
+
+          <div class="rounded-2xl bg-black border border-zinc-800 p-4 space-y-3">
+            <div>
+              <div class="text-xs text-zinc-500">Customer</div>
+              <div id="selected-email">Select a submission</div>
+            </div>
+            <div>
+              <div class="text-xs text-zinc-500">Item</div>
+              <div id="selected-title">—</div>
+              <div id="selected-subtitle" class="text-sm text-gray-400">—</div>
+            </div>
+            <div>
+              <div class="text-xs text-zinc-500">Submitted Notes</div>
+              <div id="selected-notes" class="text-sm text-gray-300 whitespace-pre-wrap">—</div>
+            </div>
+          </div>
+
+          <div class="rounded-2xl bg-black border border-zinc-800 p-4 space-y-3">
+            <div class="text-xs text-zinc-500">Offer Summary</div>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="rounded-xl bg-zinc-950 border border-zinc-800 p-3">
+                <div class="text-xs text-zinc-500">Market Value</div>
+                <div id="selected-market-value" class="mt-1 font-semibold">—</div>
+              </div>
+              <div class="rounded-xl bg-zinc-950 border border-zinc-800 p-3">
+                <div class="text-xs text-zinc-500">Offer Amount</div>
+                <div id="selected-offer-amount" class="mt-1 font-semibold">—</div>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="rounded-xl bg-zinc-950 border border-zinc-800 p-3">
+                <div class="text-xs text-zinc-500">Offer Type</div>
+                <div id="selected-offer-type" class="mt-1 font-semibold">—</div>
+              </div>
+              <div class="rounded-xl bg-zinc-950 border border-zinc-800 p-3">
+                <div class="text-xs text-zinc-500">Risk</div>
+                <div id="selected-risk" class="mt-1 font-semibold">—</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-2xl bg-black border border-zinc-800 p-4 space-y-3">
+            <div class="text-xs text-zinc-500">Staff Controls</div>
+            <select id="selected-status" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm">
+              <option value="pending">Pending</option>
+              <option value="review">Review</option>
+              <option value="accepted">Accepted</option>
+              <option value="completed">Completed</option>
+              <option value="rejected">Rejected</option>
+            </select>
+            <textarea
+              id="selected-internal-notes"
+              class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm min-h-[140px]"
+              placeholder="Internal notes for staff..."
+            ></textarea>
+            <div class="grid grid-cols-2 gap-3">
+              <button id="save-selected-btn" class="rounded-xl bg-[var(--teal)] text-black font-semibold px-4 py-3 hover:brightness-110">
+                Save Notes
+              </button>
+              <button id="email-customer-btn" class="rounded-xl bg-[var(--yellow)] text-black font-semibold px-4 py-3 hover:brightness-110">
+                Email Customer
+              </button>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/dashboard.js"></script>
+</body>
+</html>
