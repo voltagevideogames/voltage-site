@@ -370,7 +370,9 @@ function renderSelectedPanel() {
   selectedOfferTypeEl.textContent = safeText(item.offer_type);
   selectedRiskEl.textContent = risk.label;
   selectedRiskEl.className = `mt-1 font-semibold ${risk.className}`;
+  if (selectedStatusEl) {
   selectedStatusEl.value = (item.status || 'pending').toLowerCase();
+}
   selectedInternalNotesEl.value = item.internal_notes || '';
 }
 
@@ -408,7 +410,7 @@ async function saveSelectedSubmission(customStatus = null, customNoteAppend = ''
     return;
   }
 
-  const finalStatus = customStatus || selectedStatusEl.value;
+ const finalStatus = customStatus || (selectedStatusEl ? selectedStatusEl.value : 'pending');
   let notesValue = selectedInternalNotesEl.value || '';
 
   if (customNoteAppend) {
