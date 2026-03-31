@@ -28,10 +28,14 @@ const selectedSubtitleEl = document.getElementById('selected-subtitle');
 const selectedNotesEl = document.getElementById('selected-notes');
 const selectedMarketValueEl = document.getElementById('selected-market-value');
 const selectedOfferAmountEl = document.getElementById('selected-offer-amount');
+const selectedCreditAmountEl = document.getElementById('selected-credit-amount');
 const selectedOfferTypeEl = document.getElementById('selected-offer-type');
 const selectedRiskEl = document.getElementById('selected-risk');
 const selectedStatusEl = document.getElementById('selected-status');
 const selectedInternalNotesEl = document.getElementById('selected-internal-notes');
+
+const selectedIncomingBuyCostEl = document.getElementById('selected-incoming-buy-cost');
+const selectedIncomingMarketValueEl = document.getElementById('selected-incoming-market-value');
 
 const saveSelectedBtn = document.getElementById('save-selected-btn');
 const emailCustomerBtn = document.getElementById('email-customer-btn');
@@ -155,7 +159,8 @@ function getOfferDisplay(submission) {
     return {
       queueLine1: `Cash: ${cashLow} - ${cashHigh}`,
       queueLine2: `Credit: ${creditLow} - ${creditHigh}`,
-      panelValue: `${cashLow} - ${cashHigh}`
+      panelCashValue: `${cashLow} - ${cashHigh}`,
+      panelCreditValue: `${creditLow} - ${creditHigh}`
     };
   }
 
@@ -163,15 +168,45 @@ function getOfferDisplay(submission) {
     return {
       queueLine1: 'Cash: —',
       queueLine2: 'Credit: —',
-      panelValue: 'Manual Review'
+      panelCashValue: 'Manual Review',
+      panelCreditValue: 'Manual Review'
     };
   }
 
   return {
     queueLine1: `Cash: ${formatCurrency(submission.cash_amount)}`,
     queueLine2: `Credit: ${formatCurrency(submission.credit_amount)}`,
-    panelValue: formatCurrency(submission.cash_amount)
+    panelCashValue: formatCurrency(submission.cash_amount),
+    panelCreditValue: formatCurrency(submission.credit_amount)
   };
+}
+
+function getIncomingBuyCost(submission) {
+  const finalCash = Number(submission.final_cash_offer);
+  if (!Number.isNaN(finalCash) && finalCash > 0) {
+    return finalCash;
+  }
+
+  return 0;
+}
+
+function getIncomingMarketValue(submission) {
+  const marketValue = Number(submission.market_value);
+  if (!Number.isNaN(marketValue) && marketValue > 0) {
+    return marketValue;
+  }
+
+  return 0;
+}
+
+function getIncomingBuyCostDisplay(submission) {
+  const value = getIncomingBuyCost(submission);
+  return value > 0 ? formatCurrency(value) : '—';
+}
+
+function getIncomingMarketValueDisplay(submission) {
+  const value = getIncomingMarketValue(submission);
+  return value > 0 ? formatCurrency(value) : '—';
 }
 
 function updateStats(submissions) {
@@ -291,12 +326,15 @@ function renderQueue() {
     const risk = getRiskLevel(item);
     const isActive = item.id === state.selectedId;
 
+    const incomingBuyCost = escapeHtml(getIncomingBuyCostDisplay(item));
+    const incomingMarketValue = escapeHtml(getIncomingMarketValueDisplay(item));
+
     return `
       <article
         class="queue-row p-5 hover:bg-zinc-900/50 transition cursor-pointer ${isActive ? 'queue-item-active' : ''}"
         data-id="${escapeHtml(item.id)}"
       >
-        <div class="grid grid-cols-1 md:grid-cols-[110px_minmax(0,1.9fr)_minmax(0,1fr)_minmax(0,1fr)_120px] gap-6 items-start">
+        <div class="grid grid-cols-1 md:grid-cols-[110px_minmax(0,1.9fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_120px] gap-6 items-start">
           
           <div class="flex flex-col justify-start self-start min-w-0">
             <div class="text-xs text-zinc-500">Submission</div>
@@ -321,6 +359,12 @@ function renderQueue() {
             <div class="text-sm leading-snug text-[var(--yellow)]">${escapeHtml(offerDisplay.queueLine2)}</div>
           </div>
 
+          <div class="flex flex-col justify-start self-start min-w-0">
+            <div class="text-xs text-zinc-500">Incoming</div>
+            <div class="text-sm leading-snug text-[var(--teal)]">Buy Cost: ${incomingBuyCost}</div>
+            <div class="text-sm leading-snug text-[var(--yellow)]">Market Value: ${incomingMarketValue}</div>
+          </div>
+
           <div class="flex flex-col justify-start self-start items-start min-w-0">
             <div class="inline-flex status-chip ${getStatusClass(status)} capitalize">${escapeHtml(status)}</div>
             <div class="text-xs mt-2 ${risk.className}">Risk: ${risk.label}</div>
@@ -339,6 +383,7 @@ function renderQueue() {
     });
   });
 }
+
 function renderSelectedPanel() {
   const item = state.filteredSubmissions.find(sub => sub.id === state.selectedId)
     || state.submissions.find(sub => sub.id === state.selectedId);
@@ -354,8 +399,21 @@ function renderSelectedPanel() {
     selectedNotesEl.textContent = '—';
     selectedMarketValueEl.textContent = '—';
     selectedOfferAmountEl.textContent = '—';
+
+    if (selectedCreditAmountEl) {
+      selectedCreditAmountEl.textContent = '—';
+    }
+
     selectedOfferTypeEl.textContent = '—';
     selectedRiskEl.textContent = '—';
+
+    if (selectedIncomingBuyCostEl) {
+      selectedIncomingBuyCostEl.textContent = '—';
+    }
+
+    if (selectedIncomingMarketValueEl) {
+      selectedIncomingMarketValueEl.textContent = '—';
+    }
 
     if (selectedStatusEl) {
       selectedStatusEl.value = 'pending';
@@ -383,10 +441,23 @@ function renderSelectedPanel() {
   selectedSubtitleEl.textContent = getSubtitle(item);
   selectedNotesEl.textContent = item.notes || 'No customer notes submitted.';
   selectedMarketValueEl.textContent = formatCurrency(item.market_value);
-  selectedOfferAmountEl.textContent = offerDisplay.panelValue;
+  selectedOfferAmountEl.textContent = offerDisplay.panelCashValue;
+
+  if (selectedCreditAmountEl) {
+    selectedCreditAmountEl.textContent = offerDisplay.panelCreditValue;
+  }
+
   selectedOfferTypeEl.textContent = safeText(item.offer_type);
   selectedRiskEl.textContent = risk.label;
   selectedRiskEl.className = `mt-1 font-semibold ${risk.className}`;
+
+  if (selectedIncomingBuyCostEl) {
+    selectedIncomingBuyCostEl.textContent = getIncomingBuyCostDisplay(item);
+  }
+
+  if (selectedIncomingMarketValueEl) {
+    selectedIncomingMarketValueEl.textContent = getIncomingMarketValueDisplay(item);
+  }
 
   if (selectedStatusEl) {
     selectedStatusEl.value = (item.status || 'pending').toLowerCase();
@@ -548,8 +619,7 @@ function bindEvents() {
 document.addEventListener('DOMContentLoaded', async () => {
   bindEvents();
   await loadSubmissions();
-}); 
-
+});
 
 // ==================== SAFE ACTION BUTTON ENHANCEMENTS ====================
 
@@ -613,4 +683,3 @@ document.getElementById('counteroffer-btn')?.addEventListener('click', async () 
     console.error('Counteroffer failed', err);
   }
 });
-

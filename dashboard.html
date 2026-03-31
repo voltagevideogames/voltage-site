@@ -276,34 +276,51 @@
             </div>
           </div>
 
-<!-- FINAL OFFER (STAFF ONLY) -->
-<div class="rounded-2xl bg-black border border-zinc-800 p-5 space-y-4">
-  <div class="text-xs uppercase tracking-widest text-zinc-500">Final Offer (Staff Only)</div>
+          <!-- FINAL OFFER (STAFF ONLY) -->
+          <div class="rounded-2xl bg-black border border-zinc-800 p-5 space-y-4">
+            <div class="text-xs uppercase tracking-widest text-zinc-500">Final Offer (Staff Only)</div>
 
-  <div class="grid grid-cols-2 gap-4">
-    <div>
-      <div class="text-xs text-zinc-500 mb-1">Final Cash</div>
-      <input
-        id="final-cash-input"
-        type="number"
-        class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-sm"
-        placeholder="Enter cash amount"
-      />
-    </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <div class="text-xs text-zinc-500 mb-1">Final Cash</div>
+                <input
+                  id="final-cash-input"
+                  type="number"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-sm"
+                  placeholder="Enter cash amount"
+                />
+              </div>
 
-    <div>
-      <div class="text-xs text-zinc-500 mb-1">Final Credit</div>
-      <input
-        id="final-credit-input"
-        type="number"
-        class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-sm"
-        placeholder="Enter credit amount"
-      />
-    </div>
-  </div>
-</div>
+              <div>
+                <div class="text-xs text-zinc-500 mb-1">Final Credit</div>
+                <input
+                  id="final-credit-input"
+                  type="number"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-sm"
+                  placeholder="Enter credit amount"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- INCOMING METRICS -->
+          <div class="rounded-2xl bg-black border border-zinc-800 p-5 space-y-4">
+            <div class="text-xs uppercase tracking-widest text-zinc-500">Incoming Metrics</div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div class="bg-zinc-900 rounded-xl p-4">
+                <div class="text-xs uppercase tracking-widest text-zinc-500">Incoming Buy Cost</div>
+                <div id="selected-incoming-buy-cost" class="text-2xl font-bold mt-2 text-[var(--teal)]">—</div>
+              </div>
+
+              <div class="bg-zinc-900 rounded-xl p-4">
+                <div class="text-xs uppercase tracking-widest text-zinc-500">Incoming Market Value</div>
+                <div id="selected-incoming-market-value" class="text-2xl font-bold mt-2 text-[var(--yellow)]">—</div>
+              </div>
+            </div>
+          </div>
         
-	  <!-- Decision Actions - Primary & Prominent -->
+          <!-- Decision Actions - Primary & Prominent -->
           <div class="rounded-2xl bg-black border border-zinc-800 p-5">
             <div class="text-xs uppercase tracking-widest text-zinc-500 mb-4">Decision Actions</div>
             <div class="grid grid-cols-1 gap-3">
@@ -322,34 +339,34 @@
             </div>
           </div>
 
-    <!-- Staff Notes -->
-<div class="rounded-2xl bg-black border border-zinc-800 p-5 space-y-4">
-  <div class="text-xs text-zinc-500">Internal Notes</div>
+          <!-- Staff Notes -->
+          <div class="rounded-2xl bg-black border border-zinc-800 p-5 space-y-4">
+            <div class="text-xs text-zinc-500">Internal Notes</div>
 
-  <select id="selected-status" class="hidden">
-    <option value="pending">Pending</option>
-    <option value="review">Review</option>
-    <option value="accepted">Accepted</option>
-    <option value="completed">Completed</option>
-    <option value="rejected">Rejected</option>
-  </select>
+            <select id="selected-status" class="hidden">
+              <option value="pending">Pending</option>
+              <option value="review">Review</option>
+              <option value="accepted">Accepted</option>
+              <option value="completed">Completed</option>
+              <option value="rejected">Rejected</option>
+            </select>
 
-  <textarea
-    id="selected-internal-notes"
-    class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm min-h-[160px]"
-    placeholder="Internal notes for staff..."></textarea>
-  
-  <div class="grid grid-cols-2 gap-3">
-    <button id="save-selected-btn" 
-            class="rounded-2xl bg-[var(--teal)] text-black font-semibold py-3 hover:brightness-110">
-      Save Notes
-    </button>
-    <button id="email-customer-btn" 
-            class="rounded-2xl bg-zinc-800 border border-zinc-700 hover:border-[var(--teal)] py-3">
-      Email Customer
-    </button>
-  </div>
-</div>
+            <textarea
+              id="selected-internal-notes"
+              class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm min-h-[160px]"
+              placeholder="Internal notes for staff..."></textarea>
+            
+            <div class="grid grid-cols-2 gap-3">
+              <button id="save-selected-btn" 
+                      class="rounded-2xl bg-[var(--teal)] text-black font-semibold py-3 hover:brightness-110">
+                Save Notes
+              </button>
+              <button id="email-customer-btn" 
+                      class="rounded-2xl bg-zinc-800 border border-zinc-700 hover:border-[var(--teal)] py-3">
+                Email Customer
+              </button>
+            </div>
+          </div>
         </aside>
       </div>
     </div>
