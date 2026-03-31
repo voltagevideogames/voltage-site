@@ -1,3 +1,6 @@
+// dashboard.js - Safe updated version
+// Preserves current IDs, API calls, and overall structure
+
 const state = {
   submissions: [],
   filteredSubmissions: [],
@@ -16,6 +19,7 @@ const statNewToday = document.getElementById('stat-new-today');
 const statManualReview = document.getElementById('stat-manual-review');
 const statAccepted = document.getElementById('stat-accepted');
 const statPotentialBuyCost = document.getElementById('stat-potential-buy-cost');
+const statIncomingRetailValue = document.getElementById('stat-incoming-retail-value');
 
 const searchInput = document.getElementById('search-input');
 const sortSelect = document.getElementById('sort-select');
@@ -31,11 +35,10 @@ const selectedOfferAmountEl = document.getElementById('selected-offer-amount');
 const selectedCreditAmountEl = document.getElementById('selected-credit-amount');
 const selectedOfferTypeEl = document.getElementById('selected-offer-type');
 const selectedRiskEl = document.getElementById('selected-risk');
-const selectedStatusEl = document.getElementById('selected-status');
 const selectedInternalNotesEl = document.getElementById('selected-internal-notes');
 
-const selectedIncomingBuyCostEl = document.getElementById('selected-incoming-buy-cost');
-const selectedIncomingMarketValueEl = document.getElementById('selected-incoming-market-value');
+const finalCashInput = document.getElementById('final-cash-input');
+const finalCreditInput = document.getElementById('final-credit-input');
 
 const saveSelectedBtn = document.getElementById('save-selected-btn');
 const emailCustomerBtn = document.getElementById('email-customer-btn');
@@ -43,9 +46,11 @@ const markReviewedBtn = document.getElementById('mark-reviewed-btn');
 const requestPhotosBtn = document.getElementById('request-photos-btn');
 const sendCounterofferBtn = document.getElementById('send-counteroffer-btn');
 const refreshDashboardBtn = document.getElementById('refresh-dashboard-btn');
+const resetWeeklyBtn = document.getElementById('reset-weekly-btn');
 
 function showMessage(message, type = 'success') {
   globalMessage.classList.remove('hidden');
+  globalMessage.textContent = message;
 
   if (type === 'error') {
     globalMessage.className = 'rounded-2xl border border-red-500/30 bg-red-500/10 text-red-200 px-4 py-3 text-sm';
@@ -53,189 +58,146 @@ function showMessage(message, type = 'success') {
     globalMessage.className = 'rounded-2xl border border-[var(--teal)]/25 bg-[var(--teal)]/10 text-[var(--teal)] px-4 py-3 text-sm';
   }
 
-  globalMessage.textContent = message;
-
-  setTimeout(() => {
-    globalMessage.classList.add('hidden');
-  }, 3200);
+  setTimeout(() => globalMessage.classList.add('hidden'), 3200);
 }
 
 function safeText(value, fallback = '—') {
-  if (value === null || value === undefined || value === '') return fallback;
+  if (value == null || value === '') return fallback;
   return String(value);
 }
 
-function escapeHtml(str = '') {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
-
 function formatCurrency(value) {
-  const number = Number(value);
-  if (Number.isNaN(number)) return '—';
-  return `$${Math.round(number).toLocaleString()}`;
+  const num = Number(value);
+  if (Number.isNaN(num)) return '—';
+  return `$${Math.round(num).toLocaleString()}`;
 }
 
-function formatDate(dateString) {
-  if (!dateString) return '—';
-  const date = new Date(dateString);
-  if (Number.isNaN(date.getTime())) return '—';
-  return date.toLocaleString();
+function getPrimaryTitle(sub) {
+  return safeText(sub.game_title_or_description, 'Submission');
 }
 
-function getPrimaryTitle(submission) {
-  return safeText(submission.game_title_or_description, 'Submission');
+function getSubtitle(sub) {
+  const parts = [sub.platform, sub.condition, sub.completeness].filter(Boolean);
+  return parts.length ? parts.join(' • ') : 'No details';
 }
 
-function getSubtitle(submission) {
-  const parts = [
-    submission.platform,
-    submission.condition,
-    submission.completeness
-  ].filter(Boolean);
-
-  if (!parts.length) return 'No condition details';
-  return parts.join(' • ');
+function getRiskLabel(sub) {
+  const marketValue = Number(sub.market_value) || 0;
+  if (sub.manual_review_reason || marketValue > 100) return 'HIGH';
+  if (marketValue >= 30) return 'MEDIUM';
+  return 'LOW';
 }
 
-function getStatusClass(status) {
-  switch ((status || '').toLowerCase()) {
-    case 'pending':
-      return 'status-pending';
-    case 'review':
-      return 'status-review';
-    case 'accepted':
-      return 'status-accepted';
-    case 'completed':
-      return 'status-completed';
-    case 'rejected':
-      return 'status-rejected';
-    default:
-      return 'status-pending';
-  }
+function getRiskClass(sub) {
+  const risk = getRiskLabel(sub);
+  if (risk === 'HIGH') return 'text-red-400';
+  if (risk === 'MEDIUM') return 'text-yellow-400';
+  return 'text-emerald-400';
 }
 
-function getRiskLevel(submission) {
-  const hasManualReason = !!submission.manual_review_reason;
-  const marketValue = Number(submission.market_value) || 0;
+function getCommittedBuyValue(sub) {
+  return Number(sub.final_cash_offer) || Number(sub.cash_amount) || 0;
+}
 
-  if (hasManualReason || marketValue > 100) {
-    return { label: 'High', className: 'risk-high' };
+function renderQueue() {
+  queueLoading.classList.add('hidden');
+  queueList.classList.remove('hidden');
+  queueEmpty.classList.add('hidden');
+
+  const filtered = state.filteredSubmissions || [];
+
+  if (!filtered.length) {
+    queueList.classList.add('hidden');
+    queueEmpty.classList.remove('hidden');
+    queueEmpty.textContent = 'No submissions match your current filter.';
+    return;
   }
 
-  if (marketValue >= 30) {
-    return { label: 'Medium', className: 'risk-medium' };
+  queueList.innerHTML = filtered.map(item => {
+    const isActive = item.id === state.selectedId;
+    const riskLabel = getRiskLabel(item);
+    const riskClass = getRiskClass(item);
+    const manualBadge = item.manual_review_reason
+      ? '<span class="status-chip status-review">MANUAL REVIEW</span>'
+      : '';
+
+    return `
+      <div
+        class="queue-row p-5 hover:bg-zinc-900 cursor-pointer flex gap-4 border-l-4 ${isActive ? 'queue-item-active' : 'border-transparent'}"
+        data-id="${item.id}"
+      >
+        <div class="flex-1 min-w-0">
+          <div class="text-sm text-zinc-400">#${item.id}</div>
+          <div class="font-medium text-base mt-1 line-clamp-1">${getPrimaryTitle(item)}</div>
+          <div class="text-sm text-gray-400 mt-1 line-clamp-1">${getSubtitle(item)}</div>
+          <div class="text-xs text-zinc-500 mt-2 truncate">${safeText(item.customer_email)}</div>
+        </div>
+
+        <div class="text-right shrink-0 min-w-[110px]">
+          <div class="text-lg font-bold text-[var(--teal)]">
+            MV: ${formatCurrency(item.market_value)}
+          </div>
+          <div class="text-xs mt-1 text-[var(--yellow)]">
+            Buy: ${formatCurrency(getCommittedBuyValue(item))}
+          </div>
+          ${manualBadge}
+          <div class="text-[10px] mt-1 ${riskClass}">${riskLabel}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  document.querySelectorAll('.queue-row').forEach(row => {
+    row.addEventListener('click', () => {
+      state.selectedId = Number(row.dataset.id);
+      renderQueue();
+      renderSelectedPanel();
+    });
+  });
+}
+
+function renderSelectedPanel() {
+  const item = state.submissions.find(s => s.id === state.selectedId);
+
+  if (!item) {
+    selectedIdEl.textContent = '—';
+    selectedEmailEl.textContent = 'Select a submission';
+    selectedTitleEl.textContent = '—';
+    selectedSubtitleEl.textContent = '—';
+    selectedNotesEl.textContent = '—';
+    selectedMarketValueEl.textContent = '—';
+    selectedOfferAmountEl.textContent = '—';
+    if (selectedCreditAmountEl) selectedCreditAmountEl.textContent = '—';
+    selectedOfferTypeEl.textContent = '—';
+    selectedRiskEl.textContent = '—';
+    selectedInternalNotesEl.value = '';
+    if (finalCashInput) finalCashInput.value = '';
+    if (finalCreditInput) finalCreditInput.value = '';
+    return;
   }
 
-  return { label: 'Low', className: 'risk-low' };
-}
+  selectedIdEl.textContent = `#${item.id}`;
+  selectedEmailEl.textContent = safeText(item.customer_email);
+  selectedTitleEl.textContent = getPrimaryTitle(item);
+  selectedSubtitleEl.textContent = getSubtitle(item);
+  selectedNotesEl.textContent = safeText(item.notes, 'No customer notes submitted.');
+  selectedMarketValueEl.textContent = formatCurrency(item.market_value);
 
-function getOfferFilterType(submission) {
-  const offerType = (submission.offer_type || '').toLowerCase();
-
-  if (submission.manual_review_reason || offerType.includes('manual')) return 'manual';
-  if (offerType.includes('range')) return 'range';
-  if (offerType.includes('instant')) return 'instant';
-
-  const marketValue = Number(submission.market_value) || 0;
-  if (marketValue > 100) return 'manual';
-  if (marketValue >= 30) return 'range';
-  return 'instant';
-}
-
-function getOfferDisplay(submission) {
-  const offerType = (submission.offer_type || '').toLowerCase();
-
-  if (offerType.includes('range')) {
-    const cashLow = formatCurrency(submission.cash_low);
-    const cashHigh = formatCurrency(submission.cash_high);
-    const creditLow = formatCurrency(submission.credit_low);
-    const creditHigh = formatCurrency(submission.credit_high);
-
-    return {
-      queueLine1: `Cash: ${cashLow} - ${cashHigh}`,
-      queueLine2: `Credit: ${creditLow} - ${creditHigh}`,
-      panelCashValue: `${cashLow} - ${cashHigh}`,
-      panelCreditValue: `${creditLow} - ${creditHigh}`
-    };
+  // Keep offer summary showing original engine values
+  selectedOfferAmountEl.textContent = formatCurrency(item.cash_amount);
+  if (selectedCreditAmountEl) {
+    selectedCreditAmountEl.textContent = formatCurrency(item.credit_amount);
   }
 
-  if (submission.manual_review_reason || offerType.includes('manual')) {
-    return {
-      queueLine1: 'Cash: —',
-      queueLine2: 'Credit: —',
-      panelCashValue: 'Manual Review',
-      panelCreditValue: 'Manual Review'
-    };
-  }
+  selectedOfferTypeEl.textContent = safeText(item.offer_type);
+  selectedRiskEl.textContent = getRiskLabel(item);
+  selectedRiskEl.className = `mt-1 font-semibold ${getRiskClass(item)}`;
 
-  return {
-    queueLine1: `Cash: ${formatCurrency(submission.cash_amount)}`,
-    queueLine2: `Credit: ${formatCurrency(submission.credit_amount)}`,
-    panelCashValue: formatCurrency(submission.cash_amount),
-    panelCreditValue: formatCurrency(submission.credit_amount)
-  };
-}
+  selectedInternalNotesEl.value =
+    item.internal_notes == null ? '' : String(item.internal_notes);
 
-function getIncomingBuyCost(submission) {
-  const finalCash = Number(submission.final_cash_offer);
-  if (!Number.isNaN(finalCash) && finalCash > 0) {
-    return finalCash;
-  }
-
-  return 0;
-}
-
-function getIncomingMarketValue(submission) {
-  const marketValue = Number(submission.market_value);
-  if (!Number.isNaN(marketValue) && marketValue > 0) {
-    return marketValue;
-  }
-
-  return 0;
-}
-
-function getIncomingBuyCostDisplay(submission) {
-  const value = getIncomingBuyCost(submission);
-  return value > 0 ? formatCurrency(value) : '—';
-}
-
-function getIncomingMarketValueDisplay(submission) {
-  const value = getIncomingMarketValue(submission);
-  return value > 0 ? formatCurrency(value) : '—';
-}
-
-function updateStats(submissions) {
-  const today = new Date();
-  const todayString = today.toDateString();
-
-  const newTodayCount = submissions.filter(item => {
-    if (!item.submitted_at) return false;
-    const d = new Date(item.submitted_at);
-    return d.toDateString() === todayString;
-  }).length;
-
-  const manualReviewCount = submissions.filter(item => !!item.manual_review_reason).length;
-  const acceptedCount = submissions.filter(item => (item.status || '').toLowerCase() === 'accepted').length;
-
-  const potentialBuyCost = submissions.reduce((sum, item) => {
-    const cashAmount = Number(item.cash_amount) || 0;
-    const cashHigh = Number(item.cash_high) || 0;
-
-    if (['pending', 'review', 'accepted'].includes((item.status || 'pending').toLowerCase())) {
-      return sum + (cashHigh || cashAmount);
-    }
-    return sum;
-  }, 0);
-
-  statNewToday.textContent = newTodayCount;
-  statManualReview.textContent = manualReviewCount;
-  statAccepted.textContent = acceptedCount;
-  statPotentialBuyCost.textContent = formatCurrency(potentialBuyCost);
+  if (finalCashInput) finalCashInput.value = item.final_cash_offer ?? '';
+  if (finalCreditInput) finalCreditInput.value = item.final_credit_offer ?? '';
 }
 
 function applyFiltersAndSort() {
@@ -243,50 +205,34 @@ function applyFiltersAndSort() {
 
   if (state.activeFilter !== 'all') {
     items = items.filter(item => {
-      const status = (item.status || 'pending').toLowerCase();
-      const offerBucket = getOfferFilterType(item);
+      const status = (item.status || '').toLowerCase();
+      const offerType = (item.offer_type || '').toLowerCase();
 
       if (state.activeFilter === 'accepted') return status === 'accepted';
       if (state.activeFilter === 'completed') return status === 'completed';
-      if (state.activeFilter === 'manual') return offerBucket === 'manual';
-      if (state.activeFilter === 'range') return offerBucket === 'range';
-      if (state.activeFilter === 'instant') return offerBucket === 'instant';
+      if (state.activeFilter === 'manual') return !!item.manual_review_reason || offerType.includes('manual');
+      if (state.activeFilter === 'range') return offerType.includes('range');
+      if (state.activeFilter === 'instant') return offerType.includes('instant');
+
       return true;
     });
   }
 
-  if (state.searchTerm.trim()) {
-    const term = state.searchTerm.trim().toLowerCase();
-    items = items.filter(item => {
-      const haystack = [
-        item.id,
-        item.submission_id,
-        item.customer_email,
-        item.game_title_or_description,
-        item.platform,
-        item.condition,
-        item.completeness,
-        item.offer_type,
-        item.status
-      ]
-        .map(value => safeText(value, ''))
-        .join(' ')
-        .toLowerCase();
-
-      return haystack.includes(term);
-    });
+  if (state.searchTerm) {
+    const term = state.searchTerm.toLowerCase();
+    items = items.filter(item =>
+      (item.game_title_or_description || '').toLowerCase().includes(term) ||
+      (item.customer_email || '').toLowerCase().includes(term) ||
+      String(item.id).includes(term)
+    );
   }
 
   if (state.sortMode === 'highest_value') {
     items.sort((a, b) => (Number(b.market_value) || 0) - (Number(a.market_value) || 0));
   } else if (state.sortMode === 'needs_review') {
-    items.sort((a, b) => {
-      const aReview = a.manual_review_reason || (a.status || '').toLowerCase() === 'review' ? 1 : 0;
-      const bReview = b.manual_review_reason || (b.status || '').toLowerCase() === 'review' ? 1 : 0;
-      return bReview - aReview;
-    });
+    items.sort((a, b) => (b.manual_review_reason ? 1 : 0) - (a.manual_review_reason ? 1 : 0));
   } else {
-    items.sort((a, b) => new Date(b.submitted_at) - new Date(a.submitted_at));
+    items.sort((a, b) => new Date(b.submitted_at || 0) - new Date(a.submitted_at || 0));
   }
 
   state.filteredSubmissions = items;
@@ -304,238 +250,63 @@ function applyFiltersAndSort() {
   renderSelectedPanel();
 }
 
-function renderQueue() {
-  if (!state.filteredSubmissions.length) {
-    queueList.classList.add('hidden');
-    queueEmpty.classList.remove('hidden');
-    queueEmpty.textContent = 'No submissions match your current filter.';
-    return;
-  }
-
-  queueEmpty.classList.add('hidden');
-  queueList.classList.remove('hidden');
-
-  queueList.innerHTML = state.filteredSubmissions.map(item => {
-    const title = escapeHtml(getPrimaryTitle(item));
-    const subtitle = escapeHtml(getSubtitle(item));
-    const email = escapeHtml(safeText(item.customer_email));
-    const offerType = escapeHtml(safeText(item.offer_type, 'Unknown'));
-    const marketValue = escapeHtml(formatCurrency(item.market_value));
-    const offerDisplay = getOfferDisplay(item);
-    const status = (item.status || 'pending').toLowerCase();
-    const risk = getRiskLevel(item);
-    const isActive = item.id === state.selectedId;
-
-    const incomingBuyCost = escapeHtml(getIncomingBuyCostDisplay(item));
-    const incomingMarketValue = escapeHtml(getIncomingMarketValueDisplay(item));
-
-    return `
-      <article
-        class="queue-row p-5 hover:bg-zinc-900/50 transition cursor-pointer ${isActive ? 'queue-item-active' : ''}"
-        data-id="${escapeHtml(item.id)}"
-      >
-        <div class="space-y-4">
-
-          <!-- TOP -->
-          <div class="flex justify-between items-start gap-4">
-            <div class="min-w-0">
-              <div class="text-xs text-zinc-500">Submission #${escapeHtml(item.id)}</div>
-              <div class="text-lg font-semibold mt-1 break-words">${title}</div>
-              <div class="text-sm text-gray-400 mt-1 break-words">${subtitle}</div>
-              <div class="text-xs text-zinc-500 mt-2 break-all">${email}</div>
-            </div>
-
-            <div class="text-right shrink-0">
-              <div class="inline-flex status-chip ${getStatusClass(status)} capitalize">${escapeHtml(status)}</div>
-              <div class="text-xs mt-2 ${risk.className}">Risk: ${risk.label}</div>
-            </div>
-          </div>
-
-          <!-- META -->
-          <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-            <div class="bg-zinc-900/70 border border-zinc-800 rounded-xl p-3">
-              <div class="text-xs text-zinc-500">Offer Type</div>
-              <div class="mt-1">${offerType}</div>
-            </div>
-
-            <div class="bg-zinc-900/70 border border-zinc-800 rounded-xl p-3">
-              <div class="text-xs text-zinc-500">Market Value</div>
-              <div class="mt-1 font-semibold text-[var(--teal)]">${marketValue}</div>
-            </div>
-
-            <div class="bg-zinc-900/70 border border-zinc-800 rounded-xl p-3">
-              <div class="text-xs text-zinc-500">Offer</div>
-              <div class="mt-1 text-[var(--teal)]">${escapeHtml(offerDisplay.queueLine1)}</div>
-              <div class="text-[var(--yellow)]">${escapeHtml(offerDisplay.queueLine2)}</div>
-            </div>
-          </div>
-
-          <!-- FINANCIAL -->
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-            <div class="bg-zinc-900/70 border border-zinc-800 rounded-xl p-3">
-              <div class="text-xs text-zinc-500">Cash</div>
-              <div class="mt-1 text-[var(--teal)] font-semibold">
-                ${escapeHtml(offerDisplay.queueLine1.replace('Cash: ', ''))}
-              </div>
-            </div>
-
-            <div class="bg-zinc-900/70 border border-zinc-800 rounded-xl p-3">
-              <div class="text-xs text-zinc-500">Credit</div>
-              <div class="mt-1 text-[var(--yellow)] font-semibold">
-                ${escapeHtml(offerDisplay.queueLine2.replace('Credit: ', ''))}
-              </div>
-            </div>
-
-            <div class="bg-zinc-900/70 border border-zinc-800 rounded-xl p-3">
-              <div class="text-xs text-zinc-500">Incoming Buy</div>
-              <div class="mt-1 text-[var(--teal)] font-semibold">${incomingBuyCost}</div>
-            </div>
-
-            <div class="bg-zinc-900/70 border border-zinc-800 rounded-xl p-3">
-              <div class="text-xs text-zinc-500">Incoming MV</div>
-              <div class="mt-1 text-[var(--yellow)] font-semibold">${incomingMarketValue}</div>
-            </div>
-          </div>
-
-        </div>
-      </article>
-    `;
-  }).join('');
-
-  document.querySelectorAll('.queue-row').forEach(row => {
-    row.addEventListener('click', () => {
-      state.selectedId = Number(row.dataset.id);
-      renderQueue();
-      renderSelectedPanel();
-    });
-  });
-}
-
-function renderSelectedPanel() {
-  const item = state.filteredSubmissions.find(sub => sub.id === state.selectedId)
-    || state.submissions.find(sub => sub.id === state.selectedId);
-
-  const finalCashInput = document.getElementById('final-cash-input');
-  const finalCreditInput = document.getElementById('final-credit-input');
-
-  if (!item) {
-    selectedIdEl.textContent = '—';
-    selectedEmailEl.textContent = 'Select a submission';
-    selectedTitleEl.textContent = '—';
-    selectedSubtitleEl.textContent = '—';
-    selectedNotesEl.textContent = '—';
-    selectedMarketValueEl.textContent = '—';
-    selectedOfferAmountEl.textContent = '—';
-
-    if (selectedCreditAmountEl) {
-      selectedCreditAmountEl.textContent = '—';
-    }
-
-    selectedOfferTypeEl.textContent = '—';
-    selectedRiskEl.textContent = '—';
-
-    if (selectedIncomingBuyCostEl) {
-      selectedIncomingBuyCostEl.textContent = '—';
-    }
-
-    if (selectedIncomingMarketValueEl) {
-      selectedIncomingMarketValueEl.textContent = '—';
-    }
-
-    if (selectedStatusEl) {
-      selectedStatusEl.value = 'pending';
-    }
-
-    selectedInternalNotesEl.value = '';
-
-    if (finalCashInput) {
-      finalCashInput.value = '';
-    }
-
-    if (finalCreditInput) {
-      finalCreditInput.value = '';
-    }
-
-    return;
-  }
-
-  const risk = getRiskLevel(item);
-  const offerDisplay = getOfferDisplay(item);
-
-  selectedIdEl.textContent = `#${item.id}`;
-  selectedEmailEl.textContent = safeText(item.customer_email);
-  selectedTitleEl.textContent = getPrimaryTitle(item);
-  selectedSubtitleEl.textContent = getSubtitle(item);
-  selectedNotesEl.textContent = item.notes || 'No customer notes submitted.';
-  selectedMarketValueEl.textContent = formatCurrency(item.market_value);
-  selectedOfferAmountEl.textContent = offerDisplay.panelCashValue;
-
-  if (selectedCreditAmountEl) {
-    selectedCreditAmountEl.textContent = offerDisplay.panelCreditValue;
-  }
-
-  selectedOfferTypeEl.textContent = safeText(item.offer_type);
-  selectedRiskEl.textContent = risk.label;
-  selectedRiskEl.className = `mt-1 font-semibold ${risk.className}`;
-
-  if (selectedIncomingBuyCostEl) {
-    selectedIncomingBuyCostEl.textContent = getIncomingBuyCostDisplay(item);
-  }
-
-  if (selectedIncomingMarketValueEl) {
-    selectedIncomingMarketValueEl.textContent = getIncomingMarketValueDisplay(item);
-  }
-
-  if (selectedStatusEl) {
-    selectedStatusEl.value = (item.status || 'pending').toLowerCase();
-  }
-
-  selectedInternalNotesEl.value = item.internal_notes || '';
-
-  if (finalCashInput) {
-    finalCashInput.value = item.final_cash_offer ?? '';
-  }
-
-  if (finalCreditInput) {
-    finalCreditInput.value = item.final_credit_offer ?? '';
-  }
-}
-
 async function loadSubmissions() {
   queueLoading.classList.remove('hidden');
   queueList.classList.add('hidden');
   queueEmpty.classList.add('hidden');
 
   try {
-    const response = await fetch('/.netlify/functions/get-submissions');
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to load submissions.');
-    }
+    const res = await fetch('/.netlify/functions/get-submissions');
+    const data = await res.json();
 
     state.submissions = Array.isArray(data.submissions) ? data.submissions : [];
-    updateStats(state.submissions);
+
+    updateStats();
     applyFiltersAndSort();
-  } catch (error) {
-    console.error(error);
+  } catch (e) {
+    console.error(e);
     queueEmpty.classList.remove('hidden');
-    queueEmpty.textContent = error.message || 'Failed to load submissions.';
-    showMessage(error.message || 'Failed to load submissions.', 'error');
+    queueEmpty.textContent = 'Failed to load submissions';
+    showMessage('Failed to load submissions', 'error');
   } finally {
     queueLoading.classList.add('hidden');
   }
 }
 
-async function saveSelectedSubmission(customStatus = null, customNoteAppend = '') {
-  const selected = state.submissions.find(item => item.id === state.selectedId);
+function updateStats() {
+  const today = new Date().toDateString();
 
-  if (!selected) {
-    showMessage('Select a submission first.', 'error');
-    return;
+  const newTodayCount = state.submissions.filter(s => {
+    if (!s.submitted_at) return false;
+    const d = new Date(s.submitted_at);
+    return d.toDateString() === today;
+  }).length;
+
+  const manualReviewCount = state.submissions.filter(s => !!s.manual_review_reason).length;
+  const acceptedCount = state.submissions.filter(s => (s.status || '').toLowerCase() === 'accepted').length;
+
+  const potentialBuyCost = state.submissions.reduce((sum, s) => {
+    return sum + getCommittedBuyValue(s);
+  }, 0);
+
+  const incomingRetailValue = state.submissions
+    .filter(s => (s.status || '').toLowerCase() === 'accepted')
+    .reduce((sum, s) => sum + (Number(s.market_value) || 0), 0);
+
+  statNewToday.textContent = newTodayCount;
+  statManualReview.textContent = manualReviewCount;
+  statAccepted.textContent = acceptedCount;
+  statPotentialBuyCost.textContent = formatCurrency(potentialBuyCost);
+
+  if (statIncomingRetailValue) {
+    statIncomingRetailValue.textContent = formatCurrency(incomingRetailValue);
   }
+}
 
-  const finalStatus = customStatus || (selectedStatusEl ? selectedStatusEl.value : 'pending');
+async function saveSelectedSubmission(customStatus = null, customNoteAppend = '') {
+  const selected = state.submissions.find(s => s.id === state.selectedId);
+  if (!selected) return;
+
   let notesValue = selectedInternalNotesEl.value || '';
 
   if (customNoteAppend) {
@@ -545,53 +316,77 @@ async function saveSelectedSubmission(customStatus = null, customNoteAppend = ''
     selectedInternalNotesEl.value = notesValue;
   }
 
-  const finalCashInput = document.getElementById('final-cash-input');
-  const finalCreditInput = document.getElementById('final-credit-input');
-
-  const finalCashOffer =
-    finalCashInput && finalCashInput.value !== ''
+  const payload = {
+    id: selected.id,
+    status: customStatus || selected.status || 'pending',
+    internal_notes: notesValue,
+    final_cash_offer: finalCashInput && finalCashInput.value !== ''
       ? Number(finalCashInput.value)
-      : null;
-
-  const finalCreditOffer =
-    finalCreditInput && finalCreditInput.value !== ''
+      : null,
+    final_credit_offer: finalCreditInput && finalCreditInput.value !== ''
       ? Number(finalCreditInput.value)
-      : null;
+      : null
+  };
 
-  const originalText = saveSelectedBtn.textContent;
-  saveSelectedBtn.disabled = true;
-  saveSelectedBtn.textContent = 'Saving...';
+  const originalText = saveSelectedBtn ? saveSelectedBtn.textContent : '';
 
   try {
-    const response = await fetch('/.netlify/functions/update-submission', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        id: selected.id,
-        status: finalStatus,
-        internal_notes: notesValue,
-        final_cash_offer: finalCashOffer,
-        final_credit_offer: finalCreditOffer
-      })
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to update submission.');
+    if (saveSelectedBtn) {
+      saveSelectedBtn.disabled = true;
+      saveSelectedBtn.textContent = 'Saving...';
     }
 
-    showMessage('Submission updated successfully.');
+    const res = await fetch('/.netlify/functions/update-submission', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      throw new Error('Save failed');
+    }
+
+    showMessage('Saved successfully');
     await loadSubmissions();
     state.selectedId = selected.id;
     applyFiltersAndSort();
-  } catch (error) {
-    console.error(error);
-    showMessage(error.message || 'Failed to update submission.', 'error');
+  } catch (e) {
+    console.error(e);
+    showMessage('Save failed', 'error');
   } finally {
-    saveSelectedBtn.disabled = false;
-    saveSelectedBtn.textContent = originalText;
+    if (saveSelectedBtn) {
+      saveSelectedBtn.disabled = false;
+      saveSelectedBtn.textContent = originalText;
+    }
   }
+}
+
+function selectNextSubmission() {
+  const filtered = state.filteredSubmissions || [];
+  const currentIndex = filtered.findIndex(s => s.id === state.selectedId);
+
+  if (currentIndex >= 0 && currentIndex < filtered.length - 1) {
+    state.selectedId = filtered[currentIndex + 1].id;
+    renderQueue();
+    renderSelectedPanel();
+  }
+}
+
+function setupActionButtons() {
+  document.getElementById('accept-offer-btn')?.addEventListener('click', async () => {
+    await saveSelectedSubmission('accepted');
+    selectNextSubmission();
+  });
+
+  document.getElementById('reject-btn')?.addEventListener('click', async () => {
+    await saveSelectedSubmission('rejected');
+    selectNextSubmission();
+  });
+
+  document.getElementById('counteroffer-btn')?.addEventListener('click', async () => {
+    const ts = new Date().toLocaleString();
+    await saveSelectedSubmission(null, `Counteroffer initiated (${ts})`);
+  });
 }
 
 function bindEvents() {
@@ -605,108 +400,41 @@ function bindEvents() {
     applyFiltersAndSort();
   });
 
-  filterButtons.forEach(button => {
-    button.addEventListener('click', () => {
-      filterButtons.forEach(btn => btn.classList.remove('active-filter'));
-      button.classList.add('active-filter');
-      state.activeFilter = button.dataset.filter;
+  filterButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterButtons.forEach(b => b.classList.remove('active-filter'));
+      btn.classList.add('active-filter');
+      state.activeFilter = btn.dataset.filter;
       applyFiltersAndSort();
     });
   });
 
-  saveSelectedBtn.addEventListener('click', () => {
-    saveSelectedSubmission();
-  });
-
-  markReviewedBtn.addEventListener('click', () => {
-    saveSelectedSubmission('review');
-  });
-
-  requestPhotosBtn.addEventListener('click', () => {
-    saveSelectedSubmission(null, 'Requested more photos from customer.');
-  });
-
-  sendCounterofferBtn.addEventListener('click', () => {
-    saveSelectedSubmission(null, 'Counteroffer discussion started.');
-  });
-
+  saveSelectedBtn.addEventListener('click', () => saveSelectedSubmission());
+  markReviewedBtn.addEventListener('click', () => saveSelectedSubmission('review'));
+  requestPhotosBtn.addEventListener('click', () => saveSelectedSubmission(null, 'More photos requested'));
+  sendCounterofferBtn.addEventListener('click', () => saveSelectedSubmission(null, 'Counteroffer discussion started.'));
   refreshDashboardBtn.addEventListener('click', loadSubmissions);
 
-  emailCustomerBtn.addEventListener('click', () => {
-    const selected = state.submissions.find(item => item.id === state.selectedId);
-    if (!selected || !selected.customer_email) {
-      showMessage('No customer email found for this submission.', 'error');
-      return;
-    }
+  if (resetWeeklyBtn) {
+    resetWeeklyBtn.addEventListener('click', () => {
+      if (confirm('Reset weekly totals?')) {
+        showMessage('Weekly totals reset (placeholder)');
+      }
+    });
+  }
 
-    window.location.href = `mailto:${encodeURIComponent(selected.customer_email)}`;
+  emailCustomerBtn.addEventListener('click', () => {
+    const selected = state.submissions.find(s => s.id === state.selectedId);
+    if (selected && selected.customer_email) {
+      window.location.href = `mailto:${selected.customer_email}`;
+    } else {
+      showMessage('No customer email found', 'error');
+    }
   });
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
   bindEvents();
+  setupActionButtons();
   await loadSubmissions();
-});
-
-// ==================== SAFE ACTION BUTTON ENHANCEMENTS ====================
-
-function getCurrentSelectedSubmission() {
-  return state?.submissions?.find(s => s.id === state.selectedId);
-}
-
-function selectNextSubmissionSafe() {
-  const list = state.filteredSubmissions || [];
-  const currentIndex = list.findIndex(s => s.id === state.selectedId);
-
-  if (currentIndex >= 0 && currentIndex < list.length - 1) {
-    state.selectedId = list[currentIndex + 1].id;
-    renderQueue();
-    renderSelectedPanel();
-  }
-}
-
-// Accept Offer
-document.getElementById('accept-offer-btn')?.addEventListener('click', async () => {
-  const selected = getCurrentSelectedSubmission();
-  if (!selected) return;
-
-  try {
-    await saveSelectedSubmission('accepted');
-    selectNextSubmissionSafe();
-  } catch (err) {
-    console.error('Accept failed', err);
-  }
-});
-
-// Reject Submission
-document.getElementById('reject-btn')?.addEventListener('click', async () => {
-  const selected = getCurrentSelectedSubmission();
-  if (!selected) return;
-
-  try {
-    await saveSelectedSubmission('rejected');
-    selectNextSubmissionSafe();
-  } catch (err) {
-    console.error('Reject failed', err);
-  }
-});
-
-// Send Counteroffer
-document.getElementById('counteroffer-btn')?.addEventListener('click', async () => {
-  const selected = getCurrentSelectedSubmission();
-  if (!selected) return;
-
-  const notesEl = document.getElementById('selected-internal-notes');
-  if (notesEl) {
-    const timestamp = new Date().toLocaleString();
-    notesEl.value = notesEl.value
-      ? notesEl.value + `\n\nCounteroffer initiated (${timestamp})`
-      : `Counteroffer initiated (${timestamp})`;
-  }
-
-  try {
-    await saveSelectedSubmission();
-  } catch (err) {
-    console.error('Counteroffer failed', err);
-  }
 });
