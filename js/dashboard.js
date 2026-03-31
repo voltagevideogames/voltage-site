@@ -296,34 +296,36 @@ function renderQueue() {
         class="queue-row p-5 hover:bg-zinc-900/50 transition cursor-pointer ${isActive ? 'queue-item-active' : ''}"
         data-id="${escapeHtml(item.id)}"
       >
-        <div class="grid grid-cols-1 md:grid-cols-[110px_1.5fr_1fr_1fr_130px] gap-4 items-center">
-          <div>
+        <div class="grid grid-cols-1 md:grid-cols-[110px_minmax(0,1.9fr)_minmax(0,1fr)_minmax(0,1fr)_120px] gap-6 items-start">
+          
+          <div class="flex flex-col justify-start self-start min-w-0">
             <div class="text-xs text-zinc-500">Submission</div>
-            <div class="font-mono text-[var(--teal)]">#${escapeHtml(item.id)}</div>
+            <div class="font-mono text-[var(--teal)] leading-tight">#${escapeHtml(item.id)}</div>
           </div>
 
-          <div>
-            <div class="font-semibold">${title}</div>
-            <div class="text-sm text-gray-400">${subtitle}</div>
-            <div class="text-xs text-zinc-500 mt-1">${email}</div>
+          <div class="flex flex-col justify-start self-start min-w-0">
+            <div class="font-semibold leading-snug break-words">${title}</div>
+            <div class="text-sm text-gray-400 leading-snug break-words">${subtitle}</div>
+            <div class="text-xs text-zinc-500 mt-1 break-all">${email}</div>
           </div>
 
-          <div>
+          <div class="flex flex-col justify-start self-start min-w-0">
             <div class="text-xs text-zinc-500">Offer Type</div>
-            <div>${offerType}</div>
-            <div class="text-sm text-gray-400 mt-1">MV ${marketValue}</div>
+            <div class="leading-tight break-words">${offerType}</div>
+            <div class="text-sm text-gray-400 mt-1 leading-tight">MV ${marketValue}</div>
           </div>
 
-          <div>
+          <div class="flex flex-col justify-start self-start min-w-0">
             <div class="text-xs text-zinc-500">Offer</div>
-            <div class="text-sm"><span class="text-[var(--teal)]">${escapeHtml(offerDisplay.queueLine1)}</span></div>
-            <div class="text-sm"><span class="text-[var(--yellow)]">${escapeHtml(offerDisplay.queueLine2)}</span></div>
+            <div class="text-sm leading-snug text-[var(--teal)]">${escapeHtml(offerDisplay.queueLine1)}</div>
+            <div class="text-sm leading-snug text-[var(--yellow)]">${escapeHtml(offerDisplay.queueLine2)}</div>
           </div>
 
-          <div class="space-y-2">
-            <div class="inline-flex status-chip ${getStatusClass(status)}">${escapeHtml(status)}</div>
-            <div class="text-xs ${risk.className}">Risk: ${risk.label}</div>
+          <div class="flex flex-col justify-start self-start items-start min-w-0">
+            <div class="inline-flex status-chip ${getStatusClass(status)} capitalize">${escapeHtml(status)}</div>
+            <div class="text-xs mt-2 ${risk.className}">Risk: ${risk.label}</div>
           </div>
+
         </div>
       </article>
     `;
