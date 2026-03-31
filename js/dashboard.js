@@ -376,6 +376,15 @@ function renderSelectedPanel() {
   selectedStatusEl.value = (item.status || 'pending').toLowerCase();
 }
   selectedInternalNotesEl.value = item.internal_notes || '';
+const finalCashInput = document.getElementById('final-cash-input');
+const finalCreditInput = document.getElementById('final-credit-input');
+
+if (finalCashInput) {
+  finalCashInput.value = item.final_cash_offer ?? '';
+}
+
+if (finalCreditInput) {
+  finalCreditInput.value = item.final_credit_offer ?? '';
 }
 
 async function loadSubmissions() {
@@ -430,13 +439,17 @@ async function saveSelectedSubmission(customStatus = null, customNoteAppend = ''
     const response = await fetch('/.netlify/functions/update-submission', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        id: selected.id,
-        status: finalStatus,
-        internal_notes: notesValue
-      })
-    });
-
+     body: JSON.stringify({
+  id: selected.id,
+  status: finalStatus,
+  internal_notes: notesValue,
+  final_cash_offer: document.getElementById('final-cash-input')?.value !== ''
+    ? Number(document.getElementById('final-cash-input').value)
+    : null,
+  final_credit_offer: document.getElementById('final-credit-input')?.value !== ''
+    ? Number(document.getElementById('final-credit-input').value)
+    : null
+})
     const data = await response.json();
 
     if (!response.ok) {

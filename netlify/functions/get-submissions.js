@@ -37,7 +37,9 @@ exports.handler = async function () {
         cash_low,
         cash_high,
         credit_low,
-        credit_high
+        credit_high,
+	final_cash_offer,
+	final_credit_offer
       `)
       .order('submitted_at', { ascending: false });
 

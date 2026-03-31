@@ -20,6 +20,8 @@ exports.handler = async function (event) {
     const id = body.id;
     const status = body.status;
     const internalNotes = body.internal_notes || '';
+    const finalCashOffer = body.final_cash_offer;
+    const finalCreditOffer = body.final_credit_offer;
 
     if (!id) {
       return {
@@ -39,7 +41,9 @@ exports.handler = async function (event) {
       .from('submissions')
       .update({
         status,
-        internal_notes: internalNotes
+        internal_notes: internalNotes,
+        final_cash_offer: finalCashOffer,
+        final_credit_offer: finalCreditOffer
       })
       .eq('id', id)
       .select()
