@@ -334,40 +334,67 @@ function renderQueue() {
         class="queue-row p-5 hover:bg-zinc-900/50 transition cursor-pointer ${isActive ? 'queue-item-active' : ''}"
         data-id="${escapeHtml(item.id)}"
       >
-        <div class="grid grid-cols-1 md:grid-cols-[110px_minmax(0,1.9fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_120px] gap-6 items-start">
-          
-          <div class="flex flex-col justify-start self-start min-w-0">
-            <div class="text-xs text-zinc-500">Submission</div>
-            <div class="font-mono text-[var(--teal)] leading-tight">#${escapeHtml(item.id)}</div>
+        <div class="space-y-4">
+
+          <!-- TOP -->
+          <div class="flex justify-between items-start gap-4">
+            <div class="min-w-0">
+              <div class="text-xs text-zinc-500">Submission #${escapeHtml(item.id)}</div>
+              <div class="text-lg font-semibold mt-1 break-words">${title}</div>
+              <div class="text-sm text-gray-400 mt-1 break-words">${subtitle}</div>
+              <div class="text-xs text-zinc-500 mt-2 break-all">${email}</div>
+            </div>
+
+            <div class="text-right shrink-0">
+              <div class="inline-flex status-chip ${getStatusClass(status)} capitalize">${escapeHtml(status)}</div>
+              <div class="text-xs mt-2 ${risk.className}">Risk: ${risk.label}</div>
+            </div>
           </div>
 
-          <div class="flex flex-col justify-start self-start min-w-0">
-            <div class="font-semibold leading-snug break-words">${title}</div>
-            <div class="text-sm text-gray-400 leading-snug break-words">${subtitle}</div>
-            <div class="text-xs text-zinc-500 mt-1 break-all">${email}</div>
+          <!-- META -->
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+            <div class="bg-zinc-900/70 border border-zinc-800 rounded-xl p-3">
+              <div class="text-xs text-zinc-500">Offer Type</div>
+              <div class="mt-1">${offerType}</div>
+            </div>
+
+            <div class="bg-zinc-900/70 border border-zinc-800 rounded-xl p-3">
+              <div class="text-xs text-zinc-500">Market Value</div>
+              <div class="mt-1 font-semibold text-[var(--teal)]">${marketValue}</div>
+            </div>
+
+            <div class="bg-zinc-900/70 border border-zinc-800 rounded-xl p-3">
+              <div class="text-xs text-zinc-500">Offer</div>
+              <div class="mt-1 text-[var(--teal)]">${escapeHtml(offerDisplay.queueLine1)}</div>
+              <div class="text-[var(--yellow)]">${escapeHtml(offerDisplay.queueLine2)}</div>
+            </div>
           </div>
 
-          <div class="flex flex-col justify-start self-start min-w-0">
-            <div class="text-xs text-zinc-500">Offer Type</div>
-            <div class="leading-tight break-words">${offerType}</div>
-            <div class="text-sm text-gray-400 mt-1 leading-tight">MV ${marketValue}</div>
-          </div>
+          <!-- FINANCIAL -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+            <div class="bg-zinc-900/70 border border-zinc-800 rounded-xl p-3">
+              <div class="text-xs text-zinc-500">Cash</div>
+              <div class="mt-1 text-[var(--teal)] font-semibold">
+                ${escapeHtml(offerDisplay.queueLine1.replace('Cash: ', ''))}
+              </div>
+            </div>
 
-          <div class="flex flex-col justify-start self-start min-w-0">
-            <div class="text-xs text-zinc-500">Offer</div>
-            <div class="text-sm leading-snug text-[var(--teal)]">${escapeHtml(offerDisplay.queueLine1)}</div>
-            <div class="text-sm leading-snug text-[var(--yellow)]">${escapeHtml(offerDisplay.queueLine2)}</div>
-          </div>
+            <div class="bg-zinc-900/70 border border-zinc-800 rounded-xl p-3">
+              <div class="text-xs text-zinc-500">Credit</div>
+              <div class="mt-1 text-[var(--yellow)] font-semibold">
+                ${escapeHtml(offerDisplay.queueLine2.replace('Credit: ', ''))}
+              </div>
+            </div>
 
-          <div class="flex flex-col justify-start self-start min-w-0">
-            <div class="text-xs text-zinc-500">Incoming</div>
-            <div class="text-sm leading-snug text-[var(--teal)]">Buy Cost: ${incomingBuyCost}</div>
-            <div class="text-sm leading-snug text-[var(--yellow)]">Market Value: ${incomingMarketValue}</div>
-          </div>
+            <div class="bg-zinc-900/70 border border-zinc-800 rounded-xl p-3">
+              <div class="text-xs text-zinc-500">Incoming Buy</div>
+              <div class="mt-1 text-[var(--teal)] font-semibold">${incomingBuyCost}</div>
+            </div>
 
-          <div class="flex flex-col justify-start self-start items-start min-w-0">
-            <div class="inline-flex status-chip ${getStatusClass(status)} capitalize">${escapeHtml(status)}</div>
-            <div class="text-xs mt-2 ${risk.className}">Risk: ${risk.label}</div>
+            <div class="bg-zinc-900/70 border border-zinc-800 rounded-xl p-3">
+              <div class="text-xs text-zinc-500">Incoming MV</div>
+              <div class="mt-1 text-[var(--yellow)] font-semibold">${incomingMarketValue}</div>
+            </div>
           </div>
 
         </div>
