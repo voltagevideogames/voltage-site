@@ -504,4 +504,69 @@ function bindEvents() {
 document.addEventListener('DOMContentLoaded', async () => {
   bindEvents();
   await loadSubmissions();
+}); 
+
+
+// ==================== SAFE ACTION BUTTON ENHANCEMENTS ====================
+
+function getCurrentSelectedSubmission() {
+  return state?.submissions?.find(s => s.id === state.selectedId);
+}
+
+function selectNextSubmissionSafe() {
+  const list = state.filteredSubmissions || [];
+  const currentIndex = list.findIndex(s => s.id === state.selectedId);
+
+  if (currentIndex >= 0 && currentIndex < list.length - 1) {
+    state.selectedId = list[currentIndex + 1].id;
+    renderQueue();
+    renderSelectedPanel();
+  }
+}
+
+// Accept Offer
+document.getElementById('accept-offer-btn')?.addEventListener('click', async () => {
+  const selected = getCurrentSelectedSubmission();
+  if (!selected) return;
+
+  try {
+    await saveSelectedSubmission('accepted');
+    selectNextSubmissionSafe();
+  } catch (err) {
+    console.error('Accept failed', err);
+  }
 });
+
+// Reject Submission
+document.getElementById('reject-btn')?.addEventListener('click', async () => {
+  const selected = getCurrentSelectedSubmission();
+  if (!selected) return;
+
+  try {
+    await saveSelectedSubmission('rejected');
+    selectNextSubmissionSafe();
+  } catch (err) {
+    console.error('Reject failed', err);
+  }
+});
+
+// Send Counteroffer
+document.getElementById('counteroffer-btn')?.addEventListener('click', async () => {
+  const selected = getCurrentSelectedSubmission();
+  if (!selected) return;
+
+  const notesEl = document.getElementById('selected-internal-notes');
+  if (notesEl) {
+    const timestamp = new Date().toLocaleString();
+    notesEl.value = notesEl.value
+      ? notesEl.value + `\n\nCounteroffer initiated (${timestamp})`
+      : `Counteroffer initiated (${timestamp})`;
+  }
+
+  try {
+    await saveSelectedSubmission();
+  } catch (err) {
+    console.error('Counteroffer failed', err);
+  }
+});
+
