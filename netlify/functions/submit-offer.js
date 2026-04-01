@@ -76,11 +76,49 @@ exports.handler = async (event) => {
     }
 
     // ------------------------------------------------------------
-    // Business constants
+    // Pricing configuration (from Supabase or defaults)
     // ------------------------------------------------------------
-    const CASH_PERCENT_UNDER_30 = 0.30;
-    const CASH_PERCENT_30_TO_100 = 0.35;
-    const CREDIT_MULTIPLIER = 1.2;
+    let cashPercentUnder30 = 0.30;
+    let cashPercent30To100 = 0.35;
+    let creditMultiplier = 1.2;
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    try {
+      const { data: config, error: configError } = await supabase
+        .from('pricing_config')
+        .select('cash_percent_under_30, cash_percent_30_to_100, credit_multiplier')
+        .eq('id', 1)
+        .single();
+
+      if (configError && configError.code !== 'PGRST116') { // PGRST116 = no rows
+        console.warn('Failed to load pricing_config, using defaults:', configError.message);
+      } else if (config) {
+  const under30 = Number(config.cash_percent_under_30);
+  const mid = Number(config.cash_percent_30_to_100);
+  const credit = Number(config.credit_multiplier);
+
+  if (Number.isFinite(under30) && under30 > 0) {
+    cashPercentUnder30 = under30;
+  }
+  if (Number.isFinite(mid) && mid > 0) {
+    cashPercent30To100 = mid;
+  }
+  if (Number.isFinite(credit) && credit > 0) {
+    creditMultiplier = credit;
+  }
+
+  console.log('Loaded pricing config from Supabase:', {
+    cashPercentUnder30,
+    cashPercent30To100,
+    creditMultiplier
+  });
+} else {
+  console.log('No pricing_config row found (id=1), using hardcoded defaults');
+}
+    } catch (configFetchError) {
+      console.warn('Error fetching pricing_config, falling back to defaults:', configFetchError.message);
+    }
 
     // ------------------------------------------------------------
     // Offer state defaults
@@ -178,20 +216,20 @@ exports.handler = async (event) => {
       offerType = 'instant_offer';
       inventoryClass = 'common';
 
-      cashAmount = roundMoney(marketValue * CASH_PERCENT_UNDER_30);
-      creditAmount = roundMoney(cashAmount * CREDIT_MULTIPLIER);
+      cashAmount = roundMoney(marketValue * cashPercentUnder30);
+      creditAmount = roundMoney(cashAmount * creditMultiplier);
     } else if (marketValue <= 100) {
       offerType = 'instant_range';
       inventoryClass = 'evergreen';
 
-      const baseCash = roundMoney(marketValue * CASH_PERCENT_30_TO_100);
+      const baseCash = roundMoney(marketValue * cashPercent30To100);
       cashAmount = baseCash;
-      creditAmount = roundMoney(baseCash * CREDIT_MULTIPLIER);
+      creditAmount = roundMoney(baseCash * creditMultiplier);
 
       cashLow = roundMoney(baseCash * 0.9);
       cashHigh = roundMoney(baseCash * 1.1);
-      creditLow = roundMoney(cashLow * CREDIT_MULTIPLIER);
-      creditHigh = roundMoney(cashHigh * CREDIT_MULTIPLIER);
+      creditLow = roundMoney(cashLow * creditMultiplier);
+      creditHigh = roundMoney(cashHigh * creditMultiplier);
     } else {
       offerType = 'manual_review';
       inventoryClass = 'strategic';
@@ -201,7 +239,7 @@ exports.handler = async (event) => {
     // ------------------------------------------------------------
     // Save to Supabase
     // ------------------------------------------------------------
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // supabase client already created above
 
     const insertPayload = {
       customer_email: submission.customer_email,
