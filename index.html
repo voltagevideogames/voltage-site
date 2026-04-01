@@ -280,14 +280,29 @@
 </select>
         </div>
 
-        <div>
-          <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Photos (strongly recommended)</label>
-          <div class="border-2 border-dashed border-[var(--teal)]/40 p-10 text-center rounded-none">
-            <p class="text-gray-400 mb-2">Drag & drop or click to upload photos</p>
-            <p class="text-xs text-gray-500">Front, back, disc/cart, box, any damage – helps us give the best offer faster</p>
-            <input type="file" name="photos" multiple accept="image/*" />
-          </div>
-        </div>
+       <div>
+  <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Photos (strongly recommended)</label>
+  <div class="border-2 border-dashed border-[var(--teal)]/40 p-10 text-center rounded-none">
+    <p class="text-gray-400 mb-2">Drag & drop or click to upload photos</p>
+    <p class="text-xs text-gray-500 mb-4">
+      Front, back, disc/cart, box, any damage – helps us give the best offer faster
+    </p>
+
+    <input
+      id="photo-input"
+      type="file"
+      multiple
+      accept="image/jpeg,image/png,image/webp"
+      class="block mx-auto text-sm text-gray-300"
+    />
+
+    <input type="hidden" id="photo-urls" name="photo_urls" value="[]">
+
+    <p id="photo-upload-status" class="mt-4 text-sm text-gray-400"></p>
+
+    <div id="photo-preview" class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+  </div>
+</div>
 
         <div>
           <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Notes / Additional Details</label>
@@ -328,26 +343,115 @@
 </section>
 
 <script>
-// Handle form submission to your Netlify function (Supabase backend)
+const MAX_PHOTOS = 5;
+const MAX_SIZE = 5 * 1024 * 1024;
+
+function setPhotoStatus(msg, error = false) {
+  const el = document.getElementById('photo-upload-status');
+  if (!el) return;
+  el.textContent = msg || '';
+  el.className = `mt-4 text-sm ${error ? 'text-red-400' : 'text-gray-400'}`;
+}
+
+function renderPreview(urls) {
+  const container = document.getElementById('photo-preview');
+  if (!container) return;
+
+  container.innerHTML = '';
+
+  urls.forEach(url => {
+    const img = document.createElement('img');
+    img.src = url;
+    img.className = 'w-full h-28 object-cover border border-[var(--teal)]/30';
+    img.alt = 'Uploaded submission photo';
+    container.appendChild(img);
+  });
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error(`Failed to read ${file.name}`));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadPhotos(files) {
+  if (!files.length) return [];
+
+  if (files.length > MAX_PHOTOS) {
+    throw new Error('Max 5 photos allowed');
+  }
+
+  const prepared = [];
+
+  for (const file of files) {
+    if (file.size > MAX_SIZE) {
+      throw new Error(`${file.name} is too large. Max size is 5MB.`);
+    }
+
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      throw new Error(`${file.name} is not a supported image type.`);
+    }
+
+    prepared.push({
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      dataUrl: await fileToBase64(file)
+    });
+  }
+
+  setPhotoStatus('Uploading photos...');
+
+  const res = await fetch('/.netlify/functions/upload-photos', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ files: prepared })
+  });
+
+  const result = await res.json();
+
+  if (!res.ok || !result.success) {
+    throw new Error(result.error || 'Photo upload failed');
+  }
+
+  const urls = result.photos.map(photo => photo.url);
+
+  document.getElementById('photo-urls').value = JSON.stringify(urls);
+  renderPreview(urls);
+  setPhotoStatus('Photos uploaded successfully');
+
+  return urls;
+}
+
 document.getElementById('sell-form').addEventListener('submit', async function(e) {
-  e.preventDefault();   // We handle it ourselves so we can show nice results
+  e.preventDefault();
 
   const form = this;
-  const submitBtn = form.querySelector('button[type="submit"]');
-  const originalText = submitBtn.textContent;
+  const btn = form.querySelector('button[type="submit"]');
+  const originalText = btn.textContent;
+  const photoInput = document.getElementById('photo-input');
 
-  submitBtn.disabled = true;
-  submitBtn.textContent = "Processing your offer...";
-
-  const formData = new FormData(form);
-const data = Object.fromEntries(formData.entries());
-
-// SAFE compatibility mapping (prevents backend mismatch issues)
-data.email = formData.get('email');
-data.preferredPayout = formData.get('preferred_payout');
-data.gameTitleOrDescription = formData.get('games_description');
+  btn.disabled = true;
+  btn.textContent = 'Processing your offer...';
 
   try {
+    let photoUrls = [];
+
+    if (photoInput && photoInput.files.length > 0) {
+      photoUrls = await uploadPhotos([...photoInput.files]);
+    }
+
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+
+    data.email = formData.get('email');
+    data.preferredPayout = formData.get('preferred_payout');
+    data.gameTitleOrDescription = formData.get('games_description');
+    data.photo_urls = photoUrls;
+
     const response = await fetch('/.netlify/functions/submit-offer', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -359,14 +463,17 @@ data.gameTitleOrDescription = formData.get('games_description');
     if (result.success) {
       showOfferResults(result);
       form.reset();
+      document.getElementById('photo-preview').innerHTML = '';
+      document.getElementById('photo-urls').value = '[]';
+      setPhotoStatus('');
     } else {
-      showErrorResult(result.error || "There was a problem processing your submission.");
+      showErrorResult(result.error || 'There was a problem processing your submission.');
     }
   } catch (err) {
-    showErrorResult("Connection error. Please try again.");
+    showErrorResult(err.message || 'Connection error. Please try again.');
   } finally {
-    submitBtn.disabled = false;
-    submitBtn.textContent = originalText;
+    btn.disabled = false;
+    btn.textContent = originalText;
   }
 });
 
@@ -393,14 +500,13 @@ function showOfferResults(result) {
         <div class="text-gray-400 mt-3">Cash Offer</div>
         <div class="text-3xl text-[var(--yellow)] mt-8">or $${Math.ceil(result.credit_amount || 0)} Store Credit</div>
       </div>
-    <p class="text-center text-gray-300">Based on current market value ≈ $${Math.ceil(result.market_value || 0)}</p>
-<p class="text-xs text-gray-500 mt-10 text-center">This offer is good for 72 hours.</p>
-<p class="text-xs text-gray-500 mt-6 text-center">
-  All online offers are preliminary and subject to final verification of condition, completeness, and authenticity.
-</p>
+      <p class="text-center text-gray-300">Based on current market value ≈ $${Math.ceil(result.market_value || 0)}</p>
+      <p class="text-xs text-gray-500 mt-10 text-center">This offer is good for 72 hours.</p>
+      <p class="text-xs text-gray-500 mt-6 text-center">
+        All online offers are preliminary and subject to final verification of condition, completeness, and authenticity.
+      </p>
     `;
-  } 
-  else if (result.offer_type === 'instant_range') {
+  } else if (result.offer_type === 'instant_range') {
     titleEl.textContent = "🎮 Instant Offer Range";
     html += `
       <div class="grid grid-cols-1 md:grid-cols-2 gap-10 my-10">
@@ -415,8 +521,7 @@ function showOfferResults(result) {
       </div>
       <p class="text-center text-gray-300">Estimated market value ≈ $${Math.ceil(result.market_value || 0)}</p>
     `;
-  } 
-  else {
+  } else {
     titleEl.textContent = "📋 Manual Review Needed";
     html += `
       <div class="text-center py-12">

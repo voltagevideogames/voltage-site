@@ -56,7 +56,7 @@ exports.handler = async (event) => {
   'cash'
 ).trim().toLowerCase(),
       notes: String(body.notes || '').trim(),
-      photo_urls: [], // keep safe for now since your DB column is text today
+      photo_urls: Array.isArray(body.photo_urls) ? body.photo_urls : [],
       status: 'pending',
     };
 
