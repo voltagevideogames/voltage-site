@@ -60,7 +60,7 @@ exports.handler = async (event) => {
       status: 'pending',
     };
 
-    const externalId = String(body.externalId || '').trim();
+    const externalId = String(body.externalId || body.external_id || '').trim();
 
     if (!submission.game_title_or_description) {
       return jsonResponse(400, { error: 'Game title or description is required' });
