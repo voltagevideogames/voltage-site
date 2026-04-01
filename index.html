@@ -503,9 +503,9 @@ function clearSelectedGame() {
 function setSelectedGame(product) {
   if (!product) return;
 
-  const title = product['product-name'] || product.product_name || product.productName || '';
-  const platform = product.console_name || product.console || product.consoleName || '';
-  const id = product.id || product.productId || '';
+  const title = product.title || '';
+const platform = product.console || '';
+const id = product.externalId || '';
 
   document.getElementById('selected_title').value = title;
   document.getElementById('selected_platform').value = platform;
@@ -519,20 +519,20 @@ function setSelectedGame(product) {
 
     const pricesContainer = document.getElementById('selected-game-prices');
     if (pricesContainer) {
-      pricesContainer.innerHTML = `
-        <div>
-          <div class="text-xs text-gray-400">Loose</div>
-          <div class="font-mono text-[var(--teal)]">${formatPrice(product['loose-price'] || product.loosePrice)}</div>
-        </div>
-        <div>
-          <div class="text-xs text-gray-400">CIB</div>
-          <div class="font-mono text-[var(--teal)]">${formatPrice(product['cib-price'] || product.cibPrice)}</div>
-        </div>
-        <div>
-          <div class="text-xs text-gray-400">New</div>
-          <div class="font-mono text-[var(--teal)]">${formatPrice(product['new-price'] || product.newPrice)}</div>
-        </div>
-      `;
+    pricesContainer.innerHTML = `
+  <div>
+    <div class="text-xs text-gray-400">Loose</div>
+    <div class="font-mono text-[var(--teal)]">${formatPrice(product.loosePrice)}</div>
+  </div>
+  <div>
+    <div class="text-xs text-gray-400">CIB</div>
+    <div class="font-mono text-[var(--teal)]">${formatPrice(product.cibPrice)}</div>
+  </div>
+  <div>
+    <div class="text-xs text-gray-400">New</div>
+    <div class="font-mono text-[var(--teal)]">${formatPrice(product.newPrice)}</div>
+  </div>
+`;
     }
 
     panel.classList.remove('hidden');
@@ -560,10 +560,9 @@ function renderSearchResults(results) {
     const card = document.createElement('div');
     card.className = `search-result-card bg-black border border-[var(--teal)]/40 p-4 rounded-xl cursor-pointer hover:border-[var(--yellow)]`;
     
-    const title = escapeHtml(product['product-name'] || product.product_name || product.productName || 'Unknown');
-    const consoleName = escapeHtml(product.console_name || product.console || product.consoleName || 'Unknown Platform');
-    
-    const imageUrl = product.image || product.boxImage || '';
+   const title = escapeHtml(product.title || 'Unknown');
+const consoleName = escapeHtml(product.console || 'Unknown Platform');
+const imageUrl = product.imageUrl || '';
     
     card.innerHTML = `
       <div class="flex gap-4">
