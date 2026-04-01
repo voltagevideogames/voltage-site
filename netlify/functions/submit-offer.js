@@ -39,28 +39,37 @@ exports.handler = async (event) => {
     const submission = {
       customer_email: String(body.email || '').trim(),
       game_title_or_description: String(
-  body.gameTitleOrDescription ||
-  body.games_description ||
-  body.game_title_or_description ||
-  body.title ||
-  ''
-).trim(),
-      platform: String(body.platform || '').trim(),
+        body.selected_title ||
+        body.gameTitleOrDescription ||
+        body.games_description ||
+        body.game_title_or_description ||
+        body.title ||
+        ''
+      ).trim(),
+      platform: String(
+        body.selected_platform ||
+        body.platform ||
+        ''
+      ).trim(),
       condition: String(body.condition || '').trim(),
       completeness: String(body.completeness || '').trim(),
       quantity: safePositiveInt(body.quantity, 1),
       preferred_payout: String(
-  body.preferredPayout ||
-  body.preferred_payout ||
-  body.payout_type ||
-  'cash'
-).trim().toLowerCase(),
+        body.preferredPayout ||
+        body.preferred_payout ||
+        body.payout_type ||
+        'cash'
+      ).trim().toLowerCase(),
       notes: String(body.notes || '').trim(),
       photo_urls: Array.isArray(body.photo_urls) ? body.photo_urls : [],
       status: 'pending',
     };
 
     const externalId = String(body.externalId || body.external_id || '').trim();
+
+    console.log('External ID received:', externalId);
+    console.log('Selected title received:', submission.game_title_or_description);
+    console.log('Selected platform received:', submission.platform);
 
     if (!submission.game_title_or_description) {
       return jsonResponse(400, { error: 'Game title or description is required' });
@@ -102,6 +111,8 @@ exports.handler = async (event) => {
       let pcData = null;
 
       if (externalId) {
+        console.log('Using exact externalId lookup:', externalId);
+
         const productUrl = new URL('https://www.pricecharting.com/api/product');
         productUrl.searchParams.set('t', apiKey);
         productUrl.searchParams.set('id', externalId);
@@ -119,34 +130,16 @@ exports.handler = async (event) => {
           }
         }
       } else {
-        const fullQuery = submission.platform
-          ? `${submission.game_title_or_description} ${submission.platform}`
-          : submission.game_title_or_description;
-
-        const searchUrl = new URL('https://www.pricecharting.com/api/products');
-        searchUrl.searchParams.set('t', apiKey);
-        searchUrl.searchParams.set('q', fullQuery);
-
-        pcResponse = await fetch(searchUrl.toString(), {
-          method: 'GET',
-          headers: { Accept: 'application/json' },
-        });
-
-        if (pcResponse.ok) {
-          pcData = await pcResponse.json();
-
-          if (pcData && Array.isArray(pcData.products) && pcData.products.length > 0) {
-            freshResult = chooseBestProductMatch(
-              pcData.products,
-              submission.game_title_or_description,
-              submission.platform
-            );
-            pricingSource = 'pricecharting_search';
-          }
-        }
+        // No externalId → force manual review (no fuzzy search fallback)
+        console.log('No externalId provided → forcing manual review');
+        pricingSource = 'missing_external_id';
+        manualReviewReason = 'No exact product selected';
       }
     } catch (lookupError) {
       console.warn('PriceCharting lookup failed:', lookupError.message);
+      if (!manualReviewReason) {
+        manualReviewReason = 'PriceCharting lookup error';
+      }
     }
 
     // ------------------------------------------------------------
@@ -164,7 +157,7 @@ exports.handler = async (event) => {
       } else {
         manualReviewReason = 'No usable price found for selected condition/completeness';
       }
-    } else {
+    } else if (!manualReviewReason) {
       manualReviewReason = 'No PriceCharting match found';
     }
 
@@ -237,23 +230,31 @@ exports.handler = async (event) => {
       credit_high: creditHigh,
       manual_review_reason: manualReviewReason,
       external_id: externalId || null,
+
+      // New snapshot fields for exact selected game
+      snapshot_title: freshResult ? (freshResult['product-name'] || null) : null,
+      snapshot_console: freshResult ? (freshResult['console-name'] || null) : null,
+      snapshot_loose_price: freshResult ? centsToDollars(freshResult['loose-price']) : null,
+      snapshot_cib_price: freshResult ? centsToDollars(freshResult['cib-price']) : null,
+      snapshot_new_price: freshResult ? centsToDollars(freshResult['new-price']) : null,
     };
 
-   const { data, error } = await supabase
-  .from('submissions')
-  .insert(insertPayload)
-  .select('id')
-  .single();
+    const { data, error } = await supabase
+      .from('submissions')
+      .insert(insertPayload)
+      .select('id')
+      .single();
 
-if (error) {
-  console.error('Supabase insert error:', error);
-  return jsonResponse(500, {
-    error: 'Failed to save submission',
-    details: error.message,
-  });
-}
+    if (error) {
+      console.error('Supabase insert error:', error);
+      return jsonResponse(500, {
+        error: 'Failed to save submission',
+        details: error.message,
+      });
+    }
 
-const submissionId = data.id;
+    const submissionId = data.id;
+
     // ------------------------------------------------------------
     // Return response to frontend
     // ------------------------------------------------------------
@@ -281,6 +282,8 @@ const submissionId = data.id;
       responseBody.credit_low = creditLow;
       responseBody.credit_high = creditHigh;
     }
+
+    console.log('Pricing source used:', pricingSource);
 
     return jsonResponse(200, responseBody);
   } catch (error) {
