@@ -52,6 +52,19 @@ const resetWeeklyBtn = document.getElementById('reset-weekly-btn');
 const photoModal = document.getElementById('photo-modal');
 const modalImage = document.getElementById('modal-image');
 
+// === NEW: Pricing Controls Elements ===
+const pricingControlsToggle = document.getElementById('pricing-controls-toggle');
+const pricingControlsPanel = document.getElementById('pricing-controls-panel');
+const pricingControlsChevron = document.getElementById('pricing-controls-chevron');
+const pricingControlsStatus = document.getElementById('pricing-controls-status');
+
+const pricingUnder30 = document.getElementById('pricing-under-30');
+const pricing30To100 = document.getElementById('pricing-30-100');
+const pricingCreditMultiplier = document.getElementById('pricing-credit-multiplier');
+const pricingMaxAuto = document.getElementById('pricing-max-auto');
+
+const savePricingConfigBtn = document.getElementById('save-pricing-config-btn');
+
 // Safe photo parser
 function parsePhotoUrls(value) {
   if (!value) return [];
@@ -504,6 +517,153 @@ function selectNextSubmission() {
   }
 }
 
+
+
+  filterButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterButtons.forEach(b => b.classList.remove('active-filter'));
+      btn.classList.add('active-filter');
+      state.activeFilter = btn.dataset.filter;
+      applyFiltersAndSort();
+    });
+  });
+
+  if (saveSelectedBtn) saveSelectedBtn.addEventListener('click', () => saveSelectedSubmission());
+  if (markReviewedBtn) markReviewedBtn.addEventListener('click', () => saveSelectedSubmission('review'));
+  if (requestPhotosBtn) requestPhotosBtn.addEventListener('click', () => saveSelectedSubmission(null, 'More photos requested'));
+  if (sendCounterofferBtn) sendCounterofferBtn.addEventListener('click', () => saveSelectedSubmission(null, 'Counteroffer discussion started.'));
+  if (refreshDashboardBtn) refreshDashboardBtn.addEventListener('click', loadSubmissions);
+
+  if (resetWeeklyBtn) {
+    resetWeeklyBtn.addEventListener('click', () => {
+      if (confirm('Reset weekly totals?')) showMessage('Weekly totals reset');
+    });
+  }
+
+  if (emailCustomerBtn) {
+    emailCustomerBtn.addEventListener('click', () => {
+      const selected = state.submissions.find(s => s.id === state.selectedId);
+      if (selected && selected.customer_email) {
+        window.location.href = `mailto:${selected.customer_email}`;
+      }
+    });
+  }
+}
+
+// ====================== NEW: PRICING CONTROLS ======================
+
+function setPricingStatus(message, isError = false) {
+  if (!pricingControlsStatus) return;
+  pricingControlsStatus.textContent = message;
+  if (isError) {
+    pricingControlsStatus.className = 'text-sm text-red-400';
+  } else {
+    pricingControlsStatus.className = 'text-sm text-gray-400';
+  }
+}
+
+async function loadPricingConfig() {
+  if (!pricingUnder30 || !pricing30To100 || !pricingCreditMultiplier || !pricingMaxAuto) return;
+
+  try {
+    const res = await fetch('/.netlify/functions/get-pricing-config');
+    const data = await res.json();
+
+    if (data.success && data.config) {
+      pricingUnder30.value = data.config.cash_percent_under_30 || '';
+      pricing30To100.value = data.config.cash_percent_30_to_100 || '';
+      pricingCreditMultiplier.value = data.config.credit_multiplier || '';
+      pricingMaxAuto.value = data.config.max_auto_offer_value || '';
+
+      const lastUpdated = data.config.updated_at 
+        ? new Date(data.config.updated_at).toLocaleString() 
+        : 'Never';
+      
+      setPricingStatus(`Last updated: ${lastUpdated}`);
+    } else {
+      setPricingStatus('Failed to load pricing config', true);
+    }
+  } catch (e) {
+    console.error('Failed to load pricing config:', e);
+    setPricingStatus('Failed to load pricing config', true);
+  }
+}
+
+async function savePricingConfig() {
+  if (!savePricingConfigBtn) return;
+
+  const payload = {
+    cash_percent_under_30: parseFloat(pricingUnder30.value),
+    cash_percent_30_to_100: parseFloat(pricing30To100.value),
+    credit_multiplier: parseFloat(pricingCreditMultiplier.value),
+    max_auto_offer_value: parseFloat(pricingMaxAuto.value)
+  };
+
+  // Basic client-side validation
+  if (
+    isNaN(payload.cash_percent_under_30) ||
+    isNaN(payload.cash_percent_30_to_100) ||
+    isNaN(payload.credit_multiplier) ||
+    isNaN(payload.max_auto_offer_value)
+  ) {
+    setPricingStatus('All fields must be valid numbers', true);
+    return;
+  }
+
+  savePricingConfigBtn.disabled = true;
+  savePricingConfigBtn.textContent = 'Saving...';
+
+  try {
+    const res = await fetch('/.netlify/functions/update-pricing-config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      const lastUpdated = data.config.updated_at 
+        ? new Date(data.config.updated_at).toLocaleString() 
+        : 'Just now';
+      
+      setPricingStatus(`Saved • Last updated: ${lastUpdated}`);
+      showMessage('Pricing configuration saved successfully');
+    } else {
+      setPricingStatus(data.error || 'Save failed', true);
+      showMessage(data.error || 'Save failed', 'error');
+    }
+  } catch (e) {
+    console.error('Save pricing config failed:', e);
+    setPricingStatus('Save failed – check console', true);
+    showMessage('Failed to save pricing config', 'error');
+  } finally {
+    savePricingConfigBtn.disabled = false;
+    savePricingConfigBtn.textContent = 'Save Pricing Config';
+  }
+}
+
+function setupPricingControls() {
+  // Toggle panel
+  if (pricingControlsToggle && pricingControlsPanel && pricingControlsChevron) {
+    pricingControlsToggle.addEventListener('click', () => {
+      const isHidden = pricingControlsPanel.classList.contains('hidden');
+      pricingControlsPanel.classList.toggle('hidden');
+      
+      if (pricingControlsChevron) {
+        pricingControlsChevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+      }
+    });
+  }
+
+  // Save button
+  if (savePricingConfigBtn) {
+    savePricingConfigBtn.addEventListener('click', savePricingConfig);
+  }
+}
+
+// ====================== EXISTING CODE CONTINUES ======================
+
 function bindEvents() {
   if (searchInput) searchInput.addEventListener('input', (e) => {
     state.searchTerm = e.target.value;
@@ -549,5 +709,7 @@ function bindEvents() {
 document.addEventListener('DOMContentLoaded', async () => {
   bindEvents();
   setupActionButtons();
+  setupPricingControls();        // ← NEW: only added line
   await loadSubmissions();
+  await loadPricingConfig();     // ← NEW: load pricing on startup
 });
