@@ -423,36 +423,46 @@ function getManualReviewReason(submission, marketValue) {
   const lowerCompleteness = normalizeString(submission.completeness);
   const lowerNotes = normalizeString(submission.notes);
   const lowerPlatform = normalizeString(submission.platform);
-  const lowerPayout = normalizeString(submission.preferred_payout);
 
-  if (lowerPayout === 'hybrid') {
-    return 'Hybrid payout requires manual review';
+  if (!submission.game_title_or_description || submission.game_title_or_description.trim() === '') {
+    return 'Missing title or description';
   }
 
-  if (
-    lowerCondition.includes('sealed') ||
-    lowerCondition.includes('graded') ||
-    lowerCondition.includes('mint') ||
-    lowerCompleteness.includes('sealed') ||
-    lowerCompleteness.includes('graded')
-  ) {
-    return 'High-sensitivity item condition requires manual review';
+  if (!marketValue || marketValue <= 0) {
+    return 'No usable market value';
+  }
+
+  if (lowerCondition.includes('graded') || lowerCompleteness.includes('graded')) {
+    return 'Graded item requires manual review';
+  }
+
+  if (lowerCondition.includes('sealed') || lowerCompleteness.includes('sealed')) {
+    return 'Sealed item requires manual review';
   }
 
   if (lowerPlatform === 'other') {
-    return 'Platform marked as Other';
+    return 'Platform is "Other"';
   }
 
-  if (submission.quantity > 5) {
-    return 'High quantity requires manual review';
+  if (submission.quantity >= 5) {
+    return 'Quantity >= 5';
   }
 
-  if (lowerNotes.length > 20) {
-    return 'Submission notes require manual review';
+  if (marketValue >= 250) {
+    return 'Market value >= $250';
   }
 
-  if (marketValue !== null && marketValue > 100) {
-    return 'Market value exceeds auto-offer threshold';
+  const seriousKeywords = [
+    'not working', 'broken', 'cracked', 'water damage',
+    'missing pieces', 'missing manual', 'missing inserts',
+    'heavy scratches', 'wont read', "won't read",
+    'untested', 'repro', 'reproduction', 'fake', 'counterfeit', 'disc rot'
+  ];
+
+  for (const keyword of seriousKeywords) {
+    if (lowerNotes.includes(keyword)) {
+      return `Suspicious notes: ${keyword}`;
+    }
   }
 
   return null;

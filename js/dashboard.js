@@ -70,6 +70,10 @@ function parsePhotoUrls(value) {
   return [];
 }
 
+function normalizeString(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
 function showMessage(message, type = 'success') {
   if (!globalMessage) return;
   globalMessage.classList.remove('hidden');
@@ -104,8 +108,82 @@ function getSubtitle(sub) {
 
 function getRiskLabel(sub) {
   const marketValue = Number(sub.market_value) || 0;
-  if (sub.manual_review_reason || marketValue > 100) return 'HIGH';
-  if (marketValue >= 30) return 'MEDIUM';
+
+  // HIGH = real chance we get burned
+  if (!marketValue || marketValue <= 0) {
+    return 'HIGH';
+  }
+
+  if (sub.condition && normalizeString(sub.condition).includes('graded')) {
+    return 'HIGH';
+  }
+
+  if (
+    (sub.condition && normalizeString(sub.condition).includes('sealed')) ||
+    (sub.completeness && normalizeString(sub.completeness).includes('sealed'))
+  ) {
+    return 'HIGH';
+  }
+
+  if (normalizeString(sub.platform) === 'other') {
+    return 'HIGH';
+  }
+
+  if ((Number(sub.quantity) || 0) >= 5) {
+    return 'HIGH';
+  }
+
+  if (marketValue >= 250) {
+    return 'HIGH';
+  }
+
+  // Suspicious notes
+  const lowerNotes = normalizeString(sub.notes);
+  const suspiciousKeywords = [
+    'not working',
+    'broken',
+    'cracked',
+    'water damage',
+    'missing pieces',
+    'missing manual',
+    'missing inserts',
+    'heavy scratches',
+    'wont read',
+    "won't read",
+    'untested',
+    'repro',
+    'reproduction',
+    'fake',
+    'counterfeit',
+    'disc rot'
+  ];
+
+  if (suspiciousKeywords.some(k => lowerNotes.includes(k))) {
+    return 'HIGH';
+  }
+
+  // MEDIUM = some uncertainty but not dangerous
+  if (marketValue >= 100) {
+    return 'MEDIUM';
+  }
+
+  if (
+    (sub.condition && normalizeString(sub.condition).includes('mixed')) ||
+    (sub.completeness && normalizeString(sub.completeness).includes('mixed'))
+  ) {
+    return 'MEDIUM';
+  }
+
+  const photos = parsePhotoUrls(sub.photo_urls);
+  if (photos.length === 0) {
+    return 'MEDIUM';
+  }
+
+  if (sub.manual_review_reason) {
+    return 'MEDIUM';
+  }
+
+  // LOW = routine / normal submissions
   return 'LOW';
 }
 
@@ -121,6 +199,8 @@ function getCommittedBuyValue(sub) {
 }
 
 function renderQueue() {
+  if (!queueLoading || !queueList || !queueEmpty) return;
+
   queueLoading.classList.add('hidden');
   queueList.classList.remove('hidden');
   queueEmpty.classList.add('hidden');
@@ -137,8 +217,8 @@ function renderQueue() {
   queueList.innerHTML = filtered.map(item => {
     const isActive = item.id === state.selectedId;
     const photos = parsePhotoUrls(item.photo_urls);
-    const photoBadge = photos.length > 0 
-      ? `<span class="inline-flex items-center gap-1 text-xs bg-zinc-800 px-2 py-0.5 rounded-full"><span>📷</span>${photos.length}</span>` 
+    const photoBadge = photos.length > 0
+      ? `<span class="inline-flex items-center gap-1 text-xs bg-zinc-800 px-2 py-0.5 rounded-full"><span>📷</span>${photos.length}</span>`
       : '';
 
     return `
@@ -171,35 +251,39 @@ function renderSelectedPanel() {
   const item = state.submissions.find(s => s.id === state.selectedId);
 
   if (!item) {
-    selectedIdEl.textContent = '—';
-    selectedEmailEl.textContent = 'Select a submission';
-    selectedTitleEl.textContent = '—';
-    selectedSubtitleEl.textContent = '—';
-    selectedNotesEl.textContent = '—';
-    selectedMarketValueEl.textContent = '—';
-    selectedOfferAmountEl.textContent = '—';
+    if (selectedIdEl) selectedIdEl.textContent = '—';
+    if (selectedEmailEl) selectedEmailEl.textContent = 'Select a submission';
+    if (selectedTitleEl) selectedTitleEl.textContent = '—';
+    if (selectedSubtitleEl) selectedSubtitleEl.textContent = '—';
+    if (selectedNotesEl) selectedNotesEl.textContent = '—';
+    if (selectedMarketValueEl) selectedMarketValueEl.textContent = '—';
+    if (selectedOfferAmountEl) selectedOfferAmountEl.textContent = '—';
     if (selectedCreditAmountEl) selectedCreditAmountEl.textContent = '—';
-    selectedOfferTypeEl.textContent = '—';
-    selectedRiskEl.textContent = '—';
-    selectedInternalNotesEl.value = '';
+    if (selectedOfferTypeEl) selectedOfferTypeEl.textContent = '—';
+    if (selectedRiskEl) selectedRiskEl.textContent = '—';
+    if (selectedInternalNotesEl) selectedInternalNotesEl.value = '';
     if (finalCashInput) finalCashInput.value = '';
     if (finalCreditInput) finalCreditInput.value = '';
     renderPhotoGallery([]);
     return;
   }
 
-  selectedIdEl.textContent = `#${item.id}`;
-  selectedEmailEl.textContent = safeText(item.customer_email);
-  selectedTitleEl.textContent = getPrimaryTitle(item);
-  selectedSubtitleEl.textContent = getSubtitle(item);
-  selectedNotesEl.textContent = safeText(item.notes, 'No customer notes submitted.');
-  selectedMarketValueEl.textContent = formatCurrency(item.market_value);
-  selectedOfferAmountEl.textContent = formatCurrency(item.cash_amount);
+  if (selectedIdEl) selectedIdEl.textContent = `#${item.id}`;
+  if (selectedEmailEl) selectedEmailEl.textContent = safeText(item.customer_email);
+  if (selectedTitleEl) selectedTitleEl.textContent = getPrimaryTitle(item);
+  if (selectedSubtitleEl) selectedSubtitleEl.textContent = getSubtitle(item);
+  if (selectedNotesEl) selectedNotesEl.textContent = safeText(item.notes, 'No customer notes submitted.');
+  if (selectedMarketValueEl) selectedMarketValueEl.textContent = formatCurrency(item.market_value);
+  if (selectedOfferAmountEl) selectedOfferAmountEl.textContent = formatCurrency(item.cash_amount);
   if (selectedCreditAmountEl) selectedCreditAmountEl.textContent = formatCurrency(item.credit_amount);
-  selectedOfferTypeEl.textContent = safeText(item.offer_type);
-  selectedRiskEl.textContent = getRiskLabel(item);
-  selectedRiskEl.className = `mt-1 font-semibold ${getRiskClass(item)}`;
- selectedInternalNotesEl.value = item.internal_notes || '';
+  if (selectedOfferTypeEl) selectedOfferTypeEl.textContent = safeText(item.offer_type);
+
+  if (selectedRiskEl) {
+    selectedRiskEl.textContent = getRiskLabel(item);
+    selectedRiskEl.className = `mt-1 font-semibold ${getRiskClass(item)}`;
+  }
+
+  if (selectedInternalNotesEl) selectedInternalNotesEl.value = item.internal_notes || '';
 
   if (finalCashInput) finalCashInput.value = item.final_cash_offer ?? '';
   if (finalCreditInput) finalCreditInput.value = item.final_credit_offer ?? '';
@@ -223,7 +307,7 @@ function renderPhotoGallery(photos) {
     const thumb = document.createElement('img');
     thumb.src = url;
     thumb.alt = 'Submission photo';
-   thumb.className = 'w-full aspect-square object-cover rounded-xl border border-zinc-700 hover:border-[var(--teal)] hover:scale-105 cursor-pointer transition duration-200';
+    thumb.className = 'w-full aspect-square object-cover rounded-xl border border-zinc-700 hover:border-[var(--teal)] hover:scale-105 cursor-pointer transition duration-200';
     thumb.onclick = () => openPhotoModal(url);
     gallery.appendChild(thumb);
   });
@@ -254,7 +338,6 @@ if (photoModal) {
   });
 }
 
-// Rest of your existing functions (filters, load, save, etc.) remain unchanged
 function applyFiltersAndSort() {
   let items = [...state.submissions];
 
@@ -422,8 +505,15 @@ function selectNextSubmission() {
 }
 
 function bindEvents() {
-  if (searchInput) searchInput.addEventListener('input', (e) => { state.searchTerm = e.target.value; applyFiltersAndSort(); });
-  if (sortSelect) sortSelect.addEventListener('change', (e) => { state.sortMode = e.target.value; applyFiltersAndSort(); });
+  if (searchInput) searchInput.addEventListener('input', (e) => {
+    state.searchTerm = e.target.value;
+    applyFiltersAndSort();
+  });
+
+  if (sortSelect) sortSelect.addEventListener('change', (e) => {
+    state.sortMode = e.target.value;
+    applyFiltersAndSort();
+  });
 
   filterButtons.forEach(btn => {
     btn.addEventListener('click', () => {
