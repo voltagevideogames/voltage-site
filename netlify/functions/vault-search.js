@@ -23,11 +23,42 @@ exports.handler = async (event) => {
       };
     }
 
-    // Parse incoming request body
-    const body = JSON.parse(event.body || '{}');
-    const query = (body.query || '').trim();
+    // === SAFE QUERY EXTRACTION (only change) ===
+    console.log('Request method:', event.httpMethod);
+    console.log('Query string parameters:', event.queryStringParameters);
+
+    let body = {};
+    if (event.body) {
+      try {
+        body = JSON.parse(event.body);
+        console.log('Body received and parsed successfully');
+      } catch (parseErr) {
+        console.warn('Failed to parse JSON body:', parseErr.message);
+      }
+    } else {
+      console.log('No body received');
+    }
+
+    // Extract search term from all possible locations (in order of preference)
+    let searchQuery = 
+      (body.q || body.query || '').trim() ||
+      (event.queryStringParameters && (event.queryStringParameters.q || event.queryStringParameters.query || '')).trim();
+
+    console.log('Resolved search query:', searchQuery || '(empty)');
+
     const platform = (body.platform || '').trim();
-    const externalId = (body.externalId || '').trim();
+    const externalId = (body.externalId || body.external_id || '').trim();
+
+    // Validation
+    if (!searchQuery && !externalId) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ 
+          success: false, 
+          error: 'Search query is required' 
+        }),
+      };
+    }
 
     // NEW: Support direct externalId lookup (preferred for refresh)
     if (externalId) {
@@ -96,15 +127,18 @@ exports.handler = async (event) => {
       };
     }
 
-    // FALLBACK: Original search behavior (unchanged)
-    if (!query) {
+    // FALLBACK: Original search behavior
+    if (!searchQuery) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: 'Search query is required' }),
+        body: JSON.stringify({ 
+          success: false, 
+          error: 'Search query is required' 
+        }),
       };
     }
 
-    const fullQuery = platform ? `${query} ${platform}` : query;
+    const fullQuery = platform ? `${searchQuery} ${platform}` : searchQuery;
 
     const searchUrl = new URL('https://www.pricecharting.com/api/products');
     searchUrl.searchParams.set('t', apiKey);
@@ -142,7 +176,7 @@ exports.handler = async (event) => {
       };
     }
 
-    // Normalize results (unchanged from your original code)
+    // Normalize results (unchanged)
     const results = (pcData.products || []).map((item) => ({
       source: 'pricecharting',
       externalId: item.id || null,
