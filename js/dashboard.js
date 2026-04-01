@@ -517,7 +517,16 @@ function selectNextSubmission() {
   }
 }
 
+function bindEvents() {
+  if (searchInput) searchInput.addEventListener('input', (e) => {
+    state.searchTerm = e.target.value;
+    applyFiltersAndSort();
+  });
 
+  if (sortSelect) sortSelect.addEventListener('change', (e) => {
+    state.sortMode = e.target.value;
+    applyFiltersAndSort();
+  });
 
   filterButtons.forEach(btn => {
     btn.addEventListener('click', () => {
