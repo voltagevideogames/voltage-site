@@ -1001,7 +1001,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <img src="images/voltage-logo.png" alt="Voltage" class="h-8 w-auto">
           <span class="heading-font text-xl neon-text">Voltage 2.0</span>
         </div>
-        <button onclick="closeAuthModal()" class="text-gray-400 hover:text-white text-2xl leading-none">×</button>
+        <button onclick="closeAuthModal()" type="button" class="text-gray-400 hover:text-white text-2xl leading-none">×</button>
       </div>
 
       <div class="p-8">
@@ -1034,11 +1034,11 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
 
           <div class="flex gap-3 pt-4">
-            <button onclick="logInWithGamertag()" 
+            <button onclick="logInWithGamertag()" type="button"
                     class="flex-1 py-4 bg-black border border-[var(--teal)] hover:bg-[var(--teal)]/10 text-[var(--teal)] font-medium transition">
               Log In
             </button>
-            <button onclick="signUpWithGamertag()" 
+            <button onclick="signUpWithGamertag()" type="button"
                     class="flex-1 py-4 bg-gradient-to-r from-[var(--teal)] to-[var(--yellow)] text-black font-semibold transition">
               Sign Up
             </button>
@@ -1055,8 +1055,8 @@ document.addEventListener('DOMContentLoaded', function() {
   <!-- SUPABASE AUTH SCRIPT -->
   <script>
     // Supabase Client
-    const supabaseUrl = https://kdqdebpcemviaubbiuwl.supabase.co  ;
-    const supabaseAnonKey = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkcWRlYnBjZW12aWF1YmJpdXdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNjg3NTAsImV4cCI6MjA4OTk0NDc1MH0.QZHcD2RRl5rXkuaVOXPxYxFSABE_5EjsmmDaRbCktNI ;
+    const supabaseUrl = 'https://kdqdebpcemviaubbiuwl.supabase.co';
+    const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkcWRlYnBjZW12aWF1YmJpdXdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNjg3NTAsImV4cCI6MjA4OTk0NDc1MH0.QZHcD2RRl5rXkuaVOXPxYxFSABE_5EjsmmDaRbCktNI';
    const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
 
     let isSignupMode = false;
