@@ -826,9 +826,9 @@ document.getElementById('game-search-input')?.addEventListener('keydown', (e) =>
     searchGames();
   }
 });
-// ====================== GAMERTAG TEASER ======================
+// ====================== GAMERTAG LOGIN ======================
 function gamertagLoginClick() {
-  alert("Gamertag login & Collector Vault access coming soon.\n\nSign up for updates below to be notified when Voltage 2.0 launches.");
+  openAuthModal();
 }
 
 // ====================== EVENT LISTENERS ======================
@@ -1171,10 +1171,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
 
-    // Override the existing gamertagLoginClick to open the modal
-    window.gamertagLoginClick = function() {
-      openAuthModal();
-    };
+ 
 
     // Make modal functions globally available
     window.openAuthModal = openAuthModal;
