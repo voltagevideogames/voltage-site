@@ -41,36 +41,36 @@ exports.handler = async (event) => {
       };
     }
 
-    // Extract fields
-const cashPercentUnder30 = Number(body.cash_percent_under_30);
-const cashPercent30To100 = Number(body.cash_percent_30_to_100);
-const creditMultiplier = Number(body.credit_multiplier);
-const maxAutoOfferValue = Number(body.max_auto_offer_value);
+    // Extract fields (camelCase JS variables)
+    const cashPercentUnder30 = Number(body.cash_percent_under_30);
+    const cashPercent30To100 = Number(body.cash_percent_30_to_100);
+    const creditMultiplier = Number(body.credit_multiplier);
+    const maxAutoOfferValue = Number(body.max_auto_offer_value);
 
-// Validation
-if (
-  !Number.isFinite(cashPercentUnder30) ||
-  !Number.isFinite(cashPercent30To100) ||
-  !Number.isFinite(creditMultiplier) ||
-  !Number.isFinite(maxAutoOfferValue)
-) {
-  console.error('Missing or invalid pricing fields');
-  return {
-    statusCode: 400,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      success: false,
-      error: 'All fields are required and must be valid numbers'
-    }),
-  };
-}
+    // Validation
+    if (
+      !Number.isFinite(cashPercentUnder30) ||
+      !Number.isFinite(cashPercent30To100) ||
+      !Number.isFinite(creditMultiplier) ||
+      !Number.isFinite(maxAutoOfferValue)
+    ) {
+      console.error('Missing or invalid pricing fields');
+      return {
+        statusCode: 400,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          success: false,
+          error: 'All fields are required and must be valid numbers'
+        }),
+      };
+    }
 
-if (
-  cashPercentUnder30 <= 0 ||
-  cashPercent30To100 <= 0 ||
-  creditMultiplier <= 0 ||
-  maxAutoOfferValue <= 0
-) {
+    if (
+      cashPercentUnder30 <= 0 ||
+      cashPercent30To100 <= 0 ||
+      creditMultiplier <= 0 ||
+      maxAutoOfferValue <= 0
+    ) {
       console.error('Pricing values must be positive numbers');
       return {
         statusCode: 400,
@@ -82,20 +82,20 @@ if (
     }
 
     console.log('Updating pricing config with values:', {
-      cash_percent_under_30,
-      cash_percent_30_to_100,
-      credit_multiplier,
-      max_auto_offer_value
+      cashPercentUnder30,
+      cashPercent30To100,
+      creditMultiplier,
+      maxAutoOfferValue
     });
 
     // Create Supabase client
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const updateData = {
-      cash_percent_under_30,
-      cash_percent_30_to_100,
-      credit_multiplier,
-      max_auto_offer_value,
+      cash_percent_under_30: cashPercentUnder30,
+      cash_percent_30_to_100: cashPercent30To100,
+      credit_multiplier: creditMultiplier,
+      max_auto_offer_value: maxAutoOfferValue,
       updated_at: new Date().toISOString()
     };
 
