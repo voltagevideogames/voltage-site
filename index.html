@@ -828,7 +828,12 @@ document.getElementById('game-search-input')?.addEventListener('keydown', (e) =>
 });
 // ====================== GAMERTAG LOGIN ======================
 function gamertagLoginClick() {
-  openAuthModal();
+  const modal = document.getElementById('auth-modal');
+  if (!modal) {
+    console.error('Auth modal not found');
+    return;
+  }
+  modal.classList.remove('hidden');
 }
 
 // ====================== EVENT LISTENERS ======================
@@ -1050,8 +1055,8 @@ document.addEventListener('DOMContentLoaded', function() {
   <!-- SUPABASE AUTH SCRIPT -->
   <script>
     // Supabase Client
-    const supabaseUrl = 'YOUR_SUPABASE_URL';
-    const supabaseAnonKey = 'YOUR_SUPABASE_ANON_KEY';
+    const supabaseUrl = https://kdqdebpcemviaubbiuwl.supabase.co  ;
+    const supabaseAnonKey = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkcWRlYnBjZW12aWF1YmJpdXdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNjg3NTAsImV4cCI6MjA4OTk0NDc1MH0.QZHcD2RRl5rXkuaVOXPxYxFSABE_5EjsmmDaRbCktNI ;
    const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
 
     let isSignupMode = false;
