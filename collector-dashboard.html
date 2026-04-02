@@ -217,86 +217,88 @@
   </footer>
 
   <!-- SUPABASE SCRIPT -->
-  <script>
-    // Supabase Client
-    const supabaseUrl = 'https://kdqdebpcemviaubbiuwl.supabase.co';
-    const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkcWRlYnBjZW12aWF1YmJpdXdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNjg3NTAsImV4cCI6MjA4OTk0NDc1MH0.QZHcD2RRl5rXkuaVOXPxYxFSABE_5EjsmmDaRbCktNI';
-    const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+<script>
+  // Supabase Client
+  const supabaseUrl = 'https://kdqdebpcemviaubbiuwl.supabase.co';
+  const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkcWRlYnBjZW12aWF1YmJpdXdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNjg3NTAsImV4cCI6MjA4OTk0NDc1MH0.QZHcD2RRl5rXkuaVOXPxYxFSABE_5EjsmmDaRbCktNI';
+  const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
 
-    console.log("collector dashboard loaded");
+  console.log("collector dashboard loaded");
 
-    let currentUser = null;
-async function loadVaultItems(userId) {
-  const { data, error } = await supabase
-    .from('vault_items')
-    .select('*')
-    .eq('user_id', userId)
-    .order('title', { ascending: true });
+  let currentUser = null;
 
-  if (error) {
-    console.error('Error loading vault items:', error);
-    return [];
+  async function loadVaultItems(userId) {
+    const { data, error } = await supabaseClient
+      .from('vault_items')
+      .select('*')
+      .eq('user_id', userId)
+      .order('title', { ascending: true });
+
+    if (error) {
+      console.error('Error loading vault items:', error);
+      return [];
+    }
+
+    console.log('Vault items:', data);
+    return data || [];
   }
 
-  console.log('Vault items:', data);
-  return data || [];
-}
-    // Check authentication and load profile
-    async function initDashboard() {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        console.log("No session – redirecting to index");
-        window.location.href = 'index.html';
-        return;
-      }
+  // Check authentication and load profile
+  async function initDashboard() {
+    const { data: { session } } = await supabaseClient.auth.getSession();
 
-      currentUser = session.user;
-      console.log("user authenticated");
-
-// Load profile
-const { data: profile, error } = await supabase
-  .from('profiles')
-  .select('*')
-  .eq('id', currentUser.id)
-  .maybeSingle();
-
-if (error || !profile) {
-  console.warn("No profile found — redirecting to onboarding");
-  window.location.href = 'collector-onboarding.html';
-  return;
-}
-
-renderHeader(profile);
-const vaultItems = await loadVaultItems(currentUser.id);
-    }
-
-    function renderHeader(profile) {
-      const gamertagEl = document.getElementById('user-gamertag');
-      const welcomeEl = document.getElementById('welcome-message');
-
-      const gamertag = profile && profile.gamertag ? profile.gamertag : 'Collector';
-      
-      gamertagEl.textContent = gamertag;
-      welcomeEl.textContent = `Welcome back, ${gamertag}`;
-      
-      console.log("profile loaded");
-    }
-
-    async function logout() {
-      console.log("logout fired");
-      
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error(error);
-      }
-      
+    if (!session) {
+      console.log("No session – redirecting to index");
       window.location.href = 'index.html';
+      return;
     }
 
-    // Initialize on load
-    document.addEventListener('DOMContentLoaded', initDashboard);
-  </script>
+    currentUser = session.user;
+    console.log("user authenticated");
+
+    // Load profile
+    const { data: profile, error } = await supabaseClient
+      .from('profiles')
+      .select('*')
+      .eq('id', currentUser.id)
+      .maybeSingle();
+
+    if (error || !profile) {
+      console.warn("No profile found — redirecting to onboarding");
+      window.location.href = 'collector-onboarding.html';
+      return;
+    }
+
+    renderHeader(profile);
+    const vaultItems = await loadVaultItems(currentUser.id);
+  }
+
+  function renderHeader(profile) {
+    const gamertagEl = document.getElementById('user-gamertag');
+    const welcomeEl = document.getElementById('welcome-message');
+
+    const gamertag = profile && profile.gamertag ? profile.gamertag : 'Collector';
+
+    gamertagEl.textContent = gamertag;
+    welcomeEl.textContent = `Welcome back, ${gamertag}`;
+
+    console.log("profile loaded");
+  }
+
+  async function logout() {
+    console.log("logout fired");
+
+    const { error } = await supabaseClient.auth.signOut();
+    if (error) {
+      console.error(error);
+    }
+
+    window.location.href = 'index.html';
+  }
+
+  // Initialize on load
+  document.addEventListener('DOMContentLoaded', initDashboard);
+</script>
 
 </body>
 </html>
