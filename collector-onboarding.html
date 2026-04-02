@@ -106,95 +106,92 @@
     </div>
   </div>
 
-  <!-- SUPABASE AUTH SCRIPT -->
-  <script>
-    // Supabase Client
-    const supabaseUrl = 'https://kdqdebpcemviaubbiuwl.supabase.co';
-    const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkcWRlYnBjZW12aWF1YmJpdXdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNjg3NTAsImV4cCI6MjA4OTk0NDc1MH0.QZHcD2RRl5rXkuaVOXPxYxFSABE_5EjsmmDaRbCktNI';
-    const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+  <!-- SUPABASE AUTH SCRIPT --><script>
+  // Supabase Client
+  const supabaseUrl = 'https://kdqdebpcemviaubbiuwl.supabase.co';
+  const supabaseAnonKey = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkcWRlYnBjZW12aWF1YmJpdXdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNjg3NTAsImV4cCI6MjA4OTk0NDc1MH0.QZHcD2RRl5rXkuaVOXPxYxFSABE_5EjsmmDaRbCktNI
+  const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
 
-    console.log("onboarding page loaded");
+  console.log("onboarding page loaded");
 
-    // Check if user is logged in
-    async function checkAuth() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        console.log("No active session – redirecting to index");
-        window.location.href = 'index.html';
-        return null;
-      }
-      return session.user;
+  // Check if user is logged in
+  async function checkAuth() {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) {
+      console.log("No active session – redirecting to index");
+      window.location.href = 'index.html';
+      return null;
+    }
+    return session.user;
+  }
+
+  // Save gamertag to profiles table
+  async function saveGamertag() {
+    const btn = document.getElementById('save-btn');
+    const statusEl = document.getElementById('status');
+    const gamertagInput = document.getElementById('gamertag-input');
+    const gamertag = gamertagInput.value.trim();
+
+    console.log("saving gamertag");
+
+    // Validation
+    if (!gamertag || gamertag.length < 3) {
+      showStatus('Gamertag must be at least 3 characters', true);
+      return;
     }
 
-    // Save gamertag to profiles table
-    async function saveGamertag() {
-      const btn = document.getElementById('save-btn');
-      const statusEl = document.getElementById('status');
-      const gamertagInput = document.getElementById('gamertag-input');
-      const gamertag = gamertagInput.value.trim();
+    btn.disabled = true;
+    btn.innerHTML = `
+      <i class="fa-solid fa-spinner fa-spin mr-2"></i>
+      Saving...
+    `;
 
-      console.log("saving gamertag");
+    try {
+      const user = await checkAuth();
+      if (!user) return;
 
-      // Validation
-      if (!gamertag || gamertag.length < 3) {
-        showStatus('Gamertag must be at least 3 characters', true);
-        return;
-      }
+      const { error } = await supabaseClient
+        .from('profiles')
+        .upsert({
+          id: user.id,
+          gamertag: gamertag,
+          role: 'collector'
+        });
 
-      btn.disabled = true;
-      btn.innerHTML = `
-        <i class="fa-solid fa-spinner fa-spin mr-2"></i>
-        Saving...
-      `;
-
-      try {
-        const user = await checkAuth();
-        if (!user) return;
-
-        const { error } = await supabase
-          .from('profiles')
-          .upsert({
-            id: user.id,
-            gamertag: gamertag,
-            role: 'collector'
-          });
-
-        if (error) {
-          // Handle unique constraint or other errors
-          if (error.code === '23505') {
-            showStatus('This gamertag is already taken. Please choose another.', true);
-          } else {
-            showStatus('Error saving gamertag. Please try again.', true);
-          }
-          console.error(error);
+      if (error) {
+        if (error.code === '23505') {
+          showStatus('This gamertag is already taken. Please choose another.', true);
         } else {
-          showStatus('Gamertag saved successfully! Redirecting...', false);
-          console.log("profile created");
-          setTimeout(() => {
-            window.location.href = 'collector-dashboard.html';
-          }, 1000);
+          showStatus('Error saving gamertag. Please try again.', true);
         }
-      } catch (err) {
-        console.error(err);
-        showStatus('Unexpected error. Please try again.', true);
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Save Gamertag & Continue';
+        console.error(error);
+      } else {
+        showStatus('Gamertag saved successfully! Redirecting...', false);
+        console.log("profile created");
+        setTimeout(() => {
+          window.location.href = 'collector-dashboard.html';
+        }, 1000);
       }
+    } catch (err) {
+      console.error(err);
+      showStatus('Unexpected error. Please try again.', true);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Save Gamertag & Continue';
     }
+  }
 
-    function showStatus(message, isError) {
-      const statusEl = document.getElementById('status');
-      statusEl.textContent = message;
-      statusEl.className = `block text-sm py-3 px-4 rounded text-center ${isError ? 'bg-red-950/70 text-red-400 border border-red-500/30' : 'bg-emerald-950/70 text-emerald-400 border border-emerald-500/30'}`;
-      statusEl.classList.remove('hidden');
-    }
+  function showStatus(message, isError) {
+    const statusEl = document.getElementById('status');
+    statusEl.textContent = message;
+    statusEl.className = `block text-sm py-3 px-4 rounded text-center ${isError ? 'bg-red-950/70 text-red-400 border border-red-500/30' : 'bg-emerald-950/70 text-emerald-400 border border-emerald-500/30'}`;
+    statusEl.classList.remove('hidden');
+  }
 
-    // Initialize
-    document.addEventListener('DOMContentLoaded', async () => {
-      await checkAuth();
-    });
-  </script>
-
+  // Initialize
+  document.addEventListener('DOMContentLoaded', async () => {
+    await checkAuth();
+  });
+</script>
 </body>
 </html>
