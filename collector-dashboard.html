@@ -226,7 +226,21 @@
     console.log("collector dashboard loaded");
 
     let currentUser = null;
+async function loadVaultItems(userId) {
+  const { data, error } = await supabase
+    .from('vault_items')
+    .select('*')
+    .eq('user_id', userId)
+    .order('title', { ascending: true });
 
+  if (error) {
+    console.error('Error loading vault items:', error);
+    return [];
+  }
+
+  console.log('Vault items:', data);
+  return data || [];
+}
     // Check authentication and load profile
     async function initDashboard() {
       const { data: { session } } = await supabase.auth.getSession();
@@ -253,7 +267,8 @@ if (error || !profile) {
   return;
 }
 
-      renderHeader(profile);
+renderHeader(profile);
+const vaultItems = await loadVaultItems(currentUser.id);
     }
 
     function renderHeader(profile) {
