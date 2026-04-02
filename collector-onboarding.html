@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="Voltage Video Games – Complete your collector profile and choose your Gamertag for Voltage 2.0." />
+  <title>Voltage 2.0 • Choose Your Gamertag</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
+
+  <!-- Supabase JS Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    :root {
+      --teal: #00E5B8;
+      --yellow: #FFEB3B;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #0a0a0a;
+      color: #f0f0f0;
+    }
+
+    .heading-font {
+      font-family: 'Press Start 2P', system-ui;
+    }
+
+    .neon-text {
+      text-shadow: 0 0 12px var(--teal), 0 0 24px var(--teal), 0 0 48px var(--yellow);
+    }
+
+    .crt::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(to bottom, rgba(0,0,0,0.10) 0px, rgba(0,0,0,0.10) 2px, transparent 2px, transparent 4px);
+      pointer-events: none;
+      z-index: 10;
+      animation: flicker 0.18s infinite alternate;
+    }
+
+    @keyframes flicker {
+      0% { opacity: 0.97; }
+      100% { opacity: 1; }
+    }
+  </style>
+</head>
+<body class="crt min-h-screen flex items-center justify-center bg-black">
+
+  <div class="max-w-md w-full mx-auto px-6 py-12">
+    <!-- Logo / Brand -->
+    <div class="flex justify-center mb-10">
+      <img src="images/voltage-logo.png" alt="Voltage Video Games" class="h-16 w-auto">
+    </div>
+
+    <div class="bg-zinc-950 border border-[var(--teal)]/50 rounded-3xl p-10 shadow-2xl">
+      <div class="text-center mb-8">
+        <h1 class="heading-font text-4xl neon-text mb-3">Welcome Collector</h1>
+        <p class="text-xl text-[var(--yellow)]">Choose Your Gamertag</p>
+        <p class="text-gray-400 mt-3 text-sm max-w-xs mx-auto">
+          This will be your permanent identity in the Voltage 2.0 collector ecosystem.
+        </p>
+      </div>
+
+      <div class="space-y-6">
+        <!-- Gamertag Input -->
+        <div>
+          <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Gamertag</label>
+          <input 
+            id="gamertag-input" 
+            type="text" 
+            maxlength="20"
+            placeholder="RetroKing87"
+            class="w-full bg-black border border-[var(--teal)]/60 p-5 text-white focus:border-[var(--yellow)] text-lg rounded-none focus:outline-none">
+          <p class="text-xs text-gray-500 mt-1">3+ characters • No spaces • Unique</p>
+        </div>
+
+        <!-- Status Area -->
+        <div id="status" class="hidden text-sm py-3 px-4 rounded text-center"></div>
+
+        <!-- Save Button -->
+        <button 
+          onclick="saveGamertag()"
+          type="button"
+          id="save-btn"
+          class="w-full py-5 bg-gradient-to-r from-[var(--teal)] to-[var(--yellow)] text-black font-semibold text-lg hover:scale-[1.02] transition flex items-center justify-center gap-3">
+          <span>Save Gamertag & Continue</span>
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+
+        <div class="text-center text-xs text-gray-500">
+          This gamertag cannot be changed later.
+        </div>
+      </div>
+    </div>
+
+    <!-- Subtle footer note -->
+    <div class="text-center mt-8 text-xs text-gray-500">
+      Voltage 2.0 • Collector Platform • All trades stay with Voltage
+    </div>
+  </div>
+
+  <!-- SUPABASE AUTH SCRIPT -->
+  <script>
+    // Supabase Client
+    const supabaseUrl = 'https://kdqdebpcemviaubbiuwl.supabase.co';
+    const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkcWRlYnBjZW12aWF1YmJpdXdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNjg3NTAsImV4cCI6MjA4OTk0NDc1MH0.QZHcD2RRl5rXkuaVOXPxYxFSABE_5EjsmmDaRbCktNI';
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+    console.log("onboarding page loaded");
+
+    // Check if user is logged in
+    async function checkAuth() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.log("No active session – redirecting to index");
+        window.location.href = 'index.html';
+        return null;
+      }
+      return session.user;
+    }
+
+    // Save gamertag to profiles table
+    async function saveGamertag() {
+      const btn = document.getElementById('save-btn');
+      const statusEl = document.getElementById('status');
+      const gamertagInput = document.getElementById('gamertag-input');
+      const gamertag = gamertagInput.value.trim();
+
+      console.log("saving gamertag");
+
+      // Validation
+      if (!gamertag || gamertag.length < 3) {
+        showStatus('Gamertag must be at least 3 characters', true);
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = `
+        <i class="fa-solid fa-spinner fa-spin mr-2"></i>
+        Saving...
+      `;
+
+      try {
+        const user = await checkAuth();
+        if (!user) return;
+
+        const { error } = await supabase
+          .from('profiles')
+          .upsert({
+            id: user.id,
+            gamertag: gamertag,
+            role: 'collector'
+          });
+
+        if (error) {
+          // Handle unique constraint or other errors
+          if (error.code === '23505') {
+            showStatus('This gamertag is already taken. Please choose another.', true);
+          } else {
+            showStatus('Error saving gamertag. Please try again.', true);
+          }
+          console.error(error);
+        } else {
+          showStatus('Gamertag saved successfully! Redirecting...', false);
+          console.log("profile created");
+          setTimeout(() => {
+            window.location.href = 'collector-dashboard.html';
+          }, 1000);
+        }
+      } catch (err) {
+        console.error(err);
+        showStatus('Unexpected error. Please try again.', true);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Save Gamertag & Continue';
+      }
+    }
+
+    function showStatus(message, isError) {
+      const statusEl = document.getElementById('status');
+      statusEl.textContent = message;
+      statusEl.className = `block text-sm py-3 px-4 rounded text-center ${isError ? 'bg-red-950/70 text-red-400 border border-red-500/30' : 'bg-emerald-950/70 text-emerald-400 border border-emerald-500/30'}`;
+      statusEl.classList.remove('hidden');
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', async () => {
+      await checkAuth();
+    });
+  </script>
+
+</body>
+</html>
