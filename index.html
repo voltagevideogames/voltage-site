@@ -17,6 +17,9 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
 
+  <!-- Supabase JS Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -983,6 +986,202 @@ document.addEventListener('DOMContentLoaded', function() {
     Voltage Video Games • 437 S Warren Street, Syracuse, NY 13202<br>
     © 2026 Voltage Video Games. All rights reserved.
   </footer>
+
+  <!-- AUTH MODAL -->
+  <div id="auth-modal" class="hidden fixed inset-0 bg-black/90 flex items-center justify-center z-[100]">
+    <div class="bg-zinc-950 border border-[var(--teal)]/50 rounded-2xl w-full max-w-md mx-4 overflow-hidden">
+      <!-- Modal Header -->
+      <div class="flex justify-between items-center px-6 py-5 border-b border-[var(--teal)]/30">
+        <div class="flex items-center gap-3">
+          <img src="images/voltage-logo.png" alt="Voltage" class="h-8 w-auto">
+          <span class="heading-font text-xl neon-text">Voltage 2.0</span>
+        </div>
+        <button onclick="closeAuthModal()" class="text-gray-400 hover:text-white text-2xl leading-none">×</button>
+      </div>
+
+      <div class="p-8">
+        <h2 id="modal-title" class="text-2xl font-semibold mb-6 text-center">Gamertag Login</h2>
+
+        <div id="auth-status" class="hidden mb-4 text-sm text-center py-2 rounded"></div>
+
+        <!-- Login / Signup Form -->
+        <div class="space-y-5">
+          <div>
+            <label class="block text-sm mb-1.5 text-[var(--teal)]">Email</label>
+            <input id="auth-email" type="email" 
+                   class="w-full bg-black border border-[var(--teal)]/60 p-4 text-white focus:border-[var(--yellow)] rounded-none" 
+                   placeholder="you@example.com">
+          </div>
+
+          <div>
+            <label class="block text-sm mb-1.5 text-[var(--teal)]">Password</label>
+            <input id="auth-password" type="password" 
+                   class="w-full bg-black border border-[var(--teal)]/60 p-4 text-white focus:border-[var(--yellow)] rounded-none" 
+                   placeholder="••••••••">
+          </div>
+
+          <!-- Gamertag (visible only on signup) -->
+          <div id="gamertag-field" class="hidden">
+            <label class="block text-sm mb-1.5 text-[var(--teal)]">Gamertag</label>
+            <input id="auth-gamertag" type="text" 
+                   class="w-full bg-black border border-[var(--teal)]/60 p-4 text-white focus:border-[var(--yellow)] rounded-none" 
+                   placeholder="RetroKing87" maxlength="20">
+          </div>
+
+          <div class="flex gap-3 pt-4">
+            <button onclick="logInWithGamertag()" 
+                    class="flex-1 py-4 bg-black border border-[var(--teal)] hover:bg-[var(--teal)]/10 text-[var(--teal)] font-medium transition">
+              Log In
+            </button>
+            <button onclick="signUpWithGamertag()" 
+                    class="flex-1 py-4 bg-gradient-to-r from-[var(--teal)] to-[var(--yellow)] text-black font-semibold transition">
+              Sign Up
+            </button>
+          </div>
+        </div>
+
+        <div class="text-center text-xs text-gray-500 mt-8">
+          Voltage 2.0 Collector Dashboard • All buying/selling stays with Voltage
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUPABASE AUTH SCRIPT -->
+  <script>
+    // Supabase Client
+    const supabaseUrl = 'YOUR_SUPABASE_URL';
+    const supabaseAnonKey = 'YOUR_SUPABASE_ANON_KEY';
+   const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+    let isSignupMode = false;
+
+    function openAuthModal() {
+      document.getElementById('auth-modal').classList.remove('hidden');
+      document.getElementById('auth-status').classList.add('hidden');
+      document.getElementById('auth-email').value = '';
+      document.getElementById('auth-password').value = '';
+      document.getElementById('auth-gamertag').value = '';
+      toggleGamertagField(false);
+    }
+
+    function closeAuthModal() {
+      document.getElementById('auth-modal').classList.add('hidden');
+    }
+
+    function toggleGamertagField(show) {
+      const field = document.getElementById('gamertag-field');
+      if (show) {
+        field.classList.remove('hidden');
+        isSignupMode = true;
+        document.getElementById('modal-title').textContent = 'Create Collector Account';
+      } else {
+        field.classList.add('hidden');
+        isSignupMode = false;
+        document.getElementById('modal-title').textContent = 'Gamertag Login';
+      }
+    }
+
+    // Show status message
+    function showAuthStatus(message, isError = false) {
+      const statusEl = document.getElementById('auth-status');
+      statusEl.textContent = message;
+      statusEl.className = `mb-4 text-sm text-center py-2 rounded ${isError ? 'bg-red-950/50 text-red-400' : 'bg-emerald-950/50 text-emerald-400'}`;
+      statusEl.classList.remove('hidden');
+    }
+
+    async function signUpWithGamertag() {
+      const email = document.getElementById('auth-email').value.trim();
+      const password = document.getElementById('auth-password').value.trim();
+      const gamertag = document.getElementById('auth-gamertag').value.trim();
+
+      if (!email || !password) {
+        showAuthStatus('Email and password are required', true);
+        return;
+      }
+
+      if (isSignupMode && (!gamertag || gamertag.length < 3)) {
+        showAuthStatus('Gamertag must be at least 3 characters', true);
+        return;
+      }
+
+      showAuthStatus('Creating account...', false);
+
+      try {
+        // 1. Create auth user
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: email,
+          password: password,
+        });
+
+        if (authError) throw authError;
+
+        // 2. Insert profile (if user was created)
+        if (authData.user) {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert({
+              id: authData.user.id,
+              gamertag: gamertag || email.split('@')[0],
+              role: 'collector'
+            });
+
+          if (profileError) {
+            console.warn('Profile insert warning:', profileError);
+            // Continue anyway – user is created
+          }
+        }
+
+        showAuthStatus('Account created! Redirecting...', false);
+        setTimeout(() => {
+          window.location.href = 'dashboard.html';
+        }, 800);
+      } catch (err) {
+        console.error(err);
+        showAuthStatus(err.message || 'Signup failed. Please try again.', true);
+      }
+    }
+
+    async function logInWithGamertag() {
+      const email = document.getElementById('auth-email').value.trim();
+      const password = document.getElementById('auth-password').value.trim();
+
+      if (!email || !password) {
+        showAuthStatus('Email and password are required', true);
+        return;
+      }
+
+      showAuthStatus('Logging in...', false);
+
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email,
+          password: password,
+        });
+
+        if (error) throw error;
+
+        showAuthStatus('Login successful! Redirecting...', false);
+        setTimeout(() => {
+          window.location.href = 'dashboard.html';
+        }, 600);
+      } catch (err) {
+        console.error(err);
+        showAuthStatus(err.message || 'Invalid email or password', true);
+      }
+    }
+
+    // Override the existing gamertagLoginClick to open the modal
+    window.gamertagLoginClick = function() {
+      openAuthModal();
+    };
+
+    // Make modal functions globally available
+    window.openAuthModal = openAuthModal;
+    window.closeAuthModal = closeAuthModal;
+    window.signUpWithGamertag = signUpWithGamertag;
+    window.logInWithGamertag = logInWithGamertag;
+  </script>
 
 </body>
 </html>
