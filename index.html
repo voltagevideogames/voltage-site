@@ -1057,7 +1057,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Supabase Client
     const supabaseUrl = 'https://kdqdebpcemviaubbiuwl.supabase.co';
     const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkcWRlYnBjZW12aWF1YmJpdXdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNjg3NTAsImV4cCI6MjA4OTk0NDc1MH0.QZHcD2RRl5rXkuaVOXPxYxFSABE_5EjsmmDaRbCktNI';
-   const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+   const authSupabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
 
     let isSignupMode = false;
 
@@ -1116,7 +1116,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       try {
         // 1. Create auth user
-        const { data: authData, error: authError } = await supabase.auth.signUp({
+       const { data: authData, error: authError } = await authSupabase.auth.signUp({
           email: email,
           password: password,
         });
@@ -1125,7 +1125,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 2. Insert profile (if user was created)
         if (authData.user) {
-          const { error: profileError } = await supabase
+         const { error: profileError } = await authSupabase
             .from('profiles')
             .insert({
               id: authData.user.id,
@@ -1162,7 +1162,7 @@ document.addEventListener('DOMContentLoaded', function() {
       showAuthStatus('Logging in...', false);
 
       try {
-        const { data, error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await authSupabase.auth.signInWithPassword({
           email: email,
           password: password,
         });
