@@ -35,6 +35,11 @@ exports.handler = async (event) => {
     // ------------------------------------------------------------
     const body = JSON.parse(event.body || '{}');
 
+    const isBatchRequest =
+      Array.isArray(body.items) ||
+      Array.isArray(body.games) ||
+      Array.isArray(body.trade_items);
+
     const rawItems = Array.isArray(body.items)
       ? body.items
       : Array.isArray(body.games)
@@ -239,7 +244,7 @@ exports.handler = async (event) => {
       } else {
         offerType = 'manual_review';
         inventoryClass = 'strategic';
-        manualReviewReason = `Market value exceeds auto-offer threshold`;
+        manualReviewReason = 'Market value exceeds auto-offer threshold';
       }
 
       results.push({
@@ -273,7 +278,14 @@ exports.handler = async (event) => {
     }
 
     // ------------------------------------------------------------
-    // Totals for frontend
+    // SINGLE ITEM RESPONSE (this is what your current frontend needs)
+    // ------------------------------------------------------------
+    if (!isBatchRequest && results.length === 1) {
+      return jsonResponse(200, results[0]);
+    }
+
+    // ------------------------------------------------------------
+    // Totals for batch frontend use
     // ------------------------------------------------------------
     const totals = results.reduce(
       (acc, item) => {
