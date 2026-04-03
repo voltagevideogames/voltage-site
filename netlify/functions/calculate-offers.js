@@ -188,23 +188,6 @@ exports.handler = async (event) => {
   const cashHigh = roundMoney(cashAmount * 1.1);
   const creditLow = roundMoney(cashLow * creditMultiplier);
   const creditHigh = roundMoney(cashHigh * creditMultiplier);
-
-  return jsonResponse(200, {
-    success: true,
-    offer_type: 'instant_range',
-    inventory_class: 'evergreen',
-    market_value: roundMoney(unitValue),
-    unit_value: roundMoney(unitValue),
-    cash_amount: cashAmount,
-    credit_amount: creditAmount,
-    cash_low: cashLow,
-    cash_high: cashHigh,
-    credit_low: creditLow,
-    credit_high: creditHigh,
-    pricing_source: 'pricecharting_product',
-    manual_review_reason: null
-  });
-} else {
   return jsonResponse(200, {
     success: true,
     offer_type: 'manual_review',
@@ -221,4 +204,13 @@ exports.handler = async (event) => {
     manual_review_reason: 'Market value exceeds auto-offer threshold'
   });
 }
+  } catch (err) {
+    console.error('calculate-offers error:', err);
+    return jsonResponse(500, {
+      success: false,
+      error: 'Internal pricing error',
+      offer_type: 'manual_review',
+      manual_review_reason: 'Calculation failed'
+    });
+  }
 };
