@@ -84,10 +84,31 @@
         <a href="#about" class="hover:text-[var(--yellow)] transition">Visit Store</a>
       </div>
 
-      <button onclick="gamertagLoginClick()" 
-              class="px-7 py-2.5 text-sm font-medium border border-[var(--teal)] hover:bg-[var(--teal)]/10 transition">
-        Gamertag Login
-      </button>
+     <div id="nav-auth-area" class="flex items-center gap-3">
+  <button id="nav-login-btn"
+          onclick="gamertagLoginClick()"
+          class="px-7 py-2.5 text-sm font-medium border border-[var(--teal)] hover:bg-[var(--teal)]/10 transition">
+    Gamertag Login
+  </button>
+
+  <div id="nav-user-area" class="hidden items-center gap-3">
+    <div id="nav-gamertag"
+         class="px-4 py-2 text-sm border border-[var(--yellow)]/40 text-[var(--yellow)] bg-black rounded-full">
+      Collector
+    </div>
+
+    <a href="collector-dashboard.html"
+       class="px-5 py-2.5 text-sm font-medium border border-[var(--teal)] hover:bg-[var(--teal)]/10 transition">
+      Dashboard
+    </a>
+
+    <button id="nav-logout-btn"
+            type="button"
+            class="px-5 py-2.5 text-sm font-medium border border-red-500/40 hover:bg-red-950/30 text-red-400 transition">
+      Logout
+    </button>
+  </div>
+</div>
     </div>
   </nav>
 
@@ -1090,17 +1111,59 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Show status message
     function showAuthStatus(message, isError = false) {
-      const statusEl = document.getElementById('auth-status');
-      statusEl.textContent = message;
-      statusEl.className = `mb-4 text-sm text-center py-2 rounded ${isError ? 'bg-red-950/50 text-red-400' : 'bg-emerald-950/50 text-emerald-400'}`;
-      statusEl.classList.remove('hidden');
-    }
+  const statusEl = document.getElementById('auth-status');
+  statusEl.textContent = message;
+  statusEl.className = `mb-4 text-sm text-center py-2 rounded ${isError ? 'bg-red-950/50 text-red-400' : 'bg-emerald-950/50 text-emerald-400'}`;
+  statusEl.classList.remove('hidden');
+}
 
-    async function signUpWithGamertag() {
-      console.log("signUpWithGamertag fired");
-      const email = document.getElementById('auth-email').value.trim();
-      const password = document.getElementById('auth-password').value.trim();
-      const gamertag = document.getElementById('auth-gamertag').value.trim();
+async function updateNavbarAuthState() {
+  const loginBtn = document.getElementById('nav-login-btn');
+  const userArea = document.getElementById('nav-user-area');
+  const gamertagEl = document.getElementById('nav-gamertag');
+
+  if (!loginBtn || !userArea || !gamertagEl) return;
+
+  const { data: { session } } = await authSupabase.auth.getSession();
+
+  if (!session) {
+    loginBtn.classList.remove('hidden');
+    userArea.classList.add('hidden');
+    userArea.classList.remove('flex');
+    return;
+  }
+
+  const { data: profile, error } = await authSupabase
+    .from('profiles')
+    .select('gamertag')
+    .eq('id', session.user.id)
+    .maybeSingle();
+
+  const gamertag = (!error && profile && profile.gamertag)
+    ? profile.gamertag
+    : 'Collector';
+
+  gamertagEl.textContent = gamertag;
+  loginBtn.classList.add('hidden');
+  userArea.classList.remove('hidden');
+  userArea.classList.add('flex');
+}
+
+async function logoutFromIndex() {
+  const { error } = await authSupabase.auth.signOut();
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  window.location.href = 'index.html';
+}
+
+async function signUpWithGamertag() {
+  console.log("signUpWithGamertag fired");
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value.trim();
+  const gamertag = document.getElementById('auth-gamertag').value.trim();
 
       if (!email || !password) {
         showAuthStatus('Email and password are required', true);
@@ -1179,14 +1242,19 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
 
- 
+// Make modal functions globally available
+window.openAuthModal = openAuthModal;
+window.closeAuthModal = closeAuthModal;
+window.signUpWithGamertag = signUpWithGamertag;
+window.logInWithGamertag = logInWithGamertag;
+window.gamertagLoginClick = gamertagLoginClick;
 
-    // Make modal functions globally available
-    window.openAuthModal = openAuthModal;
-    window.closeAuthModal = closeAuthModal;
-    window.signUpWithGamertag = signUpWithGamertag;
-    window.logInWithGamertag = logInWithGamertag;
-  </script>
+document.addEventListener('DOMContentLoaded', async () => {
+  const logoutBtn = document.getElementById('nav-logout-btn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', logoutFromIndex);
+  }
 
-</body>
-</html>
+  await updateNavbarAuthState();
+});
+</script>
