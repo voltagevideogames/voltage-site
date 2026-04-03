@@ -691,6 +691,7 @@ async function searchGames() {
 let tradeList = [];
 
 function formatOfferDisplay(item) {
+  if (item.loading) return 'Calculating...';
   if (item.reviewRequired) return 'Review';
   if (item.cashOffer == null || item.creditOffer == null) return '—';
   return `${formatPrice(item.cashOffer)} cash / ${formatPrice(item.creditOffer)} credit`;
@@ -777,7 +778,8 @@ function addSelectedGameToTrade() {
     condition: '',
     cashOffer: null,
     creditOffer: null,
-    reviewRequired: false
+    reviewRequired: false,
+    loading: false
   });
 
   renderTradeList();
@@ -789,13 +791,63 @@ function removeTradeItem(index) {
   renderTradeList();
 }
 
-function updateTradeItemCondition(index, value) {
+async function updateTradeItemCondition(index, value) {
   tradeList[index].condition = value;
   tradeList[index].cashOffer = null;
   tradeList[index].creditOffer = null;
   tradeList[index].reviewRequired = false;
 
+  // If no condition chosen yet, just clear pricing and re-render
+  if (!value) {
+    renderTradeList();
+    return;
+  }
+
+  // Temporary loading state
+  tradeList[index].cashOffer = null;
+  tradeList[index].creditOffer = null;
+  tradeList[index].reviewRequired = false;
+  tradeList[index].loading = true;
   renderTradeList();
+
+  try {
+    const response = await fetch('/.netlify/functions/calculate-offers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        externalId: tradeList[index].externalId,
+        condition: value,
+        quantity: 1
+      })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || 'Failed to calculate preview pricing');
+    }
+
+    tradeList[index].loading = false;
+
+    if (result.offer_type === 'manual_review') {
+      tradeList[index].reviewRequired = true;
+      tradeList[index].cashOffer = null;
+      tradeList[index].creditOffer = null;
+    } else {
+      tradeList[index].reviewRequired = false;
+      tradeList[index].cashOffer = result.cash_amount ?? null;
+      tradeList[index].creditOffer = result.credit_amount ?? null;
+    }
+
+    renderTradeList();
+  } catch (err) {
+    console.error('Trade item pricing error:', err);
+    tradeList[index].loading = false;
+    tradeList[index].reviewRequired = true;
+    tradeList[index].cashOffer = null;
+    tradeList[index].creditOffer = null;
+    renderTradeList();
+  }
 }
 
 // ====================== FORM SUBMISSION ======================
@@ -1015,6 +1067,7 @@ window.updateTradeItemCondition = updateTradeItemCondition;
 
 });
 </script>
+
   <!-- 5. COLLECTOR VAULT PREVIEW -->
   <section id="gamertag" class="py-20 bg-gradient-to-b from-black to-[#111] border-t border-[var(--teal)]/20">
     <div class="max-w-6xl mx-auto px-6">
