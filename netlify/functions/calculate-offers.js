@@ -194,21 +194,34 @@ exports.handler = async (event) => {
       // ----------------------------------------------------------
       // Determine market value (same helper logic as submit-offer)
       // ----------------------------------------------------------
-      if (freshResult) {
-        unitValue = getBestUnitValue(
-          freshResult,
-          item.condition,
-          item.completeness
-        );
+    if (freshResult) {
+  // Fill preview-only missing fields from the exact matched product
+  if (!item.game_title_or_description) {
+    item.game_title_or_description = String(freshResult['product-name'] || '').trim();
+  }
 
-        if (unitValue > 0) {
-          marketValue = roundMoney(unitValue * item.quantity);
-        } else {
-          manualReviewReason = 'No usable price found for selected condition/completeness';
-        }
-      } else if (!manualReviewReason) {
-        manualReviewReason = 'No PriceCharting match found';
-      }
+  if (!item.platform) {
+    item.platform = String(
+      freshResult['console-name'] ||
+      freshResult.console_name ||
+      ''
+    ).trim();
+  }
+
+  unitValue = getBestUnitValue(
+    freshResult,
+    item.condition,
+    item.completeness
+  );
+
+  if (unitValue > 0) {
+    marketValue = roundMoney(unitValue * item.quantity);
+  } else {
+    manualReviewReason = 'No usable price found for selected condition/completeness';
+  }
+} else if (!manualReviewReason) {
+  manualReviewReason = 'No PriceCharting match found';
+}
 
       // ----------------------------------------------------------
       // Same manual review logic as submit-offer
