@@ -1258,137 +1258,130 @@ window.updateTradeItemCondition = updateTradeItemCondition;
   </div>
 
   <!-- SUPABASE AUTH SCRIPT -->
-  <script>
-    // Supabase Client
-    const supabaseUrl = 'https://kdqdebpcemviaubbiuwl.supabase.co';
-    const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkcWRlYnBjZW12aWF1YmJpdXdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNjg3NTAsImV4cCI6MjA4OTk0NDc1MH0.QZHcD2RRl5rXkuaVOXPxYxFSABE_5EjsmmDaRbCktNI';
-   const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+<script>
+  // Supabase Client
+  const supabaseUrl = 'https://kdqdebpcemviaubbiuwl.supabase.co';
+  const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkcWRlYnBjZW12aWF1YmJpdXdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNjg3NTAsImV4cCI6MjA4OTk0NDc1MH0.QZHcD2RRl5rXkuaVOXPxYxFSABE_5EjsmmDaRbCktNI';
+  const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
 
-    let isSignupMode = false;
+  let isSignupMode = false;
 
-    function openAuthModal() {
-      document.getElementById('auth-modal').classList.remove('hidden');
-      document.getElementById('auth-status').classList.add('hidden');
-      document.getElementById('auth-email').value = '';
-      document.getElementById('auth-password').value = '';
-      document.getElementById('auth-gamertag').value = '';
-      toggleGamertagField(false);
+  function openAuthModal() {
+    document.getElementById('auth-modal').classList.remove('hidden');
+    document.getElementById('auth-status').classList.add('hidden');
+    document.getElementById('auth-email').value = '';
+    document.getElementById('auth-password').value = '';
+    document.getElementById('auth-gamertag').value = '';
+    toggleGamertagField(false);
+  }
+
+  function closeAuthModal() {
+    document.getElementById('auth-modal').classList.add('hidden');
+  }
+
+  function toggleGamertagField(show) {
+    const field = document.getElementById('gamertag-field');
+    if (show) {
+      field.classList.remove('hidden');
+      isSignupMode = true;
+      document.getElementById('modal-title').textContent = 'Create Collector Account';
+    } else {
+      field.classList.add('hidden');
+      isSignupMode = false;
+      document.getElementById('modal-title').textContent = 'Gamertag Login';
+    }
+  }
+
+  function showAuthStatus(message, isError = false) {
+    const statusEl = document.getElementById('auth-status');
+    statusEl.textContent = message;
+    statusEl.className = `mb-4 text-sm text-center py-2 rounded ${isError ? 'bg-red-950/50 text-red-400' : 'bg-emerald-950/50 text-emerald-400'}`;
+    statusEl.classList.remove('hidden');
+  }
+
+  async function signUpWithGamertag() {
+    const email = document.getElementById('auth-email').value.trim();
+    const password = document.getElementById('auth-password').value.trim();
+    const gamertag = document.getElementById('auth-gamertag').value.trim();
+
+    if (!email || !password) {
+      showAuthStatus('Email and password are required', true);
+      return;
     }
 
-    function closeAuthModal() {
-      document.getElementById('auth-modal').classList.add('hidden');
+    if (isSignupMode && (!gamertag || gamertag.length < 3)) {
+      showAuthStatus('Gamertag must be at least 3 characters', true);
+      return;
     }
 
-    function toggleGamertagField(show) {
-      const field = document.getElementById('gamertag-field');
-      if (show) {
-        field.classList.remove('hidden');
-        isSignupMode = true;
-        document.getElementById('modal-title').textContent = 'Create Collector Account';
-      } else {
-        field.classList.add('hidden');
-        isSignupMode = false;
-        document.getElementById('modal-title').textContent = 'Gamertag Login';
-      }
-    }
+    showAuthStatus('Creating account...', false);
 
-    // Show status message
-    function showAuthStatus(message, isError = false) {
-      const statusEl = document.getElementById('auth-status');
-      statusEl.textContent = message;
-      statusEl.className = `mb-4 text-sm text-center py-2 rounded ${isError ? 'bg-red-950/50 text-red-400' : 'bg-emerald-950/50 text-emerald-400'}`;
-      statusEl.classList.remove('hidden');
-    }
+    try {
+      const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+        email: email,
+        password: password,
+      });
 
-    async function signUpWithGamertag() {
-      const email = document.getElementById('auth-email').value.trim();
-      const password = document.getElementById('auth-password').value.trim();
-      const gamertag = document.getElementById('auth-gamertag').value.trim();
+      if (authError) throw authError;
 
-      if (!email || !password) {
-        showAuthStatus('Email and password are required', true);
-        return;
-      }
+      if (authData.user) {
+        const { error: profileError } = await supabaseClient
+          .from('profiles')
+          .insert({
+            id: authData.user.id,
+            gamertag: gamertag || email.split('@')[0],
+            role: 'collector'
+          });
 
-      if (isSignupMode && (!gamertag || gamertag.length < 3)) {
-        showAuthStatus('Gamertag must be at least 3 characters', true);
-        return;
-      }
-
-      showAuthStatus('Creating account...', false);
-
-      try {
-        // 1. Create auth user
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: email,
-          password: password,
-        });
-
-        if (authError) throw authError;
-
-        // 2. Insert profile (if user was created)
-        if (authData.user) {
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .insert({
-              id: authData.user.id,
-              gamertag: gamertag || email.split('@')[0],
-              role: 'collector'
-            });
-
-          if (profileError) {
-            console.warn('Profile insert warning:', profileError);
-            // Continue anyway – user is created
-          }
+        if (profileError) {
+          console.warn('Profile insert warning:', profileError);
         }
-
-        showAuthStatus('Account created! Redirecting...', false);
-        setTimeout(() => {
-          window.location.href = 'dashboard.html';
-        }, 800);
-      } catch (err) {
-        console.error(err);
-        showAuthStatus(err.message || 'Signup failed. Please try again.', true);
       }
+
+      showAuthStatus('Account created! Redirecting...', false);
+      setTimeout(() => {
+        window.location.href = 'dashboard.html';
+      }, 800);
+    } catch (err) {
+      console.error(err);
+      showAuthStatus(err.message || 'Signup failed. Please try again.', true);
+    }
+  }
+
+  async function logInWithGamertag() {
+    const email = document.getElementById('auth-email').value.trim();
+    const password = document.getElementById('auth-password').value.trim();
+
+    if (!email || !password) {
+      showAuthStatus('Email and password are required', true);
+      return;
     }
 
-    async function logInWithGamertag() {
-      const email = document.getElementById('auth-email').value.trim();
-      const password = document.getElementById('auth-password').value.trim();
+    showAuthStatus('Logging in...', false);
 
-      if (!email || !password) {
-        showAuthStatus('Email and password are required', true);
-        return;
-      }
+    try {
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email: email,
+        password: password,
+      });
 
-      showAuthStatus('Logging in...', false);
+      if (error) throw error;
 
-      try {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: email,
-          password: password,
-        });
-
-        if (error) throw error;
-
-        showAuthStatus('Login successful! Redirecting...', false);
-        setTimeout(() => {
-          window.location.href = 'dashboard.html';
-        }, 600);
-      } catch (err) {
-        console.error(err);
-        showAuthStatus(err.message || 'Invalid email or password', true);
-      }
+      showAuthStatus('Login successful! Redirecting...', false);
+      setTimeout(() => {
+        window.location.href = 'dashboard.html';
+      }, 600);
+    } catch (err) {
+      console.error(err);
+      showAuthStatus(err.message || 'Invalid email or password', true);
     }
+  }
 
- 
-
-    // Make modal functions globally available
-    window.openAuthModal = openAuthModal;
-    window.closeAuthModal = closeAuthModal;
-    window.signUpWithGamertag = signUpWithGamertag;
-    window.logInWithGamertag = logInWithGamertag;
-  </script>
+  window.openAuthModal = openAuthModal;
+  window.closeAuthModal = closeAuthModal;
+  window.signUpWithGamertag = signUpWithGamertag;
+  window.logInWithGamertag = logInWithGamertag;
+</script>
 
 </body>
 </html>
