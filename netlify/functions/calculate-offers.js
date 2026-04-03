@@ -1,199 +1,223 @@
 // netlify/functions/calculate-offers.js
-// Preview-only pricing calculation for Voltage 2.0 multi-game trade list
-// Mirrors the exact pricing logic from submit-offer.js but performs NO database writes or submission creation
+// Preview pricing only — no database writes.
+// Mirrors submit-offer.js pricing logic and keeps response JSON-safe.
 
 const { createClient } = require('@supabase/supabase-js');
 
-// Helper functions - mirrored exactly from submit-offer.js for consistency
-function jsonResponse(statusCode, body) {
+const JSON_HEADERS = {
+  'Content-Type': 'application/json',
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
+function jsonResponse(statusCode, payload) {
   return {
     statusCode,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
+    headers: JSON_HEADERS,
+    body: JSON.stringify(payload),
   };
 }
 
-function safePositiveInt(value, fallback = 0) {
-  const num = parseInt(value, 10);
-  return isNaN(num) || num < 0 ? fallback : num;
+function roundMoney(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return 0;
+  return Math.round(num * 100) / 100;
 }
 
-function roundMoney(amount) {
-  return Math.round((amount || 0) * 100) / 100;
+function firstDefined(obj, keys) {
+  for (const key of keys) {
+    if (obj && obj[key] !== undefined && obj[key] !== null && obj[key] !== '') {
+      return obj[key];
+    }
+  }
+  return null;
 }
 
-function normalizeString(str) {
-  if (!str) return '';
-  return String(str).trim().toLowerCase();
+function toNumber(value, fallback = null) {
+  if (value === null || value === undefined || value === '') return fallback;
+  const cleaned =
+    typeof value === 'string'
+      ? value.replace(/\$/g, '').replace(/,/g, '').trim()
+      : value;
+  const num = Number(cleaned);
+  return Number.isFinite(num) ? num : fallback;
 }
 
-function centsToDollars(cents) {
-  return roundMoney((cents || 0) / 100);
+function normalizePriceValue(value) {
+  const num = toNumber(value, null);
+  if (num === null) return null;
+
+  // PriceCharting sometimes returns cents, sometimes dollars.
+  // If it's clearly cents, convert to dollars.
+  if (num > 1000) return roundMoney(num / 100);
+
+  return roundMoney(num);
 }
 
-function getBestUnitValue(product, condition) {
-  const norm = normalizeString(condition);
-  
-  if (norm.includes('sealed') || norm.includes('new')) {
-    return product['new-price'] || product.newPrice || 0;
+function normalizeCondition(condition) {
+  const raw = String(condition || '').trim().toLowerCase();
+
+  if (['cib', 'complete', 'complete in box', 'complete-in-box'].includes(raw)) {
+    return 'cib';
   }
-  if (norm.includes('cib') || norm.includes('complete')) {
-    return product['cib-price'] || product.cibPrice || 0;
+
+  if (['new', 'sealed', 'brand new'].includes(raw)) {
+    return 'new';
   }
-  // default to loose
-  return product['loose-price'] || product.loosePrice || 0;
+
+  if (['graded'].includes(raw)) {
+    return 'graded';
+  }
+
+  return 'loose';
 }
 
+function getConditionPrice(product, condition) {
+  const normalized = normalizeCondition(condition);
 
-exports.handler = async (event) => {
-  // Only allow POST
-  if (event.httpMethod !== 'POST') {
-    return jsonResponse(405, { success: false, error: 'Method not allowed' });
+  const keyMap = {
+    loose: ['loose-price', 'loosePrice', 'loose_price'],
+    cib: ['cib-price', 'cibPrice', 'cib_price'],
+    new: ['new-price', 'newPrice', 'new_price'],
+    graded: ['graded-price', 'gradedPrice', 'graded_price'],
+  };
+
+  const preferredValue = firstDefined(product, keyMap[normalized] || []);
+  const preferredPrice = normalizePriceValue(preferredValue);
+  if (preferredPrice !== null && preferredPrice > 0) return preferredPrice;
+
+  // Fallback order if selected condition price is unavailable
+  const fallbackKeys = [
+    'cib-price',
+    'cibPrice',
+    'cib_price',
+    'loose-price',
+    'loosePrice',
+    'loose_price',
+    'new-price',
+    'newPrice',
+    'new_price',
+    'graded-price',
+    'gradedPrice',
+    'graded_price',
+    'manual-only-price',
+    'manualOnlyPrice',
+    'manual_only_price',
+  ];
+
+  const fallbackValue = firstDefined(product, fallbackKeys);
+  const fallbackPrice = normalizePriceValue(fallbackValue);
+
+  return fallbackPrice !== null ? fallbackPrice : 0;
+}
+
+function getPercent(config, keys, fallback) {
+  const value = toNumber(firstDefined(config, keys), null);
+  return value === null ? fallback : value;
+}
+
+function buildPreviewResult(unitValue, config) {
+  const roundedUnitValue = roundMoney(unitValue);
+
+  if (roundedUnitValue < 30) {
+    const cashPercent = getPercent(
+      config,
+      ['cash_percent_under_30', 'cash_under_30_percent'],
+      30
+    );
+    const creditPercent = getPercent(
+      config,
+      ['credit_percent_under_30', 'credit_under_30_percent'],
+      40
+    );
+
+    const cashAmount = roundMoney((roundedUnitValue * cashPercent) / 100);
+    const creditAmount = roundMoney((roundedUnitValue * creditPercent) / 100);
+
+    return {
+      success: true,
+      offer_type: 'instant_offer',
+      inventory_class: 'evergreen',
+      market_value: roundedUnitValue,
+      unit_value: roundedUnitValue,
+      cash_amount: cashAmount,
+      credit_amount: creditAmount,
+      cash_low: cashAmount,
+      cash_high: cashAmount,
+      credit_low: creditAmount,
+      credit_high: creditAmount,
+      pricing_source: 'pricecharting_product',
+      manual_review_reason: null,
+    };
   }
 
-  let body;
-  try {
-    body = JSON.parse(event.body || '{}');
-  } catch (e) {
-    return jsonResponse(400, { success: false, error: 'Invalid JSON body' });
+  if (roundedUnitValue <= 100) {
+    const cashLowPercent = getPercent(
+      config,
+      [
+        'cash_percent_30_to_100_low',
+        'cash_low_percent_30_to_100',
+        'cash_percent_mid_low',
+      ],
+      35
+    );
+    const cashHighPercent = getPercent(
+      config,
+      [
+        'cash_percent_30_to_100_high',
+        'cash_high_percent_30_to_100',
+        'cash_percent_mid_high',
+      ],
+      40
+    );
+    const creditLowPercent = getPercent(
+      config,
+      [
+        'credit_percent_30_to_100_low',
+        'credit_low_percent_30_to_100',
+        'credit_percent_mid_low',
+      ],
+      45
+    );
+    const creditHighPercent = getPercent(
+      config,
+      [
+        'credit_percent_30_to_100_high',
+        'credit_high_percent_30_to_100',
+        'credit_percent_mid_high',
+      ],
+      50
+    );
+
+    const cashLow = roundMoney((roundedUnitValue * cashLowPercent) / 100);
+    const cashHigh = roundMoney((roundedUnitValue * cashHighPercent) / 100);
+    const creditLow = roundMoney((roundedUnitValue * creditLowPercent) / 100);
+    const creditHigh = roundMoney((roundedUnitValue * creditHighPercent) / 100);
+
+    return {
+      success: true,
+      offer_type: 'instant_range',
+      inventory_class: 'evergreen',
+      market_value: roundedUnitValue,
+      unit_value: roundedUnitValue,
+      cash_amount: cashLow,
+      credit_amount: creditLow,
+      cash_low: cashLow,
+      cash_high: cashHigh,
+      credit_low: creditLow,
+      credit_high: creditHigh,
+      pricing_source: 'pricecharting_product',
+      manual_review_reason: null,
+    };
   }
 
-  const { externalId, condition, quantity = 1 } = body;
-
-  if (!externalId || !String(externalId).trim()) {
-    return jsonResponse(400, { 
-      success: false, 
-      error: 'externalId is required',
-      offer_type: 'manual_review',
-      manual_review_reason: 'Missing game identifier'
-    });
-  }
-
-  if (!condition || !String(condition).trim()) {
-    return jsonResponse(400, { 
-      success: false, 
-      error: 'condition is required',
-      offer_type: 'manual_review',
-      manual_review_reason: 'Condition not specified'
-    });
-  }
-
-  const qty = safePositiveInt(quantity, 1);
-
-  try {
-    // Load environment variables
-    const pricechartingApiKey = process.env.PRICECHARTING_API_KEY;
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
-
-    if (!pricechartingApiKey || !supabaseUrl || !supabaseServiceKey) {
-      console.error('Missing required environment variables');
-      return jsonResponse(500, { 
-        success: false, 
-        error: 'Server configuration error',
-        offer_type: 'manual_review',
-        manual_review_reason: 'System unavailable'
-      });
-    }
-
-    // Initialize Supabase client with SERVICE KEY (read-only for pricing_config)
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // 1. Fetch pricing config (same as submit-offer.js)
-    const { data: configData, error: configError } = await supabase
-      .from('pricing_config')
-      .select('*')
-      .eq('id', 1)
-      .single();
-
-    if (configError || !configData) {
-      console.error('Pricing config error:', configError);
-      return jsonResponse(500, { 
-        success: false, 
-        error: 'Pricing configuration unavailable',
-        offer_type: 'manual_review',
-        manual_review_reason: 'System pricing unavailable'
-      });
-    }
-
-    // 2. Exact PriceCharting product lookup by externalId (same logic as submit-offer)
-    const pcResponse = await fetch(`https://www.pricecharting.com/api/product?t=${pricechartingApiKey}&id=${encodeURIComponent(externalId)}`);
-    
-    if (!pcResponse.ok) {
-      console.error('PriceCharting lookup failed:', pcResponse.status);
-      return jsonResponse(200, {
-        success: true,
-        offer_type: 'manual_review',
-        inventory_class: 'unclassified',
-        market_value: 0,
-        unit_value: 0,
-        pricing_source: 'pricecharting_product',
-        manual_review_reason: 'Product lookup failed'
-      });
-    }
-
-    const product = await pcResponse.json();
-
-    if (!product || !product.id) {
-      return jsonResponse(200, {
-        success: true,
-        offer_type: 'manual_review',
-        inventory_class: 'unclassified',
-        market_value: 0,
-        unit_value: 0,
-        pricing_source: 'pricecharting_product',
-        manual_review_reason: 'Product not found'
-      });
-    }
-
-    // 3. Calculate unit value based on condition (same helper)
-    const unitCents = getBestUnitValue(product, condition);
-    const marketValue = centsToDollars(unitCents);
-    const unitValue = roundMoney(marketValue * qty);
-
-   
-
-    // 4. Apply pricing rules from config (exact same percentages and multiplier)
-    let cashPercent = configData.cash_percent_under_30 || 30;
-    if (unitValue >= 30) {
-      cashPercent = configData.cash_percent_30_to_100 || 35;
-    }
-
-    const creditMultiplier = configData.credit_multiplier || 1.2;
-
-    const cashAmount = roundMoney(unitValue * (cashPercent / 100));
-    const creditAmount = roundMoney(cashAmount * creditMultiplier);
-
-    // 5. Determine offer type and inventory class
-    
-    // For higher value items, use range (same threshold behavior)
-   if (unitValue < 30) {
-  return jsonResponse(200, {
-    success: true,
-    offer_type: 'instant_offer',
-    inventory_class: 'common',
-    market_value: roundMoney(unitValue),
-    unit_value: roundMoney(unitValue),
-    cash_amount: cashAmount,
-    credit_amount: creditAmount,
-    cash_low: null,
-    cash_high: null,
-    credit_low: null,
-    credit_high: null,
-    pricing_source: 'pricecharting_product',
-    manual_review_reason: null
-  });
-} else if (unitValue <= 100) {
-  const cashLow = roundMoney(cashAmount * 0.9);
-  const cashHigh = roundMoney(cashAmount * 1.1);
-  const creditLow = roundMoney(cashLow * creditMultiplier);
-  const creditHigh = roundMoney(cashHigh * creditMultiplier);
-  return jsonResponse(200, {
+  return {
     success: true,
     offer_type: 'manual_review',
     inventory_class: 'strategic',
-    market_value: roundMoney(unitValue),
-    unit_value: roundMoney(unitValue),
+    market_value: roundedUnitValue,
+    unit_value: roundedUnitValue,
     cash_amount: null,
     credit_amount: null,
     cash_low: null,
@@ -201,16 +225,188 @@ exports.handler = async (event) => {
     credit_low: null,
     credit_high: null,
     pricing_source: 'pricecharting_product',
-    manual_review_reason: 'Market value exceeds auto-offer threshold'
-  });
+    manual_review_reason: 'value_above_100_threshold',
+  };
 }
-  } catch (err) {
-    console.error('calculate-offers error:', err);
+
+async function fetchProductByExternalId(externalId, apiKey) {
+  const url = `https://www.pricecharting.com/api/product?t=${encodeURIComponent(
+    apiKey
+  )}&id=${encodeURIComponent(String(externalId).trim())}`;
+
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`PriceCharting request failed (${response.status}): ${text}`);
+  }
+
+  return response.json();
+}
+
+exports.handler = async (event) => {
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers: JSON_HEADERS,
+      body: '',
+    };
+  }
+
+  if (event.httpMethod !== 'POST') {
+    return jsonResponse(405, { success: false, error: 'Method not allowed' });
+  }
+
+  try {
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
+    const priceChartingApiKey =
+      process.env.PRICECHARTING_API_KEY || process.env.PRICECHARTING_TOKEN;
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return jsonResponse(500, {
+        success: false,
+        error: 'Missing Supabase environment variables',
+      });
+    }
+
+    if (!priceChartingApiKey) {
+      return jsonResponse(500, {
+        success: false,
+        error: 'Missing PriceCharting API key',
+      });
+    }
+
+    let body;
+    try {
+      body = JSON.parse(event.body || '{}');
+    } catch (err) {
+      return jsonResponse(400, {
+        success: false,
+        error: 'Invalid JSON body',
+      });
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    const { data: pricingConfig, error: configError } = await supabase
+      .from('pricing_config')
+      .select('*')
+      .eq('id', 1)
+      .single();
+
+    if (configError) {
+      console.error('Failed to load pricing_config:', configError);
+      return jsonResponse(500, {
+        success: false,
+        error: 'Failed to load pricing configuration',
+      });
+    }
+
+    const rawItems = Array.isArray(body.items)
+      ? body.items
+      : Array.isArray(body.tradeItems)
+      ? body.tradeItems
+      : [body];
+
+    const results = [];
+
+    for (let index = 0; index < rawItems.length; index += 1) {
+      const item = rawItems[index] || {};
+      const externalId = item.externalId || item.external_id || item.productId || item.product_id;
+      const condition = item.condition || 'loose';
+
+      if (!externalId) {
+        results.push({
+          success: false,
+          index,
+          externalId: null,
+          condition,
+          error: 'Missing externalId',
+        });
+        continue;
+      }
+
+      try {
+        const product = await fetchProductByExternalId(externalId, priceChartingApiKey);
+        const unitValue = getConditionPrice(product, condition);
+
+        const preview = buildPreviewResult(unitValue, pricingConfig);
+
+        results.push({
+          index,
+          externalId: String(externalId),
+          title: product['product-name'] || product.productName || item.title || null,
+          console_name: product.consoleName || product['console-name'] || item.platform || null,
+          condition: normalizeCondition(condition),
+          ...preview,
+        });
+      } catch (itemError) {
+        console.error(`calculate-offers item error (${externalId}):`, itemError);
+        results.push({
+          success: false,
+          index,
+          externalId: String(externalId),
+          condition: normalizeCondition(condition),
+          error: itemError.message || 'Failed to calculate preview pricing',
+        });
+      }
+    }
+
+    const isBatchRequest = Array.isArray(body.items) || Array.isArray(body.tradeItems);
+
+    if (!isBatchRequest && results.length === 1) {
+  const result = results[0];
+
+  if (!result.success) {
+    // SAFE fallback instead of crashing
+    return jsonResponse(200, {
+      success: true,
+      offer_type: 'manual_review',
+      inventory_class: 'unclassified',
+      market_value: 0,
+      unit_value: 0,
+      cash_amount: null,
+      credit_amount: null,
+      pricing_source: 'pricecharting_product',
+      manual_review_reason: result.error || 'Preview failed'
+    });
+  }
+
+  return jsonResponse(200, result);
+}
+    const successful = results.filter((r) => r.success);
+    const totals = successful.reduce(
+      (acc, item) => {
+        acc.market_value = roundMoney(acc.market_value + (item.market_value || 0));
+        acc.cash_low = roundMoney(acc.cash_low + (item.cash_low || 0));
+        acc.cash_high = roundMoney(acc.cash_high + (item.cash_high || 0));
+        acc.credit_low = roundMoney(acc.credit_low + (item.credit_low || 0));
+        acc.credit_high = roundMoney(acc.credit_high + (item.credit_high || 0));
+        if (item.offer_type === 'manual_review') acc.manual_review_count += 1;
+        return acc;
+      },
+      {
+        market_value: 0,
+        cash_low: 0,
+        cash_high: 0,
+        credit_low: 0,
+        credit_high: 0,
+        manual_review_count: 0,
+      }
+    );
+
+    return jsonResponse(200, {
+      success: true,
+      count: results.length,
+      results,
+      totals,
+    });
+  } catch (error) {
+    console.error('calculate-offers function failed:', error);
     return jsonResponse(500, {
       success: false,
-      error: 'Internal pricing error',
-      offer_type: 'manual_review',
-      manual_review_reason: 'Calculation failed'
+      error: error.message || 'Internal server error',
     });
   }
 };
