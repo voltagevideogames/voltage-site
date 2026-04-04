@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Voltage 2.0 • Vault</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+    :root {
+      --teal: #00E5B8;
+      --yellow: #FFEB3B;
+      --panel: #0c0d10;
+      --panel-soft: #13161a;
+      --line: rgba(255,255,255,0.06);
+      --line-teal: rgba(0,229,184,0.16);
+      --line-teal-strong: rgba(0,229,184,0.28);
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background:
+        radial-gradient(circle at top center, rgba(0,229,184,0.08), transparent 28%),
+        radial-gradient(circle at top right, rgba(255,235,59,0.05), transparent 22%),
+        linear-gradient(to bottom, #050607 0%, #0a0a0a 100%);
+      color: #f5f5f5;
+    }
+
+    .heading-font {
+      font-family: 'Press Start 2P', system-ui;
+    }
+
+    .neon-text {
+      text-shadow:
+        0 0 10px rgba(0,229,184,0.55),
+        0 0 24px rgba(0,229,184,0.18),
+        0 0 36px rgba(255,235,59,0.10);
+    }
+
+    .panel {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)),
+        var(--panel);
+      border: 1px solid var(--line);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.02),
+        0 10px 30px rgba(0,0,0,0.24);
+    }
+
+    .panel-soft {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.018), rgba(255,255,255,0.01)),
+        var(--panel-soft);
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .grid-line {
+      background-image:
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+
+    .card-hover {
+      transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+    }
+
+    .card-hover:hover {
+      transform: translateY(-3px);
+      border-color: var(--line-teal-strong);
+      box-shadow:
+        0 0 0 1px rgba(0,229,184,0.10),
+        0 16px 36px rgba(0,0,0,0.28);
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      border-radius: 999px;
+      padding: 0.55rem 0.9rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+    }
+
+    .chip-teal {
+      color: var(--teal);
+      border-color: rgba(0,229,184,0.24);
+      background: rgba(0,229,184,0.08);
+    }
+
+    .chip-yellow {
+      color: var(--yellow);
+      border-color: rgba(255,235,59,0.22);
+      background: rgba(255,235,59,0.08);
+    }
+
+    .input-shell {
+      width: 100%;
+      background: #000;
+      border: 1px solid rgba(0,229,184,0.40);
+      color: white;
+      border-radius: 1rem;
+      padding: 0.95rem 1rem;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .input-shell:focus {
+      outline: none;
+      border-color: rgba(255,235,59,0.65);
+      box-shadow: 0 0 0 3px rgba(255,235,59,0.08);
+    }
+
+    .segmented-tab {
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.02);
+      color: #d4d4d8;
+      border-radius: 999px;
+      padding: 0.75rem 1rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .segmented-tab.active {
+      color: var(--teal);
+      border-color: rgba(0,229,184,0.22);
+      background: rgba(0,229,184,0.08);
+    }
+
+    .scroll-slim::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    .scroll-slim::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.10);
+      border-radius: 999px;
+    }
+
+    .scroll-slim::-webkit-scrollbar-track {
+      background: transparent;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- NAVBAR -->
+  <nav class="sticky top-0 inset-x-0 z-50 bg-black/75 backdrop-blur-xl border-b border-[rgba(0,229,184,0.14)]">
+    <div class="max-w-[1600px] mx-auto px-4 md:px-6 xl:px-8 py-4 flex items-center justify-between gap-4">
+      <a href="index.html" class="flex items-center gap-4 min-w-0">
+        <img src="images/voltage-logo.png" alt="Voltage Video Games logo" class="h-10 md:h-12 w-auto shrink-0">
+        <div class="min-w-0">
+          <div class="heading-font text-sm sm:text-lg neon-text tracking-widest truncate">VOLTAGE 2.0</div>
+          <div class="text-[10px] sm:text-xs text-zinc-500 uppercase tracking-[0.22em]">Collector Vault</div>
+        </div>
+      </a>
+
+      <div class="hidden lg:flex items-center gap-8 text-sm font-medium">
+        <a href="index.html" class="text-zinc-400 hover:text-[var(--teal)] transition">Home</a>
+        <a href="collector-dashboard.html" class="text-zinc-400 hover:text-[var(--teal)] transition">Dashboard</a>
+        <a href="vault.html" class="text-[var(--teal)]">Vault</a>
+        <a href="index.html#sell" class="text-zinc-400 hover:text-[var(--yellow)] transition">Sell / Trade</a>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <a href="collector-dashboard.html"
+           class="hidden sm:inline-flex px-4 py-2 text-sm border border-[rgba(0,229,184,0.22)] rounded-xl hover:bg-[rgba(0,229,184,0.08)] transition">
+          Dashboard
+        </a>
+
+        <button onclick="alert('Gamertag login coming soon.')" 
+                class="px-4 py-2 text-sm font-medium border border-[rgba(0,229,184,0.22)] rounded-xl hover:bg-[rgba(0,229,184,0.08)] transition">
+          Gamertag
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="flex-1 pt-6 pb-16">
+    <div class="max-w-[1600px] mx-auto px-4 md:px-6 xl:px-8 space-y-6">
+
+      <!-- HERO -->
+      <section class="panel grid-line rounded-[32px] overflow-hidden">
+        <div class="grid xl:grid-cols-[1.1fr_0.9fr] gap-6 md:gap-8 p-6 md:p-8 xl:p-10 items-center">
+          <div>
+            <div class="text-xs uppercase tracking-[0.32em] text-[var(--teal)] mb-4">Collector Vault</div>
+
+            <h1 class="heading-font text-3xl md:text-5xl xl:text-6xl leading-tight neon-text mb-5">
+              YOUR VAULT
+            </h1>
+
+            <p class="text-base md:text-lg text-zinc-300 max-w-2xl leading-relaxed">
+              Track your collection. Monitor live values. Organize your games by system and build your legacy.
+            </p>
+
+            <div class="flex flex-wrap gap-3 mt-6">
+              <div class="chip chip-teal">
+                <i class="fa-solid fa-box-archive"></i>
+                System-First Collection View
+              </div>
+              <div class="chip chip-yellow">
+                <i class="fa-solid fa-chart-line"></i>
+                Live Value Tracking
+              </div>
+            </div>
+          </div>
+
+          <!-- Gamertag / Collector Summary -->
+          <div class="panel-soft rounded-[28px] p-6 md:p-8">
+            <div class="text-xs uppercase tracking-[0.26em] text-zinc-500 mb-4">Collector Identity</div>
+
+            <div class="flex items-center gap-4 mb-5">
+              <div class="w-16 h-16 rounded-[20px] border border-[rgba(0,229,184,0.18)] bg-black flex items-center justify-center text-3xl text-[var(--teal)]">
+                <i class="fa-solid fa-user-tag"></i>
+              </div>
+              <div class="min-w-0">
+                <h2 id="gamertag-display" class="heading-font text-lg md:text-2xl neon-text break-words leading-relaxed">
+                  RetroKing87
+                </h2>
+                <p class="text-zinc-400 text-sm mt-1">Your collector identity • Joined March 2026</p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-3">
+              <div class="panel-soft rounded-2xl p-4">
+                <div class="text-[10px] uppercase tracking-wide text-zinc-500">Systems</div>
+                <div class="text-2xl font-bold text-white mt-2">7</div>
+              </div>
+              <div class="panel-soft rounded-2xl p-4">
+                <div class="text-[10px] uppercase tracking-wide text-zinc-500">Titles</div>
+                <div class="text-2xl font-bold text-white mt-2">33</div>
+              </div>
+              <div class="panel-soft rounded-2xl p-4">
+                <div class="text-[10px] uppercase tracking-wide text-zinc-500">Value</div>
+                <div class="text-2xl font-bold text-[var(--teal)] mt-2">$1,975</div>
+              </div>
+            </div>
+
+            <a href="collector-dashboard.html"
+               class="mt-5 inline-flex w-full items-center justify-center px-4 py-3 rounded-2xl border border-[rgba(255,235,59,0.18)] text-[var(--yellow)] hover:bg-[rgba(255,235,59,0.08)] transition">
+              Back to Collector Dashboard
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- SUCCESS / STATUS AREA -->
+      <div id="success-message" class="hidden text-center py-4 px-4 bg-black border border-[var(--teal)]/60 rounded-2xl">
+        <p id="success-text" class="text-lg font-medium text-[var(--teal)]"></p>
+      </div>
+
+      <!-- STATS -->
+      <section class="grid grid-cols-2 xl:grid-cols-5 gap-4">
+        <div class="panel-soft rounded-3xl p-5">
+          <div class="text-xs uppercase tracking-wide text-zinc-500">Games Tracked</div>
+          <div id="stat-games" class="text-3xl md:text-4xl font-bold text-[var(--yellow)] mt-2">0</div>
+        </div>
+
+        <div class="panel-soft rounded-3xl p-5">
+          <div class="text-xs uppercase tracking-wide text-zinc-500">Unique Titles</div>
+          <div id="stat-unique" class="text-3xl md:text-4xl font-bold text-[var(--yellow)] mt-2">0</div>
+        </div>
+
+        <div class="panel-soft rounded-3xl p-5">
+          <div class="text-xs uppercase tracking-wide text-zinc-500">Original Value</div>
+          <div id="stat-original" class="text-3xl md:text-4xl font-bold text-[var(--yellow)] mt-2">$0</div>
+        </div>
+
+        <div class="panel-soft rounded-3xl p-5">
+          <div class="text-xs uppercase tracking-wide text-zinc-500">Current Value</div>
+          <div id="stat-current" class="text-3xl md:text-4xl font-bold text-[var(--teal)] mt-2">$0</div>
+        </div>
+
+        <div class="panel-soft rounded-3xl p-5 col-span-2 xl:col-span-1">
+          <div class="text-xs uppercase tracking-wide text-zinc-500">Total Change</div>
+          <div id="stat-change" class="text-2xl md:text-3xl font-bold mt-2">+0%</div>
+        </div>
+      </section>
+
+      <!-- ADD GAME + REFRESH -->
+      <section class="grid xl:grid-cols-[1.1fr_0.9fr] gap-6">
+        <!-- ADD TO VAULT -->
+        <div class="panel rounded-[32px] p-6 md:p-8">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div>
+              <div class="text-xs uppercase tracking-[0.26em] text-zinc-500 mb-2">Add to Vault</div>
+              <h2 class="text-2xl md:text-3xl font-bold">Add a Game</h2>
+              <p class="text-zinc-400 mt-2">Search, match, and add items into your collection.</p>
+            </div>
+          </div>
+
+          <div class="text-center text-xs text-zinc-500 mb-6">
+            Live market data integration active through your current search flow
+          </div>
+
+          <div id="search-loading" class="hidden text-center py-6 text-[var(--teal)]">
+            Searching catalog...
+          </div>
+
+          <div id="search-error" class="hidden text-center py-6 text-red-400">
+            Something went wrong. Please try again.
+          </div>
+
+          <form id="add-game-form" class="grid md:grid-cols-2 gap-5">
+            <div>
+              <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Game Title *</label>
+              <input type="text" id="game-title" required placeholder="e.g. Chrono Trigger" class="input-shell" />
+            </div>
+
+            <div>
+              <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Platform *</label>
+              <select id="platform" required class="input-shell">
+                <option value="">Select platform...</option>
+                <option>NES</option>
+                <option>SNES</option>
+                <option>N64</option>
+                <option>GameCube</option>
+                <option>Wii</option>
+                <option>Switch</option>
+                <option>Game Boy / GBA</option>
+                <option>Genesis</option>
+                <option>Dreamcast</option>
+                <option>PS1</option>
+                <option>PS2</option>
+                <option>PS3</option>
+                <option>PS4</option>
+                <option>PS5</option>
+                <option>Xbox</option>
+                <option>Xbox 360</option>
+                <option>Xbox One</option>
+                <option>Xbox Series X</option>
+                <option>Other</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Condition *</label>
+              <select id="condition" required class="input-shell">
+                <option value="">Select condition...</option>
+                <option>Loose</option>
+                <option>Complete in Box (CIB)</option>
+                <option>Sealed</option>
+                <option>Graded</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Quantity</label>
+              <input type="number" id="quantity" min="1" value="1" class="input-shell" />
+            </div>
+
+            <div>
+              <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Purchase Price (Optional)</label>
+              <input type="number" id="purchase-price" min="0" step="0.01" placeholder="e.g. 45.00" class="input-shell" />
+            </div>
+
+            <div class="md:col-span-2">
+              <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Notes (optional)</label>
+              <textarea id="notes" rows="4" placeholder="e.g. light scratches, missing manual, graded case..." class="input-shell resize-none"></textarea>
+            </div>
+
+            <div class="md:col-span-2 mt-1">
+              <button type="button" onclick="runSearch()"
+                      class="w-full py-4 rounded-2xl bg-gradient-to-r from-[var(--teal)] to-[var(--yellow)] text-black font-bold text-lg hover:scale-[1.01] transition">
+                Search & Add to Vault
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- REFRESH / CONTROL PANEL -->
+        <div class="space-y-6">
+          <div class="panel rounded-[32px] p-6 md:p-8">
+            <div class="text-xs uppercase tracking-[0.26em] text-zinc-500 mb-2">Value Engine</div>
+            <h2 class="text-2xl md:text-3xl font-bold mb-3">Refresh Market Values</h2>
+            <p class="text-zinc-400 mb-6">
+              Pull the latest pricing data for your collection and update your Vault’s value snapshot.
+            </p>
+
+            <div class="panel-soft rounded-3xl p-5 mb-5">
+              <div class="text-sm text-zinc-400">Refresh status</div>
+              <div id="refresh-status" class="text-sm mt-2 text-zinc-300">Last updated: never</div>
+            </div>
+
+            <button onclick="refreshMarketValues()"
+                    class="w-full py-4 rounded-2xl border border-[rgba(0,229,184,0.24)] bg-[rgba(0,229,184,0.08)] text-[var(--teal)] font-semibold hover:bg-[rgba(0,229,184,0.12)] transition">
+              Refresh Now
+            </button>
+          </div>
+
+          <div class="panel-soft rounded-[32px] p-6">
+            <div class="text-xs uppercase tracking-[0.26em] text-zinc-500 mb-2">Vault Architecture</div>
+            <h3 class="text-xl font-bold mb-4">System-First Collection View</h3>
+            <p class="text-sm text-zinc-400 leading-relaxed">
+              Your Vault is designed to evolve into a collector shelf organized by system, then title, then condition/value details.
+            </p>
+
+            <div class="grid grid-cols-2 gap-3 mt-5">
+              <div class="panel-soft rounded-2xl p-4">
+                <div class="text-[10px] uppercase tracking-wide text-zinc-500">Primary View</div>
+                <div class="text-lg font-bold text-white mt-2">By System</div>
+              </div>
+              <div class="panel-soft rounded-2xl p-4">
+                <div class="text-[10px] uppercase tracking-wide text-zinc-500">Secondary View</div>
+                <div class="text-lg font-bold text-white mt-2">All Titles</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SEARCH RESULTS -->
+      <section id="search-results" class="hidden panel rounded-[32px] p-6 md:p-8">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          <div>
+            <div class="text-xs uppercase tracking-[0.26em] text-zinc-500 mb-2">Catalog Results</div>
+            <h2 class="text-2xl md:text-3xl font-bold">Search Results</h2>
+          </div>
+        </div>
+
+        <div id="results-grid" class="grid md:grid-cols-2 xl:grid-cols-3 gap-5"></div>
+      </section>
+
+      <!-- VAULT CONTROLS -->
+      <section class="panel rounded-[32px] p-6 md:p-8 space-y-6">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+          <div>
+            <div class="text-xs uppercase tracking-[0.26em] text-zinc-500 mb-2">Vault Browser</div>
+            <h2 class="text-2xl md:text-3xl font-bold">Browse Your Collection</h2>
+            <p class="text-zinc-400 mt-2">Search, sort, and organize your collection by system.</p>
+          </div>
+
+          <!-- View Toggle (UI-ready, safe placeholder) -->
+          <div class="flex gap-3 overflow-x-auto scroll-slim pb-1">
+            <button type="button" class="segmented-tab active">By System</button>
+            <button type="button" class="segmented-tab">All Titles</button>
+            <button type="button" class="segmented-tab">Top Value</button>
+            <button type="button" class="segmented-tab">Recent Adds</button>
+          </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="grid lg:grid-cols-[1.2fr_0.8fr] gap-4">
+          <input type="text" id="vault-search" placeholder="Search your vault..." class="input-shell" onkeyup="filterAndSortVault()" />
+
+          <div class="grid sm:grid-cols-3 gap-4">
+            <select id="vault-sort" onchange="filterAndSortVault()" class="input-shell">
+              <option value="added-desc">Recently Added</option>
+              <option value="added-asc">Oldest Added</option>
+              <option value="title-asc">Title A–Z</option>
+              <option value="title-desc">Title Z–A</option>
+              <option value="value-desc">Highest Value</option>
+              <option value="value-asc">Lowest Value</option>
+              <option value="platform-asc">Platform A–Z</option>
+            </select>
+
+            <select id="vault-platform-filter" onchange="filterAndSortVault()" class="input-shell">
+              <option value="">All Platforms</option>
+            </select>
+
+            <button onclick="exportVault()"
+                    class="px-4 py-4 rounded-2xl border border-[rgba(255,235,59,0.18)] text-[var(--yellow)] hover:bg-[rgba(255,235,59,0.08)] transition font-semibold">
+              Export CSV
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- SYSTEM SUMMARY / COLLECTION DISPLAY -->
+      <section class="grid xl:grid-cols-[320px_minmax(0,1fr)] gap-6">
+        <!-- System Summary Rail -->
+        <aside class="panel rounded-[32px] p-6 md:p-8">
+          <div class="text-xs uppercase tracking-[0.26em] text-zinc-500 mb-2">Collector Shelf View</div>
+          <h2 class="text-2xl font-bold mb-4">By System</h2>
+
+          <p class="text-sm text-zinc-400 leading-relaxed mb-6">
+            Your Vault is evolving toward a system-first view so collectors can browse like real shelves, not just a flat list.
+          </p>
+
+          <div class="space-y-3">
+            <div class="panel-soft rounded-2xl p-4">
+              <div class="text-sm font-semibold text-white">SNES</div>
+              <div class="text-xs text-zinc-500 mt-1">14 games • $1,240 total</div>
+            </div>
+
+            <div class="panel-soft rounded-2xl p-4">
+              <div class="text-sm font-semibold text-white">N64</div>
+              <div class="text-xs text-zinc-500 mt-1">8 games • $630 total</div>
+            </div>
+
+            <div class="panel-soft rounded-2xl p-4">
+              <div class="text-sm font-semibold text-white">PS1</div>
+              <div class="text-xs text-zinc-500 mt-1">6 games • $420 total</div>
+            </div>
+
+            <div class="panel-soft rounded-2xl p-4">
+              <div class="text-sm font-semibold text-white">GameCube</div>
+              <div class="text-xs text-zinc-500 mt-1">5 games • $315 total</div>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Live Vault List -->
+        <div class="panel rounded-[32px] p-6 md:p-8">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <div class="text-xs uppercase tracking-[0.26em] text-zinc-500 mb-2">Collection Display</div>
+              <h2 class="text-2xl md:text-3xl font-bold">Your Vault Items</h2>
+            </div>
+          </div>
+
+          <!-- Existing JS should continue rendering into this container -->
+          <div id="vault-list" class="space-y-6"></div>
+
+          <div class="mt-8 text-center">
+            <button onclick="clearVault()"
+                    class="px-8 py-3 rounded-2xl border border-red-600/40 text-red-400 hover:bg-red-900/30 transition">
+              Clear Vault
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="bg-black border-t border-[var(--yellow)]/18 py-12 text-center text-sm text-zinc-500">
+    Voltage Video Games • 437 S Warren Street, Syracuse, NY 13202<br>
+    © 2026 Voltage Video Games. All rights reserved.
+  </footer>
+
+  <!--
+    IMPORTANT:
+    KEEP YOUR EXISTING WORKING VAULT SCRIPT BELOW THIS POINT.
+    <script>
+    /* ================================================================
+       CONFIG + DATA LAYER
+    ================================================================ */
+    const config = {
+      dataMode: 'proxy',
+      useMockProxyResponse: false,
+      proxySearchUrl: '/.netlify/functions/vault-search'
+    };
+
+    let vault = [];
+    let lastSearchResults = [];
+    let mockGameData = [
+      { title: "Chrono Trigger", platform: "SNES", loosePrice: 185, cibPrice: 320, newPrice: 450, gradedPrice: 600 },
+      { title: "Super Mario World", platform: "SNES", loosePrice: 45, cibPrice: 68, newPrice: 120, gradedPrice: 180 },
+      { title: "The Legend of Zelda: Ocarina of Time", platform: "N64", loosePrice: 85, cibPrice: 185, newPrice: 280, gradedPrice: 420 },
+      { title: "Final Fantasy VII", platform: "PS1", loosePrice: 65, cibPrice: 145, newPrice: 220, gradedPrice: 350 }
+    ];
+
+    const STORAGE_KEY = 'voltageVaultV1';
+
+    function saveVault() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(vault)); } catch(e) {}
+    }
+
+    function loadVault() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) { vault = parsed; renderVault(); }
+        }
+      } catch(e) {}
+    }
+
+    function escapeHtml(unsafe) {
+      return String(unsafe ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+    }
+
+    function normalizeTitle(str) {
+      return str.toLowerCase().replace(/[^a-z0-9\s]/g,'').replace(/\s+/g,' ').trim();
+    }
+
+    function normalizePlatform(p) {
+      const map = {'nintendo 64':'N64','n64':'N64','super nintendo':'SNES','snes':'SNES','nes':'NES','playstation':'PS1','ps1':'PS1','ps2':'PS2','ps3':'PS3','ps4':'PS4','ps5':'PS5','xbox':'Xbox','xbox 360':'Xbox 360','xbox one':'Xbox One','xbox series x':'Xbox Series X','game boy advance':'Game Boy / GBA','gba':'Game Boy / GBA','game boy':'Game Boy / GBA','gb':'Game Boy / GBA'};
+      return map[p.toLowerCase()] || p;
+    }
+
+    function getConditionValue(result, condition) {
+      if (!result) return 0;
+      if (condition === 'Loose') return result.loosePrice || 0;
+      if (condition === 'Complete in Box (CIB)' || condition === 'CIB') return result.cibPrice || 0;
+      if (condition === 'Sealed' || condition === 'New') return result.newPrice || 0;
+      if (condition === 'Graded') return result.gradedPrice || result.newPrice || 0;
+      return result.loosePrice || 0;
+    }
+
+    /* ================================================================
+       SEARCH FLOW
+    ================================================================ */
+    async function searchCatalog(query, selectedPlatform) {
+      if (config.dataMode === 'mock') return searchMockCatalog(query, selectedPlatform);
+      if (config.dataMode === 'proxy') return await searchProxyCatalog(query, selectedPlatform);
+      return [];
+    }
+
+    function searchMockCatalog(query, selectedPlatform) {
+      if (!query) return [];
+      const normQuery = normalizeTitle(query);
+      const platformFilter = selectedPlatform ? normalizePlatform(selectedPlatform) : null;
+      return mockGameData.map(game => ({
+        source:'mock', externalId:null, title:game.title, platform:game.platform,
+        loosePrice:game.loosePrice, cibPrice:game.cibPrice, newPrice:game.newPrice,
+        gradedPrice:game.gradedPrice, releaseDate:null, imageUrl:null,
+        searchScore:0
+      })).filter(r => normalizeTitle(r.title).includes(normQuery)).sort((a,b)=>b.searchScore-a.searchScore);
+    }
+
+    async function searchProxyCatalog(query, selectedPlatform) {
+      if (config.useMockProxyResponse) {
+        await new Promise(r => setTimeout(r,600));
+        return searchMockCatalog(query, selectedPlatform);
+      }
+      try {
+        const res = await fetch(config.proxySearchUrl, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({query, platform:selectedPlatform})});
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || 'Proxy error');
+        const arr = data.results || [];
+        return arr.map(r => ({...r, platform: r.platform || r.console || 'Other'}));
+      } catch(e) {
+        console.error(e);
+        throw new Error('Live search unavailable');
+      }
+    }
+
+    function runSearch() {
+      const title = document.getElementById('game-title').value.trim();
+      if (!title) { alert("Please enter a game title."); return; }
+
+      const loading = document.getElementById('search-loading');
+      const errorEl = document.getElementById('search-error');
+      loading.classList.remove('hidden'); 
+      errorEl.classList.add('hidden');
+
+      const modeText = config.dataMode === 'proxy' && config.useMockProxyResponse ? ' (mock proxy simulation)' : config.dataMode === 'proxy' ? ' (live proxy)' : ' (mock)';
+      document.getElementById('search-loading').textContent = `Searching catalog${modeText}...`;
+
+      setTimeout(async () => {
+        loading.classList.add('hidden');
+        try {
+          const selectedPlatform = document.getElementById('platform').value;
+          const results = await searchCatalog(title, selectedPlatform);
+          lastSearchResults = results;
+          renderSearchResults(results, selectedPlatform);
+          document.getElementById('search-results').classList.remove('hidden');
+          document.getElementById('search-results').scrollIntoView({ behavior: 'smooth' });
+        } catch (err) {
+          errorEl.textContent = 'Search failed: ' + err.message;
+          errorEl.classList.remove('hidden');
+          document.getElementById('search-results').classList.add('hidden');
+        }
+      }, 420);
+    }
+
+    function renderSearchResults(results, selectedPlatform) {
+      const resultsGrid = document.getElementById('results-grid');
+      resultsGrid.innerHTML = '';
+      if (results.length === 0) {
+        resultsGrid.innerHTML = `<p class="text-center text-gray-400 col-span-3 py-4">No matches found for this platform.</p><div class="text-center col-span-3 py-4"><button onclick="addManualEntry()" class="px-6 py-3 bg-black border border-[var(--teal)] text-[var(--teal)] hover:bg-[var(--teal)]/20 transition">Add this game manually</button></div>`;
+        return;
+      }
+      const condition = document.getElementById('condition').value || 'Loose';
+      results.forEach((result, index) => {
+        const card = document.createElement('div');
+        card.className = 'relative bg-black border border-[var(--teal)]/60 rounded-xl p-6 cursor-pointer hover:border-[var(--yellow)] transition';
+        let previewPrice = 0; let previewLabel = '';
+        if (condition === 'Loose') { previewPrice = result.loosePrice || 0; previewLabel = 'Loose'; }
+        else if (condition === 'Complete in Box (CIB)') { previewPrice = result.cibPrice || 0; previewLabel = 'CIB'; }
+        else if (condition === 'Sealed') { previewPrice = result.newPrice || 0; previewLabel = 'Sealed'; }
+        else if (condition === 'Graded') { previewPrice = result.gradedPrice || result.newPrice || 0; previewLabel = 'Graded'; }
+        card.innerHTML = `
+          ${index === 0 ? '<span class="absolute top-2 right-2 px-3 py-1 text-xs font-bold bg-[var(--yellow)] text-black rounded-full">Best Match</span>' : ''}
+          <div class="font-semibold mb-2">${escapeHtml(result.title)}</div>
+          <div class="text-sm text-gray-400 mb-2">${escapeHtml(result.platform)}</div>
+          <div class="text-lg font-bold text-[var(--teal)] mb-1">${previewLabel}: $${Math.round(previewPrice)}</div>
+          <div class="text-xs text-gray-500">Loose: $${Math.round(result.loosePrice || 0)} | CIB: $${Math.round(result.cibPrice || 0)}</div>
+        `;
+        card.onclick = () => addToVault(result);
+        resultsGrid.appendChild(card);
+      });
+    }
+
+    function addManualEntry() {
+      const title = document.getElementById('game-title').value.trim();
+      if (!title) { alert("Please enter a game title first."); return; }
+      const condition = document.getElementById('condition').value || 'Loose';
+      const platform = document.getElementById('platform').value || 'Other';
+      const quantity = parseInt(document.getElementById('quantity').value) || 1;
+      const notes = document.getElementById('notes').value;
+      const purchasePriceInput = document.getElementById('purchase-price').value.trim() ? parseFloat(document.getElementById('purchase-price').value) : null;
+
+      const manualResult = { 
+        source: 'manual', 
+        externalId: null, 
+        title: title, 
+        platform: platform, 
+        loosePrice: 0, 
+        cibPrice: 0, 
+        newPrice: 0, 
+        gradedPrice: 0, 
+        releaseDate: null, 
+        imageUrl: null, 
+        searchScore: 0 
+      };
+
+      addToVault(manualResult, purchasePriceInput);
+      document.getElementById('search-results').classList.add('hidden');
+    }
+
+    document.getElementById('condition').addEventListener('change', () => {
+      if (!document.getElementById('search-results').classList.contains('hidden')) {
+        const selectedPlatform = document.getElementById('platform').value;
+        renderSearchResults(lastSearchResults, selectedPlatform);
+      }
+    });
+
+    function clearForm() {
+      document.getElementById('game-title').value = '';
+      document.getElementById('notes').value = '';
+      document.getElementById('quantity').value = 1;
+      const purchaseInput = document.getElementById('purchase-price');
+      if (purchaseInput) purchaseInput.value = '';
+    }
+
+    /* ================================================================
+       addToVault - safe optional purchase price (works for both search clicks and manual add)
+    ================================================================ */
+    function addToVault(normalizedResult, purchasePriceInput = null) {
+      const quantity = parseInt(document.getElementById('quantity').value) || 1;
+      const condition = document.getElementById('condition').value || 'Loose';
+      const selectedPlatform = document.getElementById('platform').value || normalizedResult.platform;
+      const notes = document.getElementById('notes').value;
+
+      // Read purchase price from the form field if not passed (for search result clicks)
+      if (purchasePriceInput === null) {
+        const fieldValue = document.getElementById('purchase-price').value.trim();
+        purchasePriceInput = fieldValue ? parseFloat(fieldValue) : null;
+      }
+
+      let unitValue = 0;
+      if (condition === 'Loose') unitValue = normalizedResult.loosePrice || 0;
+      else if (condition === 'Complete in Box (CIB)') unitValue = normalizedResult.cibPrice || 0;
+      else if (condition === 'Sealed') unitValue = normalizedResult.newPrice || 0;
+      else if (condition === 'Graded') unitValue = normalizedResult.gradedPrice || normalizedResult.newPrice || 0;
+
+      const existing = vault.find(item =>
+        item.title === normalizedResult.title &&
+        item.platform === selectedPlatform &&
+        item.condition === condition
+      );
+
+      if (existing) {
+        existing.quantity += quantity;
+        existing.totalValue = existing.unitValue * existing.quantity;
+        if (notes) existing.notes = existing.notes ? existing.notes + '; ' + notes : notes;
+        if (purchasePriceInput !== null && Number.isFinite(purchasePriceInput)) {
+          existing.purchasePrice = purchasePriceInput;
+        }
+      } else {
+        const newItem = {
+          id: Date.now() + Math.random().toString(36).substr(2,9),
+          source: normalizedResult.source,
+          externalId: normalizedResult.externalId,
+          title: normalizedResult.title,
+          platform: selectedPlatform,
+          condition: condition,
+          quantity: quantity,
+          unitValue: unitValue,
+          totalValue: unitValue * quantity,
+          purchasePrice: (purchasePriceInput !== null && Number.isFinite(purchasePriceInput)) ? purchasePriceInput : unitValue,
+          imageUrl: normalizedResult.imageUrl || 'images/vault-placeholder.png',
+          notes: notes,
+          addedAt: new Date().toISOString()
+        };
+        vault.push(newItem);
+      }
+
+      renderVault();
+      saveVault();
+      clearForm();
+      document.getElementById('search-results').classList.add('hidden');
+
+      const msg = document.getElementById('success-message');
+      document.getElementById('success-text').textContent = `Added ${quantity} × ${normalizedResult.title} to your Vault`;
+      msg.classList.remove('hidden');
+      setTimeout(() => msg.classList.add('hidden'), 3000);
+    }
+
+    /* ================================================================
+       VAULT RENDER + SUMMARY + FILTER/SORT
+    ================================================================ */
+    function renderVault() {
+      filterAndSortVault();
+      populatePlatformFilter();
+    }
+
+    function filterAndSortVault() {
+      const list = document.getElementById('vault-list');
+      list.innerHTML = '';
+
+      let filtered = [...vault];
+
+      // Search filter
+      const searchTerm = (document.getElementById('vault-search').value || '').toLowerCase().trim();
+      if (searchTerm) {
+        filtered = filtered.filter(item => 
+          (item.title || '').toLowerCase().includes(searchTerm) ||
+          (item.platform || '').toLowerCase().includes(searchTerm) ||
+          (item.condition || '').toLowerCase().includes(searchTerm)
+        );
+      }
+
+      // Platform filter
+      const selectedPlatformFilter = document.getElementById('vault-platform-filter').value;
+      if (selectedPlatformFilter) {
+        filtered = filtered.filter(item => item.platform === selectedPlatformFilter);
+      }
+
+      // Sort
+      const sortValue = document.getElementById('vault-sort').value;
+      if (sortValue === 'added-desc') {
+        filtered.sort((a, b) => new Date(b.addedAt || 0) - new Date(a.addedAt || 0));
+      } else if (sortValue === 'title-asc') {
+        filtered.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+      } else if (sortValue === 'title-desc') {
+        filtered.sort((a, b) => (b.title || '').localeCompare(a.title || ''));
+      } else if (sortValue === 'value-desc') {
+        filtered.sort((a, b) => {
+          const va = a.currentTotalValue !== undefined ? a.currentTotalValue : a.totalValue || 0;
+          const vb = b.currentTotalValue !== undefined ? b.currentTotalValue : b.totalValue || 0;
+          return vb - va;
+        });
+      } else if (sortValue === 'value-asc') {
+        filtered.sort((a, b) => {
+          const va = a.currentTotalValue !== undefined ? a.currentTotalValue : a.totalValue || 0;
+          const vb = b.currentTotalValue !== undefined ? b.currentTotalValue : b.totalValue || 0;
+          return va - vb;
+        });
+      } else if (sortValue === 'gain-desc') {
+        filtered.sort((a, b) => (b.valueChangeAmount || 0) - (a.valueChangeAmount || 0));
+      } else if (sortValue === 'loss-desc') {
+        filtered.sort((a, b) => (a.valueChangeAmount || 0) - (b.valueChangeAmount || 0));
+      } else if (sortValue === 'platform-asc') {
+        filtered.sort((a, b) => (a.platform || '').localeCompare(b.platform || ''));
+      }
+
+      if (filtered.length === 0) {
+        list.innerHTML = `<p class="text-center text-gray-400 py-12">No matching items found.</p>`;
+        updateSummaryStats();
+        return;
+      }
+
+      filtered.forEach(item => {
+        const currentUnit = item.currentUnitValue !== undefined ? item.currentUnitValue : item.unitValue;
+        const currentTotal = item.currentTotalValue !== undefined ? item.currentTotalValue : item.totalValue;
+        const changeAmount = item.valueChangeAmount !== undefined ? item.valueChangeAmount : 0;
+        const changePercent = item.valueChangePercent !== undefined ? item.valueChangePercent : 0;
+        const lastUpdated = item.lastPriceUpdated || "Not refreshed yet";
+        const purchasePrice = item.purchasePrice !== undefined && Number.isFinite(item.purchasePrice) ? item.purchasePrice : (item.unitValue || 0);
+        const imageSrc = item.imageUrl || 'images/vault-placeholder.png';
+
+        const snapshotTotal = (purchasePrice * item.quantity) || item.totalValue || 0;
+        const displayCurrentTotal = currentTotal || (currentUnit * item.quantity) || 0;
+
+        const changeClass = changePercent >= 0 ? 'text-green-400' : 'text-red-400';
+        const changeSign = changePercent >= 0 ? '+' : '';
+
+        const card = document.createElement('div');
+        card.className = 'bg-black border border-[var(--teal)]/40 rounded-2xl overflow-hidden hover:border-[var(--yellow)] transition-all';
+
+        card.innerHTML = `
+          <div class="flex flex-col md:flex-row gap-6 p-6">
+            <div class="relative w-28 h-28 md:w-32 md:h-32 flex-shrink-0 bg-zinc-950 border border-[var(--teal)]/30 rounded-xl overflow-hidden">
+              <img src="${imageSrc}" alt="${escapeHtml(item.title)}" class="w-full h-full object-contain p-2">
+              <div class="absolute bottom-2 left-2 bg-black/90 text-[var(--teal)] text-xs font-bold px-2.5 py-0.5 rounded border border-[var(--teal)]/50">
+                ${escapeHtml(item.platform)}
+              </div>
+            </div>
+
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-xl mb-1">${escapeHtml(item.title)}</div>
+              <div class="text-sm text-gray-400 mb-3">${escapeHtml(item.platform)} • ${escapeHtml(item.condition)} × ${item.quantity}</div>
+              ${item.notes ? `<div class="text-xs text-gray-500 mb-4">${escapeHtml(item.notes)}</div>` : ''}
+              <div class="grid grid-cols-2 gap-x-8 text-sm">
+                <div><span class="text-gray-500">Added:</span> ${new Date(item.addedAt || Date.now()).toLocaleDateString()}</div>
+                <div><span class="text-gray-500">Purchase:</span> <span class="text-[var(--yellow)]">$${Math.round(purchasePrice)}</span></div>
+              </div>
+            </div>
+
+            <div class="md:text-right md:min-w-[200px]">
+              <div class="text-xs text-gray-500">Added at (total)</div>
+              <div class="text-2xl font-bold text-[var(--yellow)]">$${Math.round(snapshotTotal)}</div>
+              
+              <div class="mt-4">
+                <div class="text-xs text-gray-500">Current Value (total)</div>
+                <div class="text-3xl font-bold text-[var(--teal)]">$${Math.round(displayCurrentTotal)}</div>
+              </div>
+
+              <div class="mt-4 inline-flex items-center gap-2 bg-black/70 px-4 py-1 rounded-full border border-[var(--teal)]/30">
+                <span class="${changeClass} font-medium">${changeSign}$${Math.round(Math.abs(changeAmount))} (${changeSign}${changePercent}%)</span>
+              </div>
+
+              <div class="text-xs text-gray-500 mt-3">Last updated: ${lastUpdated}</div>
+
+              <div class="mt-6 flex gap-3 justify-end">
+                <button onclick="viewItem('${item.id}')" class="px-5 py-2 text-xs border border-[var(--teal)] hover:bg-[var(--teal)]/10 transition">VIEW</button>
+                <button onclick="removeFromVault('${item.id}')" class="px-5 py-2 text-xs border border-red-600 text-red-400 hover:bg-red-900/30 transition">REMOVE</button>
+              </div>
+            </div>
+          </div>
+        `;
+        list.appendChild(card);
+      });
+
+      updateSummaryStats();
+    }
+
+    function updateSummaryStats() {
+      const totalGames = vault.reduce((sum, item) => sum + item.quantity, 0);
+      const uniqueTitles = new Set(vault.map(item => item.title)).size;
+      const originalValue = vault.reduce((sum, item) => {
+        const unit = item.purchasePrice !== undefined && Number.isFinite(item.purchasePrice) ? item.purchasePrice : (item.unitValue || 0);
+        return sum + (unit * item.quantity);
+      }, 0);
+      const currentValue = vault.reduce((sum, item) => {
+        return sum + (item.currentTotalValue !== undefined ? item.currentTotalValue : item.totalValue || 0);
+      }, 0);
+      const totalChange = currentValue - originalValue;
+      const changePercent = originalValue > 0 ? Math.round((totalChange / originalValue) * 100) : 0;
+
+      document.getElementById('stat-games').textContent = totalGames;
+      document.getElementById('stat-unique').textContent = uniqueTitles;
+      document.getElementById('stat-original').textContent = '$' + Math.round(originalValue);
+      document.getElementById('stat-current').textContent = '$' + Math.round(currentValue);
+      
+      const changeEl = document.getElementById('stat-change');
+      changeEl.textContent = (totalChange >= 0 ? '+' : '') + Math.round(totalChange) + ' (' + (totalChange >= 0 ? '+' : '') + changePercent + '%)';
+      changeEl.className = totalChange >= 0 ? 'text-3xl font-bold text-green-400' : 'text-3xl font-bold text-red-400';
+    }
+
+    /* ================================================================
+       LIVE MARKET REFRESH
+    ================================================================ */
+    async function refreshMarketValues() {
+      const button = document.querySelector('button[onclick="refreshMarketValues()"]');
+      const statusEl = document.getElementById('refresh-status');
+
+      if (button) button.disabled = true;
+      statusEl.textContent = 'Refreshing market values...';
+
+      let updatedCount = 0;
+      const totalItems = vault.length;
+
+      for (let i = 0; i < vault.length; i++) {
+        const item = vault[i];
+        if (!item.externalId && !item.title) continue;
+
+        try {
+          let response;
+          if (item.externalId) {
+            response = await fetch(config.proxySearchUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ externalId: item.externalId })
+            });
+          } else {
+            response = await fetch(config.proxySearchUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ query: item.title, platform: item.platform })
+            });
+          }
+
+          const data = await response.json();
+          if (!response.ok || data.error || !data.results || data.results.length === 0) continue;
+
+          const freshResult = data.results[0];
+          const liveUnitValue = getConditionValue(freshResult, item.condition);
+          const liveTotalValue = liveUnitValue * item.quantity;
+          const snapshotTotal = (item.purchasePrice !== undefined && Number.isFinite(item.purchasePrice) ? item.purchasePrice : (item.unitValue || 0)) * item.quantity;
+          const changeAmount = liveTotalValue - snapshotTotal;
+          const changePercent = snapshotTotal > 0 ? Math.round((changeAmount / snapshotTotal) * 100) : 0;
+
+          item.currentUnitValue = liveUnitValue;
+          item.currentTotalValue = liveTotalValue;
+          item.valueChangeAmount = changeAmount;
+          item.valueChangePercent = changePercent;
+          item.lastPriceUpdated = new Date().toLocaleString();
+
+          updatedCount++;
+        } catch (err) {
+          console.warn(`Refresh failed for ${item.title || item.externalId}:`, err.message);
+        }
+      }
+
+      saveVault();
+      renderVault();
+
+      if (button) button.disabled = false;
+
+      if (updatedCount > 0) {
+        statusEl.textContent = `Updated ${updatedCount} of ${totalItems} items • Just now`;
+      } else {
+        statusEl.textContent = 'No items could be refreshed • Just now';
+      }
+
+      setTimeout(() => {
+        if (statusEl.textContent.includes('Just now')) statusEl.textContent = 'Last updated: Just now';
+      }, 5000);
+    }
+
+    /* Placeholder functions */
+    function filterVault() { filterAndSortVault(); }
+    function exportVault() { alert('Export CSV coming soon (placeholder)'); }
+    function viewItem(id) { alert('View detailed item coming soon (placeholder)'); }
+
+    function removeFromVault(id) {
+      vault = vault.filter(item => item.id !== id);
+      renderVault();
+      saveVault();
+    }
+
+    function clearVault() {
+      if (confirm("Are you sure you want to clear your entire Vault?")) {
+        vault = [];
+        saveVault();
+        renderVault();
+      }
+    }
+
+    // Populate platform filter dynamically
+    function populatePlatformFilter() {
+      const select = document.getElementById('vault-platform-filter');
+      const currentValue = select.value;
+      while (select.options.length > 1) select.remove(1);
+
+      const platforms = new Set(vault.map(item => item.platform).filter(Boolean));
+      platforms.forEach(platform => {
+        const option = document.createElement('option');
+        option.value = platform;
+        option.textContent = platform;
+        select.appendChild(option);
+      });
+
+      if (currentValue && Array.from(select.options).some(opt => opt.value === currentValue)) {
+        select.value = currentValue;
+      }
+    }
+
+    // Gamertag + Enter key
+    document.getElementById('gamertag-display').textContent = "RetroKing87";
+    document.getElementById('game-title').addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); runSearch(); }
+    });
+
+    // Load vault and populate filter
+    loadVault();
+    populatePlatformFilter();
+  </script>
+</body>
+</html>
