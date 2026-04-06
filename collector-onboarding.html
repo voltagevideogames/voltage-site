@@ -127,6 +127,7 @@
   // Save gamertag to profiles table
   async function saveGamertag() {
     const btn = document.getElementById('save-btn');
+    const originalBtnHTML = btn.innerHTML;
     const statusEl = document.getElementById('status');
     const gamertagInput = document.getElementById('gamertag-input');
     const gamertag = gamertagInput.value.trim();
@@ -176,7 +177,7 @@
       showStatus('Unexpected error. Please try again.', true);
     } finally {
       btn.disabled = false;
-      btn.textContent = 'Save Gamertag & Continue';
+      btn.innerHTML = originalBtnHTML;
     }
   }
 
