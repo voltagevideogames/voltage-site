@@ -505,7 +505,7 @@
       </section>
 
     </div>
-  </main>
+   </main>
 
   <!--
     KEEP YOUR EXISTING SUPABASE / SESSION / LOGOUT SCRIPT BELOW THIS POINT.
@@ -515,5 +515,68 @@
     - #welcome-message
     - logout()
   -->
+
+  <script>
+    const supabaseUrl = 'https://kdqdebpcemviaubbiuwl.supabase.co';
+    const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkcWRlYnBjZW12aWF1YmJpdXdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNjg3NTAsImV4cCI6MjA4OTk0NDc1MH0.QZHcD2RRl5rXkuaVOXPxYxFSABE_5EjsmmDaRbCktNI';
+    const dashboardSupabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+    let currentCollector = null;
+    let currentProfile = null;
+
+    async function loadCollectorDashboard() {
+      const { data: { session }, error: sessionError } = await dashboardSupabase.auth.getSession();
+
+      if (sessionError || !session) {
+        window.location.href = 'index.html';
+        return;
+      }
+
+      currentCollector = session.user;
+
+      const { data: profile, error: profileError } = await dashboardSupabase
+        .from('profiles')
+        .select('gamertag, role')
+        .eq('id', currentCollector.id)
+        .maybeSingle();
+
+      if (profileError) {
+        console.error('Failed to load profile:', profileError);
+      }
+
+      currentProfile = profile || null;
+
+      const gamertag = (profile && profile.gamertag) ? profile.gamertag : 'Collector';
+
+      const topGamertagEl = document.getElementById('user-gamertag');
+      if (topGamertagEl) {
+        topGamertagEl.textContent = gamertag;
+      }
+
+      const welcomeEl = document.getElementById('welcome-message');
+      if (welcomeEl) {
+        welcomeEl.textContent = `Welcome, ${gamertag}`;
+      }
+
+      const identityTitleEl = document.querySelector('.heading-font.text-lg.md\\:text-2xl.neon-text.leading-relaxed');
+      if (identityTitleEl) {
+        identityTitleEl.textContent = gamertag;
+      }
+    }
+
+    async function logout() {
+      const { error } = await dashboardSupabase.auth.signOut();
+      if (error) {
+        console.error('Logout failed:', error);
+        return;
+      }
+
+      window.location.href = 'index.html';
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadCollectorDashboard();
+    });
+  </script>
 </body>
 </html>
