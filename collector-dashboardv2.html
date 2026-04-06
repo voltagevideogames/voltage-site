@@ -235,19 +235,19 @@
         <div class="grid grid-cols-2 xl:grid-cols-5 gap-4">
           <div class="stat-card rounded-3xl p-5">
             <div class="text-xs uppercase tracking-wide text-zinc-500">Vault Value</div>
-            <div class="text-3xl font-bold text-[var(--teal)] mt-2">$1,975</div>
-            <div class="text-xs text-emerald-400 mt-1">+3.26% vs last 30 days</div>
+            <div id="kpi-vault-value" class="text-3xl font-bold text-[var(--teal)] mt-2">$1,975</div>
+            <div id="kpi-30day" class="text-xs text-emerald-400 mt-1">+3.26% vs last 30 days</div>
           </div>
 
           <div class="stat-card rounded-3xl p-5">
             <div class="text-xs uppercase tracking-wide text-zinc-500">Total Games</div>
-            <div class="text-3xl font-bold text-white mt-2">89</div>
+            <div id="kpi-total-games" class="text-3xl font-bold text-white mt-2">89</div>
             <div class="text-xs text-zinc-400 mt-1">Tracked in collection</div>
           </div>
 
           <div class="stat-card rounded-3xl p-5">
             <div class="text-xs uppercase tracking-wide text-zinc-500">Unique Systems</div>
-            <div class="text-3xl font-bold text-white mt-2">7</div>
+            <div id="kpi-unique-systems" class="text-3xl font-bold text-white mt-2">7</div>
             <div class="text-xs text-zinc-400 mt-1">Across your vault</div>
           </div>
 
@@ -359,17 +359,17 @@
           </div>
 
          <div class="text-sm uppercase tracking-wide text-zinc-500 mb-2">Total Collection Value</div>
-          <div class="text-5xl font-bold text-[var(--teal)] leading-none">$1,975</div>
-          <div class="text-zinc-400 mt-3 text-lg">33 games • 7 systems</div>
+          <div id="total-collection-value" class="text-5xl font-bold text-[var(--teal)] leading-none">$1,975</div>
+          <div id="games-systems-line" class="text-zinc-400 mt-3 text-lg">33 games • 7 systems</div>
         </div>
 
         <div class="mt-8">
           <div class="flex items-center justify-between text-sm mb-2">
             <span class="text-zinc-500">30-Day Performance</span>
-            <span class="text-emerald-400 font-semibold">+3.26%</span>
+            <span id="performance-percent" class="text-emerald-400 font-semibold">+3.26%</span>
           </div>
           <div class="h-2 rounded-full bg-zinc-800 overflow-hidden">
-            <div class="h-2 w-[68%] rounded-full bg-gradient-to-r from-[var(--teal)] to-emerald-400"></div>
+            <div id="performance-bar" class="h-2 w-[68%] rounded-full bg-gradient-to-r from-[var(--teal)] to-emerald-400"></div>
           </div>
         </div>
       </div>
@@ -379,8 +379,8 @@
     <div class="grid gap-4">
       <div class="panel-soft rounded-[28px] p-5">
         <div class="text-xs uppercase tracking-wide text-zinc-500 mb-2">Most Valuable Item</div>
-        <div class="text-3xl font-bold text-white leading-tight">Chrono Trigger</div>
-        <div class="text-zinc-400 mt-3 text-lg">SNES • $260</div>
+        <div id="most-valuable-title" class="text-3xl font-bold text-white leading-tight">Chrono Trigger</div>
+        <div id="most-valuable-subtitle" class="text-zinc-400 mt-3 text-lg">SNES • $260</div>
       </div>
 
       <div class="panel-soft rounded-[28px] p-5">
@@ -389,22 +389,22 @@
         <div class="grid grid-cols-2 gap-4 mt-4">
           <div>
             <div class="text-[11px] uppercase tracking-wide text-zinc-500">Average Value</div>
-            <div class="text-2xl font-bold text-white mt-1">$59.85</div>
+            <div id="snapshot-average" class="text-2xl font-bold text-white mt-1">$59.85</div>
           </div>
 
           <div>
             <div class="text-[11px] uppercase tracking-wide text-zinc-500">Top Platform</div>
-            <div class="text-2xl font-bold text-white mt-1">SNES</div>
+            <div id="snapshot-top-platform" class="text-2xl font-bold text-white mt-1">SNES</div>
           </div>
 
           <div>
             <div class="text-[11px] uppercase tracking-wide text-zinc-500">Last Refresh</div>
-            <div class="text-lg font-semibold text-zinc-300 mt-1">Today</div>
+            <div id="snapshot-last-refresh" class="text-lg font-semibold text-zinc-300 mt-1">Today</div>
           </div>
 
           <div>
             <div class="text-[11px] uppercase tracking-wide text-zinc-500">Status</div>
-            <div class="text-lg font-semibold text-emerald-400 mt-1">Tracking</div>
+            <div id="snapshot-status" class="text-lg font-semibold text-emerald-400 mt-1">Tracking</div>
           </div>
         </div>
       </div>
@@ -507,15 +507,6 @@
     </div>
    </main>
 
-  <!--
-    KEEP YOUR EXISTING SUPABASE / SESSION / LOGOUT SCRIPT BELOW THIS POINT.
-    This blueprint is intentionally focused on structure + presentation.
-    Preserve your current JS that populates:
-    - #user-gamertag
-    - #welcome-message
-    - logout()
-  -->
-
   <script>
     const supabaseUrl = 'https://kdqdebpcemviaubbiuwl.supabase.co';
     const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkcWRlYnBjZW12aWF1YmJpdXdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNjg3NTAsImV4cCI6MjA4OTk0NDc1MH0.QZHcD2RRl5rXkuaVOXPxYxFSABE_5EjsmmDaRbCktNI';
@@ -574,8 +565,146 @@
       window.location.href = 'index.html';
     }
 
+    // ============== VAULT DASHBOARD STATS FROM localStorage (voltageVaultV1) ==============
+    function loadVaultDashboardStats() {
+      let items = [];
+      const stored = localStorage.getItem('voltageVaultV1');
+      if (stored) {
+        try {
+          items = JSON.parse(stored);
+        } catch (e) {
+          console.error('Failed to parse voltageVaultV1', e);
+        }
+      }
+      if (!Array.isArray(items)) items = [];
+
+      // Safe value getter
+      const getValue = (item, currKey, fallbackKey) => {
+        if (item && item[currKey] != null) return parseFloat(item[currKey]) || 0;
+        if (item && item[fallbackKey] != null) return parseFloat(item[fallbackKey]) || 0;
+        return 0;
+      };
+
+      // Totals
+      let totalValue = 0;
+      let totalGames = 0;
+      const platformMap = new Map();
+
+      items.forEach(item => {
+        const qty = Math.max(1, parseInt(item.quantity) || 1);
+        totalGames += qty;
+
+        const currTotal = getValue(item, 'currentTotalValue', 'totalValue');
+        const unitVal = getValue(item, 'currentUnitValue', 'unitValue');
+        const itemTotal = currTotal > 0 ? currTotal : (unitVal * qty);
+
+        totalValue += itemTotal;
+
+        const plat = String(item.platform || 'Unknown').trim();
+        if (plat) {
+          platformMap.set(plat, (platformMap.get(plat) || 0) + itemTotal);
+        }
+      });
+
+      const uniqueSystems = platformMap.size;
+
+      // 30-Day Performance (temporary)
+      let originalValue = 0;
+      items.forEach(item => {
+        const qty = Math.max(1, parseInt(item.quantity) || 1);
+        const purchase = parseFloat(item.purchasePrice) || 0;
+        const unit = parseFloat(item.unitValue) || 0;
+        originalValue += (purchase > 0 ? purchase * qty : unit * qty);
+      });
+
+      let perfPercent = 0;
+      if (originalValue > 0) {
+        perfPercent = ((totalValue - originalValue) / originalValue) * 100;
+      }
+      const perfText = (perfPercent >= 0 ? '+' : '') + perfPercent.toFixed(2) + '%';
+      const isPositive = perfPercent >= 0;
+
+      // Bar width (visual clamp)
+      let barWidth = 68;
+      if (originalValue > 0) {
+        const ratio = Math.max(0, totalValue / originalValue);
+        barWidth = Math.min(100, Math.max(8, Math.round(ratio * 75)));
+      }
+
+      // Most Valuable Item
+      let mostVal = null;
+      let maxVal = -1;
+      items.forEach(item => {
+        const qty = Math.max(1, parseInt(item.quantity) || 1);
+        const val = getValue(item, 'currentTotalValue', 'totalValue') || (getValue(item, 'currentUnitValue', 'unitValue') * qty);
+        if (val > maxVal) {
+          maxVal = val;
+          mostVal = item;
+        }
+      });
+
+      // Average & Top Platform
+      const avgValue = totalGames > 0 ? (totalValue / totalGames).toFixed(2) : '0';
+      let topPlatform = '—';
+      let topPlatVal = 0;
+      platformMap.forEach((val, plat) => {
+        if (val > topPlatVal) {
+          topPlatVal = val;
+          topPlatform = plat;
+        }
+      });
+
+      // Last Refresh
+      let lastRefresh = 'Never';
+      let latest = null;
+      items.forEach(item => {
+        if (item.lastPriceUpdated) {
+          const d = new Date(item.lastPriceUpdated);
+          if (!isNaN(d.getTime()) && (!latest || d > latest)) latest = d;
+        }
+      });
+      if (latest) {
+        lastRefresh = latest.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      }
+
+      const statusText = items.length > 0 ? 'Tracking' : 'Ready';
+      const statusClass = items.length > 0 ? 'text-emerald-400' : 'text-zinc-400';
+
+      // Bind KPI Strip
+      document.getElementById('kpi-vault-value').textContent = '$' + Math.round(totalValue).toLocaleString();
+      document.getElementById('kpi-total-games').textContent = totalGames;
+      document.getElementById('kpi-unique-systems').textContent = uniqueSystems;
+
+      // Bind Vault Overview
+      document.getElementById('total-collection-value').textContent = '$' + Math.round(totalValue).toLocaleString();
+      document.getElementById('games-systems-line').textContent = `${totalGames} games • ${uniqueSystems} systems`;
+      document.getElementById('performance-percent').textContent = perfText;
+      document.getElementById('performance-percent').className = `font-semibold ${isPositive ? 'text-emerald-400' : 'text-red-400'}`;
+      document.getElementById('performance-bar').style.width = `${barWidth}%`;
+
+      // Bind Most Valuable
+      if (mostVal && maxVal >= 0) {
+        const mvQty = Math.max(1, parseInt(mostVal.quantity) || 1);
+        const mvDisplayVal = getValue(mostVal, 'currentTotalValue', 'totalValue') || (getValue(mostVal, 'currentUnitValue', 'unitValue') * mvQty);
+        document.getElementById('most-valuable-title').textContent = mostVal.title || 'Untitled Item';
+        document.getElementById('most-valuable-subtitle').textContent = `${mostVal.platform || '—'} • $${Math.round(mvDisplayVal).toLocaleString()}`;
+      } else {
+        document.getElementById('most-valuable-title').textContent = 'No items in vault';
+        document.getElementById('most-valuable-subtitle').textContent = 'Add games to begin tracking';
+      }
+
+      // Bind Collection Snapshot
+      document.getElementById('snapshot-average').textContent = '$' + parseFloat(avgValue).toLocaleString();
+      document.getElementById('snapshot-top-platform').textContent = topPlatform;
+      document.getElementById('snapshot-last-refresh').textContent = lastRefresh;
+      document.getElementById('snapshot-status').textContent = statusText;
+      document.getElementById('snapshot-status').className = `text-lg font-semibold ${statusClass} mt-1`;
+    }
+
+    // Initialize
     document.addEventListener('DOMContentLoaded', async () => {
       await loadCollectorDashboard();
+      loadVaultDashboardStats();
     });
   </script>
 </body>
