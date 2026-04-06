@@ -7,8 +7,29 @@
 
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+  const SUPABASE_URL = 'https://kdqdebpcemviaubbiuwl.supabase.co ';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkcWRlYnBjZW12aWF1YmJpdXdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNjg3NTAsImV4cCI6MjA4OTk0NDc1MH0.QZHcD2RRl5rXkuaVOXPxYxFSABE_5EjsmmDaRbCktNI';
 
-  <style>
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let currentUser = null;
+
+  async function requireVaultUser() {
+    const { data, error } = await supabaseClient.auth.getUser();
+
+    if (error || !data?.user) {
+      window.location.href = 'index.html';
+      return null;
+    }
+
+    currentUser = data.user;
+    return currentUser;
+  }
+</script>
+
+<style>
     @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
@@ -548,16 +569,24 @@
     © 2026 Voltage Video Games. All rights reserved.
   </footer>
 
-    <script>
-    /* ================================================================
-       CONFIG + DATA LAYER
-    ================================================================ */
-    const config = {
-      dataMode: 'proxy',
-      useMockProxyResponse: false,
-      proxySearchUrl: '/.netlify/functions/vault-search'
-    };
+   <script>
+document.addEventListener('DOMContentLoaded', async () => {
+  const user = await requireVaultUser();
+  if (!user) return;
 
+  /* ================================================================
+     CONFIG + DATA LAYER
+  ================================================================ */
+  const config = {
+    dataMode: 'proxy',
+    useMockProxyResponse: false,
+    proxySearchUrl: '/.netlify/functions/vault-search'
+  };
+
+  // ⬇️ EVERYTHING ELSE IN YOUR SCRIPT STAYS EXACTLY THE SAME BELOW THIS
+
+});
+</script>
     let vault = [];
     let lastSearchResults = [];
      let activeSystemFilter = '';
