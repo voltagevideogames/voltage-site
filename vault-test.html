@@ -439,14 +439,32 @@
             <p class="text-zinc-400 mt-2">Search, sort, and organize your collection by system.</p>
           </div>
 
-          <!-- View Toggle (UI-ready, safe placeholder) -->
-          <div class="flex gap-3 overflow-x-auto scroll-slim pb-1">
-            <button type="button" class="segmented-tab active">By System</button>
-            <button type="button" class="segmented-tab">All Titles</button>
-            <button type="button" class="segmented-tab">Top Value</button>
-            <button type="button" class="segmented-tab">Recent Adds</button>
-          </div>
-        </div>
+          <!-- Vault Insights Panel -->
+<div class="grid grid-cols-2 xl:grid-cols-4 gap-3">
+  <div class="panel-soft rounded-2xl p-4">
+    <div class="text-[10px] uppercase tracking-wide text-zinc-500">Top Value Item</div>
+    <div id="insight-top-item" class="text-sm font-semibold text-white mt-2">—</div>
+    <div id="insight-top-item-value" class="text-xs text-[var(--teal)] mt-1">$0</div>
+  </div>
+
+  <div class="panel-soft rounded-2xl p-4">
+    <div class="text-[10px] uppercase tracking-wide text-zinc-500">Biggest Gain</div>
+    <div id="insight-biggest-gain" class="text-sm font-semibold text-white mt-2">—</div>
+    <div id="insight-biggest-gain-value" class="text-xs text-emerald-400 mt-1">$0</div>
+  </div>
+
+  <div class="panel-soft rounded-2xl p-4">
+    <div class="text-[10px] uppercase tracking-wide text-zinc-500">Top System</div>
+    <div id="insight-top-system" class="text-sm font-semibold text-white mt-2">—</div>
+    <div id="insight-top-system-value" class="text-xs text-[var(--yellow)] mt-1">$0</div>
+  </div>
+
+  <div class="panel-soft rounded-2xl p-4">
+    <div class="text-[10px] uppercase tracking-wide text-zinc-500">Recently Added</div>
+    <div id="insight-recent-item" class="text-sm font-semibold text-white mt-2">—</div>
+    <div id="insight-recent-item-date" class="text-xs text-zinc-400 mt-1">—</div>
+  </div>
+</div>
 
         <!-- Toolbar -->
         <div class="grid lg:grid-cols-[1.2fr_0.8fr] gap-4">
@@ -535,6 +553,7 @@
 
     let vault = [];
     let lastSearchResults = [];
+     let activeSystemFilter = '';
     let mockGameData = [
       { title: "Chrono Trigger", platform: "SNES", loosePrice: 185, cibPrice: 320, newPrice: 450, gradedPrice: 600 },
       { title: "Super Mario World", platform: "SNES", loosePrice: 45, cibPrice: 68, newPrice: 120, gradedPrice: 180 },
@@ -832,23 +851,14 @@ function groupVaultBySystem(items) {
   return Object.values(groups).sort((a, b) => b.totalCurrentValue - a.totalCurrentValue);
 }
 
-function renderCollectorIdentity() {
-  const summary = getVaultSummary();
-
-  const gamertagEl = document.getElementById('gamertag-display');
-  if (gamertagEl) {
-    const savedGamertag = localStorage.getItem('gamertag') || 'Collector';
-    gamertagEl.textContent = savedGamertag;
+function setActiveSystemFilter(systemName) {
+  if (activeSystemFilter === systemName) {
+    activeSystemFilter = '';
+  } else {
+    activeSystemFilter = systemName;
   }
 
-  const systemsEl = document.getElementById('collector-systems-count');
-  if (systemsEl) systemsEl.textContent = summary.uniqueSystems;
-
-  const titlesEl = document.getElementById('collector-titles-count');
-  if (titlesEl) titlesEl.textContent = summary.uniqueTitles;
-
-  const valueEl = document.getElementById('collector-total-value');
-  if (valueEl) valueEl.textContent = '$' + summary.currentValue.toLocaleString();
+  renderVault();
 }
 
 function renderSystemShelf() {
@@ -864,25 +874,34 @@ function renderSystemShelf() {
   }
 
   groups.forEach(group => {
-    const card = document.createElement('div');
-    card.className = 'panel-soft rounded-2xl p-4';
+    const isActive = activeSystemFilter === group.system;
+
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = `w-full text-left panel-soft rounded-2xl p-4 transition border ${
+      isActive
+        ? 'border-[var(--yellow)] bg-[rgba(255,235,59,0.06)]'
+        : 'border-white/5 hover:border-[var(--teal)]'
+    }`;
+
     card.innerHTML = `
       <div class="text-sm font-semibold text-white">${escapeHtml(group.system)}</div>
       <div class="text-xs text-zinc-500 mt-1">${group.totalQuantity} games • $${Math.round(group.totalCurrentValue).toLocaleString()} total</div>
     `;
+
+    card.addEventListener('click', () => setActiveSystemFilter(group.system));
     container.appendChild(card);
   });
 }
-
-
     /* ================================================================
        VAULT RENDER + SUMMARY + FILTER/SORT
     ================================================================ */
-    function renderVault() {
+   function renderVault() {
   filterAndSortVault();
   populatePlatformFilter();
   renderCollectorIdentity();
   renderSystemShelf();
+  renderInsightsPanel();
 }
 
     function filterAndSortVault() {
@@ -900,6 +919,11 @@ function renderSystemShelf() {
           (item.condition || '').toLowerCase().includes(searchTerm)
         );
       }
+
+     // System shelf filter
+     if (activeSystemFilter) {
+     filtered = filtered.filter(item => item.platform === activeSystemFilter);
+     }
 
       // Platform filter
       const selectedPlatformFilter = document.getElementById('vault-platform-filter').value;
