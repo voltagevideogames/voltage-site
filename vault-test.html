@@ -609,11 +609,134 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const STORAGE_KEY = 'voltageVaultV1';
 
-    function saveVault() {
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(vault)); } catch(e) {}
-    }
+function mapVaultRowToItem(row) {
+  return {
+    id: row.id,
+    externalId: row.external_id || null,
+    title: row.title || '',
+    platform: row.platform || 'Other',
+    condition: row.condition || 'Loose',
+    quantity: Number(row.quantity || 1),
+    unitValue: Number(row.unit_value || 0),
+    totalValue: Number(row.total_value || 0),
+    purchasePrice: row.purchase_price != null ? Number(row.purchase_price) : null,
+    imageUrl: row.image_url || 'images/vault-placeholder.png',
+    notes: row.notes || '',
+    addedAt: row.created_at || new Date().toISOString(),
+    currentUnitValue: row.current_unit_value != null ? Number(row.current_unit_value) : undefined,
+    currentTotalValue: row.current_total_value != null ? Number(row.current_total_value) : undefined,
+    valueChangeAmount: row.value_change_amount != null ? Number(row.value_change_amount) : undefined,
+    valueChangePercent: row.value_change_percent != null ? Number(row.value_change_percent) : undefined,
+    lastPriceUpdated: row.last_price_updated || undefined
+  };
+}
 
-   async function loadVault() {
+function mapVaultItemToRow(item) {
+  return {
+    user_id: currentUser.id,
+    external_id: item.externalId || null,
+    title: item.title || '',
+    platform: item.platform || 'Other',
+    condition: item.condition || 'Loose',
+    quantity: Number(item.quantity || 1),
+    unit_value: Number(item.unitValue || 0),
+    total_value: Number(item.totalValue || 0),
+    purchase_price: item.purchasePrice != null ? Number(item.purchasePrice) : null,
+    image_url: item.imageUrl || null,
+    notes: item.notes || null,
+    current_unit_value: item.currentUnitValue != null ? Number(item.currentUnitValue) : null,
+    current_total_value: item.currentTotalValue != null ? Number(item.currentTotalValue) : null,
+    value_change_amount: item.valueChangeAmount != null ? Number(item.valueChangeAmount) : null,
+    value_change_percent: item.valueChangePercent != null ? Number(item.valueChangePercent) : null,
+    last_price_updated: item.lastPriceUpdated || null
+  };
+}
+
+async function loadVaultFromSupabase() {
+  if (!currentUser?.id) return [];
+
+  const { data, error } = await supabaseClient
+    .from('vault_items')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Failed to load vault_items:', error);
+    return [];
+  }
+
+  return Array.isArray(data) ? data.map(mapVaultRowToItem) : [];
+}
+
+async function insertVaultItemToSupabase(item) {
+  if (!currentUser?.id) throw new Error('No authenticated user');
+
+  const row = mapVaultItemToRow(item);
+
+  const { data, error } = await supabaseClient
+    .from('vault_items')
+    .insert(row)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Failed to insert vault item:', error);
+    throw error;
+  }
+
+  return mapVaultRowToItem(data);
+}
+
+async function updateVaultItemInSupabase(id, item) {
+  const row = mapVaultItemToRow(item);
+
+  const { data, error } = await supabaseClient
+    .from('vault_items')
+    .update(row)
+    .eq('id', id)
+    .eq('user_id', currentUser.id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Failed to update vault item:', error);
+    throw error;
+  }
+
+  return mapVaultRowToItem(data);
+}
+
+async function deleteVaultItemFromSupabase(id) {
+  const { error } = await supabaseClient
+    .from('vault_items')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', currentUser.id);
+
+  if (error) {
+    console.error('Failed to delete vault item:', error);
+    throw error;
+  }
+}
+
+async function clearVaultInSupabase() {
+  const { error } = await supabaseClient
+    .from('vault_items')
+    .delete()
+    .eq('user_id', currentUser.id);
+
+  if (error) {
+    console.error('Failed to clear vault:', error);
+    throw error;
+  }
+}
+
+function saveVault() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(vault)); } catch(e) {}
+}
+
+async function loadVault() {
   try {
     const supabaseItems = await loadVaultFromSupabase();
 
