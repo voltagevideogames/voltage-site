@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="Voltage 2.0 Collector Dashboard – Track your collection, monitor values, and manage your trades." />
+  <title>Voltage 2.0 • Collector Dashboard</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+    :root {
+      --teal: #00E5B8;
+      --yellow: #FFEB3B;
+      --card: #101214;
+      --panel: #0b0d0f;
+      --line: rgba(0, 229, 184, 0.16);
+      --line-strong: rgba(0, 229, 184, 0.34);
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background:
+        radial-gradient(circle at top center, rgba(0,229,184,0.08), transparent 30%),
+        linear-gradient(to bottom, #050607 0%, #0a0a0a 100%);
+      color: #f5f5f5;
+    }
+
+    .heading-font {
+      font-family: 'Press Start 2P', system-ui;
+    }
+
+    .neon-text {
+      text-shadow:
+        0 0 10px rgba(0,229,184,0.55),
+        0 0 24px rgba(0,229,184,0.18),
+        0 0 36px rgba(255,235,59,0.10);
+    }
+
+    .dashboard-shell {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.005)),
+        rgba(0,0,0,0.55);
+      backdrop-filter: blur(10px);
+    }
+
+    .panel {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)),
+        var(--panel);
+      border: 1px solid var(--line);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.03),
+        0 0 0 1px rgba(255,255,255,0.01);
+    }
+
+    .panel-soft {
+      background: rgba(255,255,255,0.015);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .stat-card {
+      background: linear-gradient(180deg, rgba(14,16,18,0.98), rgba(10,11,13,0.98));
+      border: 1px solid rgba(255,255,255,0.07);
+      box-shadow: 0 8px 28px rgba(0,0,0,0.30);
+    }
+
+    .feature-card {
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--line-strong);
+      box-shadow: 0 0 0 1px rgba(0,229,184,0.10), 0 12px 30px rgba(0,0,0,0.28);
+    }
+
+    .glow-divider {
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(0,229,184,0.4), transparent);
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      border-radius: 999px;
+      padding: 0.55rem 0.9rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+    }
+
+    .status-teal {
+      color: var(--teal);
+      border-color: rgba(0,229,184,0.24);
+      background: rgba(0,229,184,0.08);
+    }
+
+    .status-yellow {
+      color: var(--yellow);
+      border-color: rgba(255,235,59,0.22);
+      background: rgba(255,235,59,0.08);
+    }
+
+    .nav-link {
+      color: #cfcfcf;
+      transition: color 0.2s ease;
+    }
+
+    .nav-link:hover,
+    .nav-link.active {
+      color: var(--teal);
+    }
+
+    .grid-line {
+      background-image:
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 26px 26px;
+    }
+  </style>
+</head>
+<body class="min-h-screen text-white">
+
+  <!-- TOP NAV -->
+  <nav class="sticky top-0 z-50 border-b border-[rgba(0,229,184,0.14)] bg-black/75 backdrop-blur-xl">
+    <div class="max-w-[1600px] mx-auto px-4 md:px-6 xl:px-8 py-4 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-4 min-w-0">
+        <img src="images/voltage-logo.png" alt="Voltage" class="h-10 w-auto shrink-0">
+        <div class="min-w-0">
+          <div class="heading-font text-sm sm:text-lg neon-text tracking-widest truncate">VOLTAGE 2.0</div>
+          <div class="text-[10px] sm:text-xs text-zinc-500 uppercase tracking-[0.22em]">Collector Dashboard</div>
+        </div>
+      </div>
+
+      <div class="hidden lg:flex items-center gap-8 text-sm font-medium">
+        <a href="#" class="nav-link active">Dashboard</a>
+        <a href="vault.html" class="nav-link">Vault</a>
+        <a href="#" class="nav-link">Trades</a>
+        <a href="#" class="nav-link">Community</a>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <div id="user-gamertag" class="hidden sm:flex items-center px-4 py-2 rounded-full border border-[rgba(0,229,184,0.22)] bg-black/40 text-[var(--yellow)] text-sm font-semibold"></div>
+
+        <a href="index.html"
+           class="hidden sm:inline-flex px-4 py-2 text-sm border border-[rgba(0,229,184,0.22)] hover:bg-[rgba(0,229,184,0.08)] transition rounded-xl">
+          Home
+        </a>
+
+        <button onclick="logout()"
+                class="px-4 py-2 text-sm rounded-xl border border-red-500/25 text-red-300 hover:bg-red-950/30 transition">
+          Logout
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-[1600px] mx-auto px-4 md:px-6 xl:px-8 py-6 md:py-8 xl:py-10">
+    <div class="dashboard-shell rounded-[28px] border border-[rgba(255,255,255,0.05)] overflow-hidden">
+
+      <!-- HERO -->
+      <section class="relative grid-line border-b border-[rgba(0,229,184,0.08)]">
+        <div class="grid xl:grid-cols-[1.2fr_0.8fr] gap-8 p-6 md:p-8 xl:p-10 items-center">
+          <div>
+            <div class="text-xs uppercase tracking-[0.32em] text-[var(--teal)] mb-4">Collector Experience</div>
+
+            <div id="welcome-message" class="text-3xl md:text-5xl xl:text-6xl font-extrabold leading-tight mb-4">
+              Welcome, Collector
+            </div>
+
+            <p class="text-base md:text-lg text-zinc-300 max-w-2xl leading-relaxed">
+              Track your collection. Monitor live values. Manage trades. Build your legacy inside the Voltage ecosystem.
+            </p>
+
+            <div class="flex flex-wrap gap-3 mt-6">
+              <div class="status-pill status-teal">
+                <i class="fa-solid fa-shield-halved"></i>
+                Verified Collector
+              </div>
+              <div class="status-pill status-yellow">
+                <i class="fa-solid fa-star"></i>
+                Member Since 2026
+              </div>
+            </div>
+          </div>
+
+          <div class="panel rounded-[28px] p-6 md:p-8 relative overflow-hidden">
+            <div class="absolute inset-0 opacity-30"
+                 style="background: radial-gradient(circle at center, rgba(0,229,184,0.22), transparent 55%);"></div>
+
+            <div class="relative">
+              <div class="text-xs uppercase tracking-[0.28em] text-zinc-500 mb-4">Voltage Identity</div>
+
+              <div class="rounded-[24px] border border-[rgba(0,229,184,0.18)] bg-black/40 p-6 md:p-8 text-center">
+                <div class="w-20 h-20 md:w-24 md:h-24 mx-auto rounded-[24px] border border-[rgba(0,229,184,0.20)] bg-black flex items-center justify-center text-4xl text-[var(--teal)] mb-5">
+                  <i class="fa-solid fa-shield"></i>
+                </div>
+
+                <div class="heading-font text-lg md:text-2xl neon-text leading-relaxed">VOLTAGE GAMING</div>
+                <div class="mt-3 text-sm md:text-base text-zinc-400">
+                  Your collector hub for value, identity, and trades.
+                </div>
+
+                <div class="mt-6 grid grid-cols-3 gap-3">
+                  <div class="panel-soft rounded-2xl p-3">
+                    <div class="text-[10px] uppercase tracking-wide text-zinc-500">Level</div>
+                    <div class="text-xl font-bold text-[var(--teal)] mt-1">5</div>
+                  </div>
+                  <div class="panel-soft rounded-2xl p-3">
+                    <div class="text-[10px] uppercase tracking-wide text-zinc-500">Vault</div>
+                    <div class="text-xl font-bold text-white mt-1">Ready</div>
+                  </div>
+                  <div class="panel-soft rounded-2xl p-3">
+                    <div class="text-[10px] uppercase tracking-wide text-zinc-500">Status</div>
+                    <div class="text-xl font-bold text-[var(--yellow)] mt-1">Live</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- KPI STRIP -->
+      <section class="p-6 md:p-8 xl:p-10 border-b border-[rgba(255,255,255,0.04)]">
+        <div class="grid grid-cols-2 xl:grid-cols-5 gap-4">
+          <div class="stat-card rounded-3xl p-5">
+            <div class="text-xs uppercase tracking-wide text-zinc-500">Vault Value</div>
+            <div class="text-3xl font-bold text-[var(--teal)] mt-2">$1,975</div>
+            <div class="text-xs text-emerald-400 mt-1">+3.26% vs last 30 days</div>
+          </div>
+
+          <div class="stat-card rounded-3xl p-5">
+            <div class="text-xs uppercase tracking-wide text-zinc-500">Total Games</div>
+            <div class="text-3xl font-bold text-white mt-2">89</div>
+            <div class="text-xs text-zinc-400 mt-1">Tracked in collection</div>
+          </div>
+
+          <div class="stat-card rounded-3xl p-5">
+            <div class="text-xs uppercase tracking-wide text-zinc-500">Unique Systems</div>
+            <div class="text-3xl font-bold text-white mt-2">7</div>
+            <div class="text-xs text-zinc-400 mt-1">Across your vault</div>
+          </div>
+
+          <div class="stat-card rounded-3xl p-5">
+            <div class="text-xs uppercase tracking-wide text-zinc-500">Trades Submitted</div>
+            <div class="text-3xl font-bold text-white mt-2">12</div>
+            <div class="text-xs text-zinc-400 mt-1">2 currently active</div>
+          </div>
+
+          <div class="stat-card rounded-3xl p-5">
+            <div class="text-xs uppercase tracking-wide text-zinc-500">Collector Rank</div>
+            <div class="text-3xl font-bold text-[var(--yellow)] mt-2">Top 5%</div>
+            <div class="text-xs text-zinc-400 mt-1">Community tier placeholder</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- MAIN DASHBOARD GRID -->
+      <section class="p-6 md:p-8 xl:p-10">
+        <div class="grid xl:grid-cols-[260px_minmax(0,1fr)_320px] gap-6">
+
+         <!-- LEFT RAIL -->
+<aside class="space-y-6">
+  <div class="panel rounded-[28px] p-5">
+    <div class="text-xs uppercase tracking-[0.25em] text-zinc-500 mb-4">My Hub</div>
+
+    <div class="space-y-2">
+      <a href="#" class="feature-card flex items-center gap-3 rounded-2xl border border-[rgba(0,229,184,0.16)] bg-[rgba(0,229,184,0.06)] px-4 py-3 text-[var(--teal)] font-semibold">
+        <i class="fa-solid fa-chart-line w-5"></i>
+        Dashboard
+      </a>
+
+      <a href="vault.html" class="feature-card flex items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-3 text-zinc-300">
+        <i class="fa-solid fa-box-archive w-5"></i>
+        My Vault
+      </a>
+
+      <a href="#" class="feature-card flex items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-3 text-zinc-300">
+        <i class="fa-solid fa-arrow-right-arrow-left w-5"></i>
+        My Trades
+      </a>
+
+      <a href="vault.html" class="feature-card flex items-center justify-between rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-3 text-zinc-300">
+        <div class="flex items-center gap-3">
+          <i class="fa-solid fa-chart-simple w-5"></i>
+          <span>Value Tracker</span>
+        </div>
+        <span class="text-[10px] uppercase tracking-wide text-zinc-500">Vault</span>
+      </a>
+
+      <div class="feature-card flex items-center justify-between rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-3 text-zinc-400">
+        <div class="flex items-center gap-3">
+          <i class="fa-solid fa-users w-5"></i>
+          <span>Community</span>
+        </div>
+        <span class="text-[10px] uppercase tracking-wide text-[var(--yellow)]">Soon</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel rounded-[28px] p-5">
+    <div class="text-xs uppercase tracking-[0.25em] text-zinc-500 mb-4">Quick Actions</div>
+
+    <div class="space-y-3">
+      <a href="index.html#sell"
+         class="feature-card flex items-center justify-between rounded-2xl border border-[rgba(255,235,59,0.16)] bg-[rgba(255,235,59,0.06)] px-4 py-4">
+        <div>
+          <div class="font-semibold text-white">Sell or Trade Games</div>
+          <div class="text-xs text-zinc-400 mt-1">Get a fast offer from Voltage</div>
+        </div>
+        <i class="fa-solid fa-arrow-right text-[var(--yellow)]"></i>
+      </a>
+
+      <a href="vault.html"
+         class="feature-card flex items-center justify-between rounded-2xl border border-[rgba(0,229,184,0.16)] bg-[rgba(0,229,184,0.06)] px-4 py-4">
+        <div>
+          <div class="font-semibold text-white">Manage Vault</div>
+          <div class="text-xs text-zinc-400 mt-1">Track value and condition</div>
+        </div>
+        <i class="fa-solid fa-arrow-right text-[var(--teal)]"></i>
+      </a>
+    </div>
+  </div>
+</aside>
+          <!-- CENTER CONTENT -->
+          <div class="space-y-6">
+
+            <!-- Vault Overview -->
+<section class="panel rounded-[28px] p-6">
+  <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
+    <div>
+      <div class="text-xs uppercase tracking-[0.25em] text-zinc-500 mb-2">Vault Overview</div>
+      <h2 class="text-3xl font-bold leading-tight mb-1">Your Collection Command Center</h2>
+    </div>
+
+    <a href="vault.html"
+       class="px-5 py-3 rounded-2xl border border-[rgba(0,229,184,0.20)] text-sm font-medium text-[var(--teal)] hover:bg-[rgba(0,229,184,0.08)] transition">
+      Manage Vault
+    </a>
+  </div>
+
+  <div class="grid lg:grid-cols-[1.15fr_0.85fr] gap-5">
+    <!-- LEFT: MAIN VAULT CARD -->
+    <div class="rounded-[28px] border border-[rgba(0,229,184,0.16)] bg-black/35 p-6">
+      <div class="flex flex-col h-full justify-between">
+        <div>
+          <div class="w-24 h-24 rounded-[24px] border border-[rgba(0,229,184,0.16)] bg-black flex items-center justify-center text-[var(--teal)] text-4xl mb-6">
+            <i class="fa-solid fa-layer-group"></i>
+          </div>
+
+         <div class="text-sm uppercase tracking-wide text-zinc-500 mb-2">Total Collection Value</div>
+          <div class="text-5xl font-bold text-[var(--teal)] leading-none">$1,975</div>
+          <div class="text-zinc-400 mt-3 text-lg">33 games • 7 systems</div>
+        </div>
+
+        <div class="mt-8">
+          <div class="flex items-center justify-between text-sm mb-2">
+            <span class="text-zinc-500">30-Day Performance</span>
+            <span class="text-emerald-400 font-semibold">+3.26%</span>
+          </div>
+          <div class="h-2 rounded-full bg-zinc-800 overflow-hidden">
+            <div class="h-2 w-[68%] rounded-full bg-gradient-to-r from-[var(--teal)] to-emerald-400"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: STACKED INSIGHT CARDS -->
+    <div class="grid gap-4">
+      <div class="panel-soft rounded-[28px] p-5">
+        <div class="text-xs uppercase tracking-wide text-zinc-500 mb-2">Most Valuable Item</div>
+        <div class="text-3xl font-bold text-white leading-tight">Chrono Trigger</div>
+        <div class="text-zinc-400 mt-3 text-lg">SNES • $260</div>
+      </div>
+
+      <div class="panel-soft rounded-[28px] p-5">
+        <div class="text-xs uppercase tracking-wide text-zinc-500 mb-2">Collection Snapshot</div>
+
+        <div class="grid grid-cols-2 gap-4 mt-4">
+          <div>
+            <div class="text-[11px] uppercase tracking-wide text-zinc-500">Average Value</div>
+            <div class="text-2xl font-bold text-white mt-1">$59.85</div>
+          </div>
+
+          <div>
+            <div class="text-[11px] uppercase tracking-wide text-zinc-500">Top Platform</div>
+            <div class="text-2xl font-bold text-white mt-1">SNES</div>
+          </div>
+
+          <div>
+            <div class="text-[11px] uppercase tracking-wide text-zinc-500">Last Refresh</div>
+            <div class="text-lg font-semibold text-zinc-300 mt-1">Today</div>
+          </div>
+
+          <div>
+            <div class="text-[11px] uppercase tracking-wide text-zinc-500">Status</div>
+            <div class="text-lg font-semibold text-emerald-400 mt-1">Tracking</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+              <section class="panel rounded-[28px] p-6">
+                <div class="text-xs uppercase tracking-[0.25em] text-zinc-500 mb-2">Quick Actions</div>
+                <h2 class="text-2xl font-bold mb-5">What do you want to do?</h2>
+
+                <div class="grid gap-4">
+                  <a href="vault.html" class="feature-card rounded-3xl border border-[rgba(0,229,184,0.14)] bg-[rgba(0,229,184,0.05)] p-5">
+                    <div class="text-3xl text-[var(--teal)] mb-3"><i class="fa-solid fa-box-archive"></i></div>
+                    <div class="font-semibold text-lg">Build Your Vault</div>
+                    <div class="text-sm text-zinc-400 mt-1">Add, organize, and track your collection.</div>
+                  </a>
+
+                  <a href="index.html#sell" class="feature-card rounded-3xl border border-[rgba(255,235,59,0.14)] bg-[rgba(255,235,59,0.05)] p-5">
+                    <div class="text-3xl text-[var(--yellow)] mb-3"><i class="fa-solid fa-arrow-right-arrow-left"></i></div>
+                    <div class="font-semibold text-lg">Submit a Trade</div>
+                    <div class="text-sm text-zinc-400 mt-1">Get a fast offer from Voltage.</div>
+                  </a>
+
+                  <a href="#" class="feature-card rounded-3xl border border-white/6 bg-white/[0.02] p-5">
+                    <div class="text-3xl text-[var(--teal)] mb-3"><i class="fa-solid fa-chart-simple"></i></div>
+                   <div class="font-semibold text-lg">Value Tracker</div>
+                   <div class="text-sm text-zinc-400 mt-1">Track real-time value of your collection.</div>
+                    <div class="text-sm text-zinc-400 mt-1">Monitor game values across your collection.</div>
+                  </a>
+                </div>
+              </section>
+            </div>
+          </div>
+
+          <!-- RIGHT RAIL -->
+          <aside class="space-y-6">
+            <section class="panel rounded-[28px] p-5">
+              <div class="text-xs uppercase tracking-[0.25em] text-zinc-500 mb-2">Sell or Trade Inventory</div>
+              <h2 class="text-2xl font-bold mb-4">Get an Offer</h2>
+
+              <div class="rounded-3xl border border-[rgba(255,235,59,0.14)] bg-[rgba(255,235,59,0.05)] p-5">
+                <div class="text-sm text-zinc-300 mb-4">
+                  Ready to move part of your collection? Start a trade-in and get a fair Voltage offer.
+                </div>
+                <a href="index.html#sell"
+                   class="w-full inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-[var(--teal)] to-[var(--yellow)] px-4 py-4 text-black font-bold">
+                  Get an Offer
+                </a>
+              </div>
+            </section>
+
+            <section class="panel rounded-[28px] p-5">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <div class="text-xs uppercase tracking-[0.25em] text-zinc-500 mb-2">Recent Activity</div>
+                  <h2 class="text-xl font-bold">What’s happening</h2>
+                </div>
+              </div>
+
+              <div class="space-y-4 text-sm">
+                <div>
+                  <div class="font-medium text-white">Offer submitted</div>
+                  <div class="text-zinc-400 mt-1">Zelda lot entered for mixed Genesis / NES offer.</div>
+                </div>
+
+                <div class="glow-divider"></div>
+
+                <div>
+                  <div class="font-medium text-white">Vault refreshed</div>
+                  <div class="text-zinc-400 mt-1">Latest value refresh completed this morning.</div>
+                </div>
+
+                <div class="glow-divider"></div>
+
+                <div>
+                  <div class="font-medium text-white">Profile unlocked</div>
+                  <div class="text-zinc-400 mt-1">Collector hub activated after Gamertag signup.</div>
+                </div>
+              </div>
+            </section>
+
+            <section class="panel rounded-[28px] p-5">
+              <div class="text-xs uppercase tracking-[0.25em] text-zinc-500 mb-2">Community</div>
+              <h2 class="text-xl font-bold mb-4">Collector Spotlight</h2>
+
+              <div class="rounded-3xl border border-white/5 bg-white/[0.02] p-5">
+                <div class="text-sm text-zinc-300">
+                  Track your collection, monitor value, and eventually showcase your best pieces inside the Voltage community.
+                </div>
+                <button class="mt-4 w-full rounded-2xl border border-[rgba(0,229,184,0.16)] px-4 py-3 text-sm text-[var(--teal)] hover:bg-[rgba(0,229,184,0.08)] transition">
+                  Community Hub Coming Soon
+                </button>
+              </div>
+            </section>
+          </aside>
+
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!--
+    KEEP YOUR EXISTING SUPABASE / SESSION / LOGOUT SCRIPT BELOW THIS POINT.
+    This blueprint is intentionally focused on structure + presentation.
+    Preserve your current JS that populates:
+    - #user-gamertag
+    - #welcome-message
+    - logout()
+  -->
+</body>
+</html>
