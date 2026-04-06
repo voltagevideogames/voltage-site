@@ -10,11 +10,12 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
   const SUPABASE_URL = 'https://kdqdebpcemviaubbiuwl.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkcWRlYnBjZW12aWF1YmJpdXdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNjg3NTAsImV4cCI6MjA4OTk0NDc1MH0.QZHcD2RRl5rXkuaVOXPxYxFSABE_5EjsmmDaRbCktNI';
+  const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
 
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   let currentUser = null;
+  let currentProfile = null;
 
   async function requireVaultUser() {
     const { data, error } = await supabaseClient.auth.getUser();
@@ -25,6 +26,18 @@
     }
 
     currentUser = data.user;
+
+    const { data: profile, error: profileError } = await supabaseClient
+      .from('profiles')
+      .select('gamertag, role')
+      .eq('id', currentUser.id)
+      .maybeSingle();
+
+    if (profileError) {
+      console.error('Failed to load vault profile:', profileError);
+    }
+
+    currentProfile = profile || null;
     return currentUser;
   }
 </script>
@@ -907,13 +920,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       const titlesEl = document.getElementById('collector-titles-count');
       const totalValueEl = document.getElementById('collector-total-value');
 
-      const storedGamertag =
-        (localStorage.getItem('gamertag') || localStorage.getItem('voltageGamertag') || '').trim();
+      const liveGamertag =
+  currentProfile && currentProfile.gamertag
+    ? currentProfile.gamertag
+    : 'Collector';
 
-      if (gamertagEl && storedGamertag) {
-        gamertagEl.textContent = storedGamertag;
-      }
-
+if (gamertagEl) {
+  gamertagEl.textContent = liveGamertag;
+}
       if (systemsEl) systemsEl.textContent = summary.uniqueSystems;
       if (titlesEl) titlesEl.textContent = summary.uniqueTitles;
       if (totalValueEl) totalValueEl.textContent = '$' + summary.currentValue.toLocaleString();
