@@ -613,15 +613,43 @@ document.addEventListener('DOMContentLoaded', async () => {
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(vault)); } catch(e) {}
     }
 
-    function loadVault() {
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed)) { vault = parsed; renderVault(); }
-        }
-      } catch(e) {}
+   async function loadVault() {
+  try {
+    const supabaseItems = await loadVaultFromSupabase();
+
+    if (Array.isArray(supabaseItems) && supabaseItems.length > 0) {
+      vault = supabaseItems;
+      renderVault();
+      return;
     }
+
+    // Fallback to localStorage if Supabase is empty
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        vault = parsed;
+        renderVault();
+      }
+    }
+  } catch (e) {
+    console.error('loadVault failed:', e);
+
+    // Safe fallback
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          vault = parsed;
+          renderVault();
+        }
+      }
+    } catch (fallbackErr) {
+      console.error('localStorage fallback failed:', fallbackErr);
+    }
+  }
+}
 
     function escapeHtml(unsafe) {
       return String(unsafe ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
@@ -1324,8 +1352,8 @@ if (gamertagEl) {
       }
     });
 
-    // Initial load
-   loadVault();
+  // Initial load
+await loadVault();
 if (!vault.length) {
   renderVault();
 }
