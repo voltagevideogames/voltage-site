@@ -874,25 +874,82 @@ function groupVaultBySystem(items) {
   return Object.values(groups).sort((a, b) => b.totalCurrentValue - a.totalCurrentValue);
 }
 
-ffunction setActiveSystemFilter(systemName) {
-  if (activeSystemFilter === systemName) {
-    activeSystemFilter = '';
-  } else {
-    activeSystemFilter = systemName;
+function renderCollectorIdentity() {
+  const summary = getVaultSummary();
+
+  const gamertagEl = document.getElementById('gamertag-display');
+  const systemsEl = document.getElementById('collector-systems-count');
+  const titlesEl = document.getElementById('collector-titles-count');
+  const totalValueEl = document.getElementById('collector-total-value');
+
+  const storedGamertag =
+    (localStorage.getItem('gamertag') || localStorage.getItem('voltageGamertag') || '').trim();
+
+  if (gamertagEl && storedGamertag) {
+    gamertagEl.textContent = storedGamertag;
   }
 
-  const label = document.getElementById('active-system-label');
-  if (label) {
-    if (activeSystemFilter) {
-      label.textContent = `Showing: ${activeSystemFilter}`;
-      label.classList.remove('hidden');
-    } else {
-      label.textContent = '';
-      label.classList.add('hidden');
-    }
+  if (systemsEl) systemsEl.textContent = summary.uniqueSystems;
+  if (titlesEl) titlesEl.textContent = summary.uniqueTitles;
+  if (totalValueEl) totalValueEl.textContent = '$' + summary.currentValue.toLocaleString();
+}
+
+function renderInsightsPanel() {
+  const topItemEl = document.getElementById('insight-top-item');
+  const topItemValueEl = document.getElementById('insight-top-item-value');
+  const biggestGainEl = document.getElementById('insight-biggest-gain');
+  const biggestGainValueEl = document.getElementById('insight-biggest-gain-value');
+  const topSystemEl = document.getElementById('insight-top-system');
+  const topSystemValueEl = document.getElementById('insight-top-system-value');
+  const recentItemEl = document.getElementById('insight-recent-item');
+  const recentItemDateEl = document.getElementById('insight-recent-item-date');
+
+  if (!vault.length) {
+    if (topItemEl) topItemEl.textContent = '—';
+    if (topItemValueEl) topItemValueEl.textContent = '$0';
+    if (biggestGainEl) biggestGainEl.textContent = '—';
+    if (biggestGainValueEl) biggestGainValueEl.textContent = '$0';
+    if (topSystemEl) topSystemEl.textContent = '—';
+    if (topSystemValueEl) topSystemValueEl.textContent = '$0';
+    if (recentItemEl) recentItemEl.textContent = '—';
+    if (recentItemDateEl) recentItemDateEl.textContent = '—';
+    return;
   }
 
-  renderVault();
+  const topItem = [...vault].sort((a, b) => {
+    const av = (a.currentTotalValue !== undefined ? a.currentTotalValue : a.totalValue) || 0;
+    const bv = (b.currentTotalValue !== undefined ? b.currentTotalValue : b.totalValue) || 0;
+    return bv - av;
+  })[0];
+
+  const biggestGain = [...vault].sort((a, b) => (b.valueChangeAmount || 0) - (a.valueChangeAmount || 0))[0];
+  const topSystem = groupVaultBySystem(vault)[0];
+  const recentItem = [...vault].sort((a, b) => new Date(b.addedAt || 0) - new Date(a.addedAt || 0))[0];
+
+  if (topItemEl) topItemEl.textContent = topItem?.title || '—';
+  if (topItemValueEl) {
+    const value = (topItem?.currentTotalValue !== undefined ? topItem.currentTotalValue : topItem?.totalValue) || 0;
+    topItemValueEl.textContent = '$' + Math.round(value).toLocaleString();
+  }
+
+  if (biggestGainEl) biggestGainEl.textContent = biggestGain?.title || '—';
+  if (biggestGainValueEl) {
+    const gain = biggestGain?.valueChangeAmount || 0;
+    biggestGainValueEl.textContent = (gain >= 0 ? '+' : '-') + '$' + Math.round(Math.abs(gain)).toLocaleString();
+  }
+
+  if (topSystemEl) topSystemEl.textContent = topSystem?.system || '—';
+  if (topSystemValueEl) {
+    const systemValue = topSystem?.totalCurrentValue || 0;
+    topSystemValueEl.textContent = '$' + Math.round(systemValue).toLocaleString();
+  }
+
+  if (recentItemEl) recentItemEl.textContent = recentItem?.title || '—';
+  if (recentItemDateEl) {
+    recentItemDateEl.textContent = recentItem?.addedAt
+      ? new Date(recentItem.addedAt).toLocaleDateString()
+      : '—';
+  }
 }
 
 function setActiveSystemFilter(systemName) {
@@ -913,7 +970,13 @@ function setActiveSystemFilter(systemName) {
     }
   }
 
-  renderVault();
+  const platformSelect = document.getElementById('vault-platform-filter');
+  if (platformSelect) {
+    platformSelect.value = activeSystemFilter || '';
+  }
+
+  filterAndSortVault();
+  renderSystemShelf();
 }
 
 function renderSystemShelf() {
@@ -952,8 +1015,8 @@ function renderSystemShelf() {
        VAULT RENDER + SUMMARY + FILTER/SORT
     ================================================================ */
    function renderVault() {
-  filterAndSortVault();
   populatePlatformFilter();
+  filterAndSortVault();
   renderCollectorIdentity();
   renderSystemShelf();
   renderInsightsPanel();
@@ -1214,18 +1277,18 @@ function renderSystemShelf() {
       }
     }
 
-    // Gamertag + Enter key
-   const gamertagEl = document.getElementById('gamertag-display');
-if (gamertagEl && !gamertagEl.textContent.trim()) {
-  gamertagEl.textContent = localStorage.getItem('gamertag') || 'Collector';
-}
     document.getElementById('game-title').addEventListener('keypress', function (e) {
-      if (e.key === 'Enter') { e.preventDefault(); runSearch(); }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        runSearch();
+      }
     });
 
-    // Load vault and populate filter
+    // Initial load
     loadVault();
-    populatePlatformFilter();
+    if (!vault.length) {
+      renderVault();
+    }
   </script>
 </body>
 </html>
