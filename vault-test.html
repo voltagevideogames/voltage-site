@@ -431,68 +431,78 @@
       </section>
 
       <!-- VAULT CONTROLS -->
-      <section class="panel rounded-[32px] p-6 md:p-8 space-y-6">
-        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-          <div>
-            <div class="text-xs uppercase tracking-[0.26em] text-zinc-500 mb-2">Vault Browser</div>
-            <h2 class="text-2xl md:text-3xl font-bold">Browse Your Collection</h2>
-            <p class="text-zinc-400 mt-2">Search, sort, and organize your collection by system.</p>
-          </div>
+     <section class="panel rounded-[32px] p-6 md:p-8 space-y-6">
+  <!-- Header -->
+  <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+    <div>
+      <div class="text-xs uppercase tracking-[0.26em] text-zinc-500 mb-2">Vault Browser</div>
+      <h2 class="text-2xl md:text-3xl font-bold">Browse Your Collection</h2>
+      <p class="text-zinc-400 mt-2">Search, sort, and organize your collection by system.</p>
+    </div>
 
-          <!-- Vault Insights Panel -->
-<div class="grid grid-cols-2 xl:grid-cols-4 gap-3">
-  <div class="panel-soft rounded-2xl p-4">
-    <div class="text-[10px] uppercase tracking-wide text-zinc-500">Top Value Item</div>
-    <div id="insight-top-item" class="text-sm font-semibold text-white mt-2">—</div>
-    <div id="insight-top-item-value" class="text-xs text-[var(--teal)] mt-1">$0</div>
+    <div id="active-system-label" class="hidden text-sm text-[var(--yellow)] font-medium"></div>
   </div>
 
-  <div class="panel-soft rounded-2xl p-4">
-    <div class="text-[10px] uppercase tracking-wide text-zinc-500">Biggest Gain</div>
-    <div id="insight-biggest-gain" class="text-sm font-semibold text-white mt-2">—</div>
-    <div id="insight-biggest-gain-value" class="text-xs text-emerald-400 mt-1">$0</div>
+  <!-- Insights -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+    <div class="panel-soft rounded-2xl p-4">
+      <div class="text-[10px] uppercase tracking-wide text-zinc-500">Top Value Item</div>
+      <div id="insight-top-item" class="text-sm font-semibold text-white mt-2">—</div>
+      <div id="insight-top-item-value" class="text-xs text-[var(--teal)] mt-1">$0</div>
+    </div>
+
+    <div class="panel-soft rounded-2xl p-4">
+      <div class="text-[10px] uppercase tracking-wide text-zinc-500">Biggest Gain</div>
+      <div id="insight-biggest-gain" class="text-sm font-semibold text-white mt-2">—</div>
+      <div id="insight-biggest-gain-value" class="text-xs text-emerald-400 mt-1">$0</div>
+    </div>
+
+    <div class="panel-soft rounded-2xl p-4">
+      <div class="text-[10px] uppercase tracking-wide text-zinc-500">Top System</div>
+      <div id="insight-top-system" class="text-sm font-semibold text-white mt-2">—</div>
+      <div id="insight-top-system-value" class="text-xs text-[var(--yellow)] mt-1">$0</div>
+    </div>
+
+    <div class="panel-soft rounded-2xl p-4">
+      <div class="text-[10px] uppercase tracking-wide text-zinc-500">Recently Added</div>
+      <div id="insight-recent-item" class="text-sm font-semibold text-white mt-2">—</div>
+      <div id="insight-recent-item-date" class="text-xs text-zinc-400 mt-1">—</div>
+    </div>
   </div>
 
-  <div class="panel-soft rounded-2xl p-4">
-    <div class="text-[10px] uppercase tracking-wide text-zinc-500">Top System</div>
-    <div id="insight-top-system" class="text-sm font-semibold text-white mt-2">—</div>
-    <div id="insight-top-system-value" class="text-xs text-[var(--yellow)] mt-1">$0</div>
+  <!-- Toolbar -->
+  <div class="grid grid-cols-1 xl:grid-cols-[1.3fr_1fr] gap-4">
+    <input
+      type="text"
+      id="vault-search"
+      placeholder="Search your vault..."
+      class="input-shell"
+      onkeyup="filterAndSortVault()"
+    />
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <select id="vault-sort" onchange="filterAndSortVault()" class="input-shell">
+        <option value="added-desc">Recently Added</option>
+        <option value="added-asc">Oldest Added</option>
+        <option value="title-asc">Title A–Z</option>
+        <option value="title-desc">Title Z–A</option>
+        <option value="value-desc">Highest Value</option>
+        <option value="value-asc">Lowest Value</option>
+        <option value="platform-asc">Platform A–Z</option>
+      </select>
+
+      <select id="vault-platform-filter" onchange="filterAndSortVault()" class="input-shell">
+        <option value="">All Platforms</option>
+      </select>
+
+      <button
+        onclick="exportVault()"
+        class="px-4 py-4 rounded-2xl border border-[rgba(255,235,59,0.18)] text-[var(--yellow)] hover:bg-[rgba(255,235,59,0.08)] transition font-semibold">
+        Export CSV
+      </button>
+    </div>
   </div>
-
-  <div class="panel-soft rounded-2xl p-4">
-    <div class="text-[10px] uppercase tracking-wide text-zinc-500">Recently Added</div>
-    <div id="insight-recent-item" class="text-sm font-semibold text-white mt-2">—</div>
-    <div id="insight-recent-item-date" class="text-xs text-zinc-400 mt-1">—</div>
-  </div>
-</div>
-
-        <!-- Toolbar -->
-        <div class="grid lg:grid-cols-[1.2fr_0.8fr] gap-4">
-          <input type="text" id="vault-search" placeholder="Search your vault..." class="input-shell" onkeyup="filterAndSortVault()" />
-
-          <div class="grid sm:grid-cols-3 gap-4">
-            <select id="vault-sort" onchange="filterAndSortVault()" class="input-shell">
-              <option value="added-desc">Recently Added</option>
-              <option value="added-asc">Oldest Added</option>
-              <option value="title-asc">Title A–Z</option>
-              <option value="title-desc">Title Z–A</option>
-              <option value="value-desc">Highest Value</option>
-              <option value="value-asc">Lowest Value</option>
-              <option value="platform-asc">Platform A–Z</option>
-            </select>
-
-            <select id="vault-platform-filter" onchange="filterAndSortVault()" class="input-shell">
-              <option value="">All Platforms</option>
-            </select>
-
-            <button onclick="exportVault()"
-                    class="px-4 py-4 rounded-2xl border border-[rgba(255,235,59,0.18)] text-[var(--yellow)] hover:bg-[rgba(255,235,59,0.08)] transition font-semibold">
-              Export CSV
-            </button>
-          </div>
-        </div>
-      </section>
-
+</section>
       <!-- SYSTEM SUMMARY / COLLECTION DISPLAY -->
       <section class="grid xl:grid-cols-[320px_minmax(0,1fr)] gap-6">
         <!-- System Summary Rail -->
@@ -789,15 +799,28 @@
         vault.push(newItem);
       }
 
-      renderVault();
-      saveVault();
-      clearForm();
-      document.getElementById('search-results').classList.add('hidden');
+     renderVault();
+saveVault();
+clearForm();
+document.getElementById('search-results').classList.add('hidden');
 
-      const msg = document.getElementById('success-message');
-      document.getElementById('success-text').textContent = `Added ${quantity} × ${normalizedResult.title} to your Vault`;
-      msg.classList.remove('hidden');
-      setTimeout(() => msg.classList.add('hidden'), 3000);
+lastSearchResults = [];
+const resultsGrid = document.getElementById('results-grid');
+if (resultsGrid) resultsGrid.innerHTML = '';
+
+const searchLoading = document.getElementById('search-loading');
+if (searchLoading) searchLoading.classList.add('hidden');
+
+const searchError = document.getElementById('search-error');
+if (searchError) {
+  searchError.classList.add('hidden');
+  searchError.textContent = '';
+}
+
+const msg = document.getElementById('success-message');
+document.getElementById('success-text').textContent = `Added ${quantity} × ${normalizedResult.title} to your Vault`;
+msg.classList.remove('hidden');
+setTimeout(() => msg.classList.add('hidden'), 3000);
     }
 /* ================================================================
    NEW: COLLECTOR SUMMARY + SYSTEM SHELF HELPERS
@@ -856,6 +879,27 @@ function setActiveSystemFilter(systemName) {
     activeSystemFilter = '';
   } else {
     activeSystemFilter = systemName;
+  }
+
+  renderVault();
+}
+
+function setActiveSystemFilter(systemName) {
+  if (activeSystemFilter === systemName) {
+    activeSystemFilter = '';
+  } else {
+    activeSystemFilter = systemName;
+  }
+
+  const label = document.getElementById('active-system-label');
+  if (label) {
+    if (activeSystemFilter) {
+      label.textContent = `Showing: ${activeSystemFilter}`;
+      label.classList.remove('hidden');
+    } else {
+      label.textContent = '';
+      label.classList.add('hidden');
+    }
   }
 
   renderVault();
