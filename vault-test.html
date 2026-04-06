@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
 <head>
   <meta charset="UTF-8" />
@@ -874,11 +874,22 @@ function groupVaultBySystem(items) {
   return Object.values(groups).sort((a, b) => b.totalCurrentValue - a.totalCurrentValue);
 }
 
-function setActiveSystemFilter(systemName) {
+ffunction setActiveSystemFilter(systemName) {
   if (activeSystemFilter === systemName) {
     activeSystemFilter = '';
   } else {
     activeSystemFilter = systemName;
+  }
+
+  const label = document.getElementById('active-system-label');
+  if (label) {
+    if (activeSystemFilter) {
+      label.textContent = `Showing: ${activeSystemFilter}`;
+      label.classList.remove('hidden');
+    } else {
+      label.textContent = '';
+      label.classList.add('hidden');
+    }
   }
 
   renderVault();
@@ -964,15 +975,12 @@ function renderSystemShelf() {
         );
       }
 
-     // System shelf filter
-     if (activeSystemFilter) {
-     filtered = filtered.filter(item => item.platform === activeSystemFilter);
-     }
-
-      // Platform filter
+     // Unified platform filter
       const selectedPlatformFilter = document.getElementById('vault-platform-filter').value;
-      if (selectedPlatformFilter) {
-        filtered = filtered.filter(item => item.platform === selectedPlatformFilter);
+      const effectivePlatformFilter = activeSystemFilter || selectedPlatformFilter;
+
+      if (effectivePlatformFilter) {
+        filtered = filtered.filter(item => item.platform === effectivePlatformFilter);
       }
 
       // Sort
