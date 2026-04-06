@@ -231,19 +231,19 @@
             </div>
 
             <div class="grid grid-cols-3 gap-3">
-              <div class="panel-soft rounded-2xl p-4">
-                <div class="text-[10px] uppercase tracking-wide text-zinc-500">Systems</div>
-                <div class="text-2xl font-bold text-white mt-2">7</div>
-              </div>
-              <div class="panel-soft rounded-2xl p-4">
-                <div class="text-[10px] uppercase tracking-wide text-zinc-500">Titles</div>
-                <div class="text-2xl font-bold text-white mt-2">33</div>
-              </div>
-              <div class="panel-soft rounded-2xl p-4">
-                <div class="text-[10px] uppercase tracking-wide text-zinc-500">Value</div>
-                <div class="text-2xl font-bold text-[var(--teal)] mt-2">$1,975</div>
-              </div>
-            </div>
+  <div class="panel-soft rounded-2xl p-4">
+    <div class="text-[10px] uppercase tracking-wide text-zinc-500">Systems</div>
+    <div id="collector-systems-count" class="text-2xl font-bold text-white mt-2">0</div>
+  </div>
+  <div class="panel-soft rounded-2xl p-4">
+    <div class="text-[10px] uppercase tracking-wide text-zinc-500">Titles</div>
+    <div id="collector-titles-count" class="text-2xl font-bold text-white mt-2">0</div>
+  </div>
+  <div class="panel-soft rounded-2xl p-4">
+    <div class="text-[10px] uppercase tracking-wide text-zinc-500">Value</div>
+    <div id="collector-total-value" class="text-2xl font-bold text-[var(--teal)] mt-2">$0</div>
+  </div>
+</div>
 
             <a href="collector-dashboard.html"
                class="mt-5 inline-flex w-full items-center justify-center px-4 py-3 rounded-2xl border border-[rgba(255,235,59,0.18)] text-[var(--yellow)] hover:bg-[rgba(255,235,59,0.08)] transition">
@@ -486,27 +486,9 @@
             Your Vault is evolving toward a system-first view so collectors can browse like real shelves, not just a flat list.
           </p>
 
-          <div class="space-y-3">
-            <div class="panel-soft rounded-2xl p-4">
-              <div class="text-sm font-semibold text-white">SNES</div>
-              <div class="text-xs text-zinc-500 mt-1">14 games • $1,240 total</div>
-            </div>
-
-            <div class="panel-soft rounded-2xl p-4">
-              <div class="text-sm font-semibold text-white">N64</div>
-              <div class="text-xs text-zinc-500 mt-1">8 games • $630 total</div>
-            </div>
-
-            <div class="panel-soft rounded-2xl p-4">
-              <div class="text-sm font-semibold text-white">PS1</div>
-              <div class="text-xs text-zinc-500 mt-1">6 games • $420 total</div>
-            </div>
-
-            <div class="panel-soft rounded-2xl p-4">
-              <div class="text-sm font-semibold text-white">GameCube</div>
-              <div class="text-xs text-zinc-500 mt-1">5 games • $315 total</div>
-            </div>
-          </div>
+        <div id="system-shelf" class="space-y-3">
+  <p class="text-sm text-zinc-500">No systems yet.</p>
+</div>
         </aside>
 
         <!-- Live Vault List -->
@@ -798,14 +780,110 @@
       msg.classList.remove('hidden');
       setTimeout(() => msg.classList.add('hidden'), 3000);
     }
+/* ================================================================
+   NEW: COLLECTOR SUMMARY + SYSTEM SHELF HELPERS
+================================================================ */
+
+function getVaultSummary() {
+  const totalGames = vault.reduce((sum, item) => sum + item.quantity, 0);
+  const uniqueTitles = new Set(vault.map(item => item.title)).size;
+  const uniqueSystems = new Set(vault.map(item => item.platform)).size;
+
+  const originalValue = vault.reduce((sum, item) => {
+    const unit = item.purchasePrice !== undefined && Number.isFinite(item.purchasePrice)
+      ? item.purchasePrice
+      : (item.unitValue || 0);
+    return sum + (unit * item.quantity);
+  }, 0);
+
+  const currentValue = vault.reduce((sum, item) => {
+    return sum + ((item.currentTotalValue !== undefined ? item.currentTotalValue : item.totalValue) || 0);
+  }, 0);
+
+  return {
+    totalGames,
+    uniqueTitles,
+    uniqueSystems,
+    originalValue: Math.round(originalValue),
+    currentValue: Math.round(currentValue)
+  };
+}
+
+function groupVaultBySystem(items) {
+  const groups = {};
+
+  items.forEach(item => {
+    const sys = item.platform || 'Other';
+
+    if (!groups[sys]) {
+      groups[sys] = {
+        system: sys,
+        titleCount: 0,
+        totalQuantity: 0,
+        totalCurrentValue: 0
+      };
+    }
+
+    groups[sys].titleCount += 1;
+    groups[sys].totalQuantity += item.quantity;
+    groups[sys].totalCurrentValue += (item.currentTotalValue !== undefined ? item.currentTotalValue : item.totalValue) || 0;
+  });
+
+  return Object.values(groups).sort((a, b) => b.totalCurrentValue - a.totalCurrentValue);
+}
+
+function renderCollectorIdentity() {
+  const summary = getVaultSummary();
+
+  const gamertagEl = document.getElementById('gamertag-display');
+  if (gamertagEl) {
+    const savedGamertag = localStorage.getItem('gamertag') || 'Collector';
+    gamertagEl.textContent = savedGamertag;
+  }
+
+  const systemsEl = document.getElementById('collector-systems-count');
+  if (systemsEl) systemsEl.textContent = summary.uniqueSystems;
+
+  const titlesEl = document.getElementById('collector-titles-count');
+  if (titlesEl) titlesEl.textContent = summary.uniqueTitles;
+
+  const valueEl = document.getElementById('collector-total-value');
+  if (valueEl) valueEl.textContent = '$' + summary.currentValue.toLocaleString();
+}
+
+function renderSystemShelf() {
+  const container = document.getElementById('system-shelf');
+  if (!container) return;
+
+  const groups = groupVaultBySystem(vault);
+  container.innerHTML = '';
+
+  if (groups.length === 0) {
+    container.innerHTML = `<p class="text-sm text-zinc-500">No systems yet.</p>`;
+    return;
+  }
+
+  groups.forEach(group => {
+    const card = document.createElement('div');
+    card.className = 'panel-soft rounded-2xl p-4';
+    card.innerHTML = `
+      <div class="text-sm font-semibold text-white">${escapeHtml(group.system)}</div>
+      <div class="text-xs text-zinc-500 mt-1">${group.totalQuantity} games • $${Math.round(group.totalCurrentValue).toLocaleString()} total</div>
+    `;
+    container.appendChild(card);
+  });
+}
+
 
     /* ================================================================
        VAULT RENDER + SUMMARY + FILTER/SORT
     ================================================================ */
     function renderVault() {
-      filterAndSortVault();
-      populatePlatformFilter();
-    }
+  filterAndSortVault();
+  populatePlatformFilter();
+  renderCollectorIdentity();
+  renderSystemShelf();
+}
 
     function filterAndSortVault() {
       const list = document.getElementById('vault-list');
@@ -1061,7 +1139,10 @@
     }
 
     // Gamertag + Enter key
-    document.getElementById('gamertag-display').textContent = "RetroKing87";
+   const gamertagEl = document.getElementById('gamertag-display');
+if (gamertagEl && !gamertagEl.textContent.trim()) {
+  gamertagEl.textContent = localStorage.getItem('gamertag') || 'Collector';
+}
     document.getElementById('game-title').addEventListener('keypress', function (e) {
       if (e.key === 'Enter') { e.preventDefault(); runSearch(); }
     });
