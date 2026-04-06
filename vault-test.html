@@ -1,4 +1,4 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
 <head>
   <meta charset="UTF-8" />
@@ -471,7 +471,7 @@
   </div>
 
   <!-- Toolbar -->
-  <div class="grid grid-cols-1 xl:grid-cols-[1.3fr_1fr] gap-4">
+  <div class="grid grid-cols-1 2xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] gap-4">
     <input
       type="text"
       id="vault-search"
@@ -480,7 +480,7 @@
       onkeyup="filterAndSortVault()"
     />
 
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
       <select id="vault-sort" onchange="filterAndSortVault()" class="input-shell">
         <option value="added-desc">Recently Added</option>
         <option value="added-asc">Oldest Added</option>
@@ -547,9 +547,6 @@
     Voltage Video Games • 437 S Warren Street, Syracuse, NY 13202<br>
     © 2026 Voltage Video Games. All rights reserved.
   </footer>
-
- <!-- IMPORTANT: KEEP YOUR EXISTING WORKING VAULT SCRIPT BELOW THIS POINT. -->
-
 
     <script>
     /* ================================================================
@@ -675,6 +672,7 @@
         }
       }, 420);
     }
+    window.runSearch = runSearch;
 
     function renderSearchResults(results, selectedPlatform) {
       const resultsGrid = document.getElementById('results-grid');
@@ -799,228 +797,230 @@
         vault.push(newItem);
       }
 
-     renderVault();
-saveVault();
-clearForm();
-document.getElementById('search-results').classList.add('hidden');
+      renderVault();
+      saveVault();
+      clearForm();
+      document.getElementById('search-results').classList.add('hidden');
 
-lastSearchResults = [];
-const resultsGrid = document.getElementById('results-grid');
-if (resultsGrid) resultsGrid.innerHTML = '';
+      lastSearchResults = [];
+      const resultsGrid = document.getElementById('results-grid');
+      if (resultsGrid) resultsGrid.innerHTML = '';
 
-const searchLoading = document.getElementById('search-loading');
-if (searchLoading) searchLoading.classList.add('hidden');
+      const searchLoading = document.getElementById('search-loading');
+      if (searchLoading) searchLoading.classList.add('hidden');
 
-const searchError = document.getElementById('search-error');
-if (searchError) {
-  searchError.classList.add('hidden');
-  searchError.textContent = '';
-}
+      const searchError = document.getElementById('search-error');
+      if (searchError) {
+        searchError.classList.add('hidden');
+        searchError.textContent = '';
+      }
 
-const msg = document.getElementById('success-message');
-document.getElementById('success-text').textContent = `Added ${quantity} × ${normalizedResult.title} to your Vault`;
-msg.classList.remove('hidden');
-setTimeout(() => msg.classList.add('hidden'), 3000);
+      const msg = document.getElementById('success-message');
+      document.getElementById('success-text').textContent = `Added ${quantity} × ${normalizedResult.title} to your Vault`;
+      msg.classList.remove('hidden');
+      setTimeout(() => msg.classList.add('hidden'), 3000);
     }
-/* ================================================================
-   NEW: COLLECTOR SUMMARY + SYSTEM SHELF HELPERS
-================================================================ */
 
-function getVaultSummary() {
-  const totalGames = vault.reduce((sum, item) => sum + item.quantity, 0);
-  const uniqueTitles = new Set(vault.map(item => item.title)).size;
-  const uniqueSystems = new Set(vault.map(item => item.platform)).size;
+    /* ================================================================
+       NEW: COLLECTOR SUMMARY + SYSTEM SHELF HELPERS
+    ================================================================ */
 
-  const originalValue = vault.reduce((sum, item) => {
-    const unit = item.purchasePrice !== undefined && Number.isFinite(item.purchasePrice)
-      ? item.purchasePrice
-      : (item.unitValue || 0);
-    return sum + (unit * item.quantity);
-  }, 0);
+    function getVaultSummary() {
+      const totalGames = vault.reduce((sum, item) => sum + item.quantity, 0);
+      const uniqueTitles = new Set(vault.map(item => item.title)).size;
+      const uniqueSystems = new Set(vault.map(item => item.platform)).size;
 
-  const currentValue = vault.reduce((sum, item) => {
-    return sum + ((item.currentTotalValue !== undefined ? item.currentTotalValue : item.totalValue) || 0);
-  }, 0);
+      const originalValue = vault.reduce((sum, item) => {
+        const unit = item.purchasePrice !== undefined && Number.isFinite(item.purchasePrice)
+          ? item.purchasePrice
+          : (item.unitValue || 0);
+        return sum + (unit * item.quantity);
+      }, 0);
 
-  return {
-    totalGames,
-    uniqueTitles,
-    uniqueSystems,
-    originalValue: Math.round(originalValue),
-    currentValue: Math.round(currentValue)
-  };
-}
+      const currentValue = vault.reduce((sum, item) => {
+        return sum + ((item.currentTotalValue !== undefined ? item.currentTotalValue : item.totalValue) || 0);
+      }, 0);
 
-function groupVaultBySystem(items) {
-  const groups = {};
-
-  items.forEach(item => {
-    const sys = item.platform || 'Other';
-
-    if (!groups[sys]) {
-      groups[sys] = {
-        system: sys,
-        titleCount: 0,
-        totalQuantity: 0,
-        totalCurrentValue: 0
+      return {
+        totalGames,
+        uniqueTitles,
+        uniqueSystems,
+        originalValue: Math.round(originalValue),
+        currentValue: Math.round(currentValue)
       };
     }
 
-    groups[sys].titleCount += 1;
-    groups[sys].totalQuantity += item.quantity;
-    groups[sys].totalCurrentValue += (item.currentTotalValue !== undefined ? item.currentTotalValue : item.totalValue) || 0;
-  });
+    function groupVaultBySystem(items) {
+      const groups = {};
 
-  return Object.values(groups).sort((a, b) => b.totalCurrentValue - a.totalCurrentValue);
-}
+      items.forEach(item => {
+        const sys = item.platform || 'Other';
 
-function renderCollectorIdentity() {
-  const summary = getVaultSummary();
+        if (!groups[sys]) {
+          groups[sys] = {
+            system: sys,
+            titleCount: 0,
+            totalQuantity: 0,
+            totalCurrentValue: 0
+          };
+        }
 
-  const gamertagEl = document.getElementById('gamertag-display');
-  const systemsEl = document.getElementById('collector-systems-count');
-  const titlesEl = document.getElementById('collector-titles-count');
-  const totalValueEl = document.getElementById('collector-total-value');
+        groups[sys].titleCount += 1;
+        groups[sys].totalQuantity += item.quantity;
+        groups[sys].totalCurrentValue += (item.currentTotalValue !== undefined ? item.currentTotalValue : item.totalValue) || 0;
+      });
 
-  const storedGamertag =
-    (localStorage.getItem('gamertag') || localStorage.getItem('voltageGamertag') || '').trim();
-
-  if (gamertagEl && storedGamertag) {
-    gamertagEl.textContent = storedGamertag;
-  }
-
-  if (systemsEl) systemsEl.textContent = summary.uniqueSystems;
-  if (titlesEl) titlesEl.textContent = summary.uniqueTitles;
-  if (totalValueEl) totalValueEl.textContent = '$' + summary.currentValue.toLocaleString();
-}
-
-function renderInsightsPanel() {
-  const topItemEl = document.getElementById('insight-top-item');
-  const topItemValueEl = document.getElementById('insight-top-item-value');
-  const biggestGainEl = document.getElementById('insight-biggest-gain');
-  const biggestGainValueEl = document.getElementById('insight-biggest-gain-value');
-  const topSystemEl = document.getElementById('insight-top-system');
-  const topSystemValueEl = document.getElementById('insight-top-system-value');
-  const recentItemEl = document.getElementById('insight-recent-item');
-  const recentItemDateEl = document.getElementById('insight-recent-item-date');
-
-  if (!vault.length) {
-    if (topItemEl) topItemEl.textContent = '—';
-    if (topItemValueEl) topItemValueEl.textContent = '$0';
-    if (biggestGainEl) biggestGainEl.textContent = '—';
-    if (biggestGainValueEl) biggestGainValueEl.textContent = '$0';
-    if (topSystemEl) topSystemEl.textContent = '—';
-    if (topSystemValueEl) topSystemValueEl.textContent = '$0';
-    if (recentItemEl) recentItemEl.textContent = '—';
-    if (recentItemDateEl) recentItemDateEl.textContent = '—';
-    return;
-  }
-
-  const topItem = [...vault].sort((a, b) => {
-    const av = (a.currentTotalValue !== undefined ? a.currentTotalValue : a.totalValue) || 0;
-    const bv = (b.currentTotalValue !== undefined ? b.currentTotalValue : b.totalValue) || 0;
-    return bv - av;
-  })[0];
-
-  const biggestGain = [...vault].sort((a, b) => (b.valueChangeAmount || 0) - (a.valueChangeAmount || 0))[0];
-  const topSystem = groupVaultBySystem(vault)[0];
-  const recentItem = [...vault].sort((a, b) => new Date(b.addedAt || 0) - new Date(a.addedAt || 0))[0];
-
-  if (topItemEl) topItemEl.textContent = topItem?.title || '—';
-  if (topItemValueEl) {
-    const value = (topItem?.currentTotalValue !== undefined ? topItem.currentTotalValue : topItem?.totalValue) || 0;
-    topItemValueEl.textContent = '$' + Math.round(value).toLocaleString();
-  }
-
-  if (biggestGainEl) biggestGainEl.textContent = biggestGain?.title || '—';
-  if (biggestGainValueEl) {
-    const gain = biggestGain?.valueChangeAmount || 0;
-    biggestGainValueEl.textContent = (gain >= 0 ? '+' : '-') + '$' + Math.round(Math.abs(gain)).toLocaleString();
-  }
-
-  if (topSystemEl) topSystemEl.textContent = topSystem?.system || '—';
-  if (topSystemValueEl) {
-    const systemValue = topSystem?.totalCurrentValue || 0;
-    topSystemValueEl.textContent = '$' + Math.round(systemValue).toLocaleString();
-  }
-
-  if (recentItemEl) recentItemEl.textContent = recentItem?.title || '—';
-  if (recentItemDateEl) {
-    recentItemDateEl.textContent = recentItem?.addedAt
-      ? new Date(recentItem.addedAt).toLocaleDateString()
-      : '—';
-  }
-}
-
-function setActiveSystemFilter(systemName) {
-  if (activeSystemFilter === systemName) {
-    activeSystemFilter = '';
-  } else {
-    activeSystemFilter = systemName;
-  }
-
-  const label = document.getElementById('active-system-label');
-  if (label) {
-    if (activeSystemFilter) {
-      label.textContent = `Showing: ${activeSystemFilter}`;
-      label.classList.remove('hidden');
-    } else {
-      label.textContent = '';
-      label.classList.add('hidden');
+      return Object.values(groups).sort((a, b) => b.totalCurrentValue - a.totalCurrentValue);
     }
-  }
 
-  const platformSelect = document.getElementById('vault-platform-filter');
-  if (platformSelect) {
-    platformSelect.value = activeSystemFilter || '';
-  }
+    function renderCollectorIdentity() {
+      const summary = getVaultSummary();
 
-  filterAndSortVault();
-  renderSystemShelf();
-}
+      const gamertagEl = document.getElementById('gamertag-display');
+      const systemsEl = document.getElementById('collector-systems-count');
+      const titlesEl = document.getElementById('collector-titles-count');
+      const totalValueEl = document.getElementById('collector-total-value');
 
-function renderSystemShelf() {
-  const container = document.getElementById('system-shelf');
-  if (!container) return;
+      const storedGamertag =
+        (localStorage.getItem('gamertag') || localStorage.getItem('voltageGamertag') || '').trim();
 
-  const groups = groupVaultBySystem(vault);
-  container.innerHTML = '';
+      if (gamertagEl && storedGamertag) {
+        gamertagEl.textContent = storedGamertag;
+      }
 
-  if (groups.length === 0) {
-    container.innerHTML = `<p class="text-sm text-zinc-500">No systems yet.</p>`;
-    return;
-  }
+      if (systemsEl) systemsEl.textContent = summary.uniqueSystems;
+      if (titlesEl) titlesEl.textContent = summary.uniqueTitles;
+      if (totalValueEl) totalValueEl.textContent = '$' + summary.currentValue.toLocaleString();
+    }
 
-  groups.forEach(group => {
-    const isActive = activeSystemFilter === group.system;
+    function renderInsightsPanel() {
+      const topItemEl = document.getElementById('insight-top-item');
+      const topItemValueEl = document.getElementById('insight-top-item-value');
+      const biggestGainEl = document.getElementById('insight-biggest-gain');
+      const biggestGainValueEl = document.getElementById('insight-biggest-gain-value');
+      const topSystemEl = document.getElementById('insight-top-system');
+      const topSystemValueEl = document.getElementById('insight-top-system-value');
+      const recentItemEl = document.getElementById('insight-recent-item');
+      const recentItemDateEl = document.getElementById('insight-recent-item-date');
 
-    const card = document.createElement('button');
-    card.type = 'button';
-    card.className = `w-full text-left panel-soft rounded-2xl p-4 transition border ${
-      isActive
-        ? 'border-[var(--yellow)] bg-[rgba(255,235,59,0.06)]'
-        : 'border-white/5 hover:border-[var(--teal)]'
-    }`;
+      if (!vault.length) {
+        if (topItemEl) topItemEl.textContent = '—';
+        if (topItemValueEl) topItemValueEl.textContent = '$0';
+        if (biggestGainEl) biggestGainEl.textContent = '—';
+        if (biggestGainValueEl) biggestGainValueEl.textContent = '$0';
+        if (topSystemEl) topSystemEl.textContent = '—';
+        if (topSystemValueEl) topSystemValueEl.textContent = '$0';
+        if (recentItemEl) recentItemEl.textContent = '—';
+        if (recentItemDateEl) recentItemDateEl.textContent = '—';
+        return;
+      }
 
-    card.innerHTML = `
-      <div class="text-sm font-semibold text-white">${escapeHtml(group.system)}</div>
-      <div class="text-xs text-zinc-500 mt-1">${group.totalQuantity} games • $${Math.round(group.totalCurrentValue).toLocaleString()} total</div>
-    `;
+      const topItem = [...vault].sort((a, b) => {
+        const av = (a.currentTotalValue !== undefined ? a.currentTotalValue : a.totalValue) || 0;
+        const bv = (b.currentTotalValue !== undefined ? b.currentTotalValue : b.totalValue) || 0;
+        return bv - av;
+      })[0];
 
-    card.addEventListener('click', () => setActiveSystemFilter(group.system));
-    container.appendChild(card);
-  });
-}
+      const biggestGain = [...vault].sort((a, b) => (b.valueChangeAmount || 0) - (a.valueChangeAmount || 0))[0];
+      const topSystem = groupVaultBySystem(vault)[0];
+      const recentItem = [...vault].sort((a, b) => new Date(b.addedAt || 0) - new Date(a.addedAt || 0))[0];
+
+      if (topItemEl) topItemEl.textContent = topItem?.title || '—';
+      if (topItemValueEl) {
+        const value = (topItem?.currentTotalValue !== undefined ? topItem.currentTotalValue : topItem?.totalValue) || 0;
+        topItemValueEl.textContent = '$' + Math.round(value).toLocaleString();
+      }
+
+      if (biggestGainEl) biggestGainEl.textContent = biggestGain?.title || '—';
+      if (biggestGainValueEl) {
+        const gain = biggestGain?.valueChangeAmount || 0;
+        biggestGainValueEl.textContent = (gain >= 0 ? '+' : '-') + '$' + Math.round(Math.abs(gain)).toLocaleString();
+      }
+
+      if (topSystemEl) topSystemEl.textContent = topSystem?.system || '—';
+      if (topSystemValueEl) {
+        const systemValue = topSystem?.totalCurrentValue || 0;
+        topSystemValueEl.textContent = '$' + Math.round(systemValue).toLocaleString();
+      }
+
+      if (recentItemEl) recentItemEl.textContent = recentItem?.title || '—';
+      if (recentItemDateEl) {
+        recentItemDateEl.textContent = recentItem?.addedAt
+          ? new Date(recentItem.addedAt).toLocaleDateString()
+          : '—';
+      }
+    }
+
+    function setActiveSystemFilter(systemName) {
+      if (activeSystemFilter === systemName) {
+        activeSystemFilter = '';
+      } else {
+        activeSystemFilter = systemName;
+      }
+
+      const label = document.getElementById('active-system-label');
+      if (label) {
+        if (activeSystemFilter) {
+          label.textContent = `Showing: ${activeSystemFilter}`;
+          label.classList.remove('hidden');
+        } else {
+          label.textContent = '';
+          label.classList.add('hidden');
+        }
+      }
+
+      const platformSelect = document.getElementById('vault-platform-filter');
+      if (platformSelect) {
+        platformSelect.value = activeSystemFilter || '';
+      }
+
+      filterAndSortVault();
+      renderSystemShelf();
+    }
+
+    function renderSystemShelf() {
+      const container = document.getElementById('system-shelf');
+      if (!container) return;
+
+      const groups = groupVaultBySystem(vault);
+      container.innerHTML = '';
+
+      if (groups.length === 0) {
+        container.innerHTML = `<p class="text-sm text-zinc-500">No systems yet.</p>`;
+        return;
+      }
+
+      groups.forEach(group => {
+        const isActive = activeSystemFilter === group.system;
+
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = `w-full text-left panel-soft rounded-2xl p-4 transition border ${
+          isActive
+            ? 'border-[var(--yellow)] bg-[rgba(255,235,59,0.06)]'
+            : 'border-white/5 hover:border-[var(--teal)]'
+        }`;
+
+        card.innerHTML = `
+          <div class="text-sm font-semibold text-white">${escapeHtml(group.system)}</div>
+          <div class="text-xs text-zinc-500 mt-1">${group.totalQuantity} games • $${Math.round(group.totalCurrentValue).toLocaleString()} total</div>
+        `;
+
+        card.addEventListener('click', () => setActiveSystemFilter(group.system));
+        container.appendChild(card);
+      });
+    }
+
     /* ================================================================
        VAULT RENDER + SUMMARY + FILTER/SORT
     ================================================================ */
-   function renderVault() {
-  populatePlatformFilter();
-  filterAndSortVault();
-  renderCollectorIdentity();
-  renderSystemShelf();
-  renderInsightsPanel();
-}
+    function renderVault() {
+      populatePlatformFilter();
+      filterAndSortVault();
+      renderCollectorIdentity();
+      renderSystemShelf();
+      renderInsightsPanel();
+    }
 
     function filterAndSortVault() {
       const list = document.getElementById('vault-list');
@@ -1038,7 +1038,7 @@ function renderSystemShelf() {
         );
       }
 
-     // Unified platform filter
+      // Unified platform filter
       const selectedPlatformFilter = document.getElementById('vault-platform-filter').value;
       const effectivePlatformFilter = activeSystemFilter || selectedPlatformFilter;
 
