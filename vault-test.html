@@ -1457,19 +1457,36 @@ if (gamertagEl) {
     function exportVault() { alert('Export CSV coming soon (placeholder)'); }
     function viewItem(id) { alert('View detailed item coming soon (placeholder)'); }
 
-    function removeFromVault(id) {
-      vault = vault.filter(item => item.id !== id);
-      renderVault();
-      saveVault();
+    async function removeFromVault(id) {
+  try {
+    if (isUuid(id)) {
+      await deleteVaultItemFromSupabase(id);
     }
 
-    function clearVault() {
-      if (confirm("Are you sure you want to clear your entire Vault?")) {
-        vault = [];
-        saveVault();
-        renderVault();
-      }
-    }
+    vault = vault.filter(item => item.id !== id);
+    saveVault();
+    renderVault();
+  } catch (err) {
+    console.error('removeFromVault failed:', err);
+    alert('Failed to remove this item from your vault. Please try again.');
+  }
+}
+
+async function clearVault() {
+  if (!confirm("Are you sure you want to clear your entire Vault?")) {
+    return;
+  }
+
+  try {
+    await clearVaultInSupabase();
+    vault = [];
+    saveVault();
+    renderVault();
+  } catch (err) {
+    console.error('clearVault failed:', err);
+    alert('Failed to clear your vault. Please try again.');
+  }
+}
 
     // Populate platform filter dynamically
     function populatePlatformFilter() {
