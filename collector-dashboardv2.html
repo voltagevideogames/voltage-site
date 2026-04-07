@@ -584,18 +584,9 @@ async function loadDashboardVaultItems() {
     }
 
     // ============== VAULT DASHBOARD STATS FROM localStorage (voltageVaultV1) ==============
-    function loadVaultDashboardStats() {
-      let items = [];
-      const stored = localStorage.getItem('voltageVaultV1');
-      if (stored) {
-        try {
-          items = JSON.parse(stored);
-        } catch (e) {
-          console.error('Failed to parse voltageVaultV1', e);
-        }
-      }
-      if (!Array.isArray(items)) items = [];
-
+    function loadVaultDashboardStats(items = []) {
+    if (!Array.isArray(items)) items = [];
+    loadVaultDashboardStats(vaultItems); 
       // Safe value getter
       const getValue = (item, currKey, fallbackKey) => {
         if (item && item[currKey] != null) return parseFloat(item[currKey]) || 0;
