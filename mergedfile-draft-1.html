@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="Submit your games for a fair cash or store credit offer at Voltage Video Games. Single items or full collections. Powered by PriceCharting." />
+  <title>Get an Offer • Voltage Video Games</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
+
+  <!-- Supabase JS Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    :root {
+      --teal: #00E5B8;
+      --yellow: #FFEB3B;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #0a0a0a;
+      color: #f0f0f0;
+    }
+
+    .heading-font {
+      font-family: 'Press Start 2P', system-ui;
+    }
+
+    .neon-text {
+      text-shadow: 0 0 12px var(--teal), 0 0 24px var(--teal), 0 0 48px var(--yellow);
+    }
+
+    .crt::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(to bottom, rgba(0,0,0,0.10) 0px, rgba(0,0,0,0.10) 2px, transparent 2px, transparent 4px);
+      pointer-events: none;
+      z-index: 10;
+      animation: flicker 0.18s infinite alternate;
+    }
+
+    @keyframes flicker {
+      0% { opacity: 0.97; }
+      100% { opacity: 1; }
+    }
+
+    .search-result-card {
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .search-result-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 0 2px var(--teal);
+    }
+
+    .trade-item {
+      transition: background-color 0.2s;
+    }
+    .trade-item:hover {
+      background-color: #111;
+    }
+  </style>
+</head>
+<body class="crt min-h-screen">
+
+  <!-- NAVBAR -->
+  <nav class="fixed top-0 inset-x-0 z-50 bg-black/95 border-b border-[var(--teal)]/30">
+    <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+      <a href="index.html" class="flex items-center">
+        <img src="images/voltage-logo.png" alt="Voltage Video Games logo" class="h-10 md:h-12 w-auto">
+      </a>
+
+      <div class="flex items-center gap-8 text-sm font-medium">
+        <a href="index.html" class="hover:text-[var(--teal)] transition">Home</a>
+        <a href="https://1ndfvw-zk.myshopify.com" target="_blank" rel="noopener noreferrer" class="hover:text-[var(--teal)] transition">Shop</a>
+        <a href="collector-dashboardv2.html" class="hover:text-[var(--yellow)] transition">Dashboard</a>
+      </div>
+
+      <button onclick="gamertagLoginClick()" 
+              class="px-7 py-2.5 text-sm font-medium border border-[var(--teal)] hover:bg-[var(--teal)]/10 transition">
+        Gamertag Login
+      </button>
+    </div>
+  </nav>
+
+  <div class="pt-20 flex min-h-screen">
+    <!-- LEFT SUPPORT RAIL -->
+    <div id="intake-sidebar" class="w-72 bg-zinc-950 border-r border-[var(--teal)]/30 p-8 hidden lg:block">
+      <div class="sticky top-24 space-y-10">
+        <div>
+          <div class="text-[var(--teal)] text-xs tracking-widest mb-2">VOLTAGE 2.0 INTAKE</div>
+          <h1 class="heading-font text-3xl neon-text leading-none">GET AN OFFER</h1>
+          <p class="text-gray-400 text-sm mt-2">Single games or full collections</p>
+        </div>
+
+        <div class="space-y-6 text-sm">
+          <div class="flex gap-3">
+            <i class="fa-solid fa-bolt text-[var(--yellow)] mt-0.5"></i>
+            <div>Instant pricing on most titles</div>
+          </div>
+          <div class="flex gap-3">
+            <i class="fa-solid fa-truck text-[var(--teal)] mt-0.5"></i>
+            <div>Nationwide shipping &amp; pickup</div>
+          </div>
+          <div class="flex gap-3">
+            <i class="fa-solid fa-handshake text-[var(--yellow)] mt-0.5"></i>
+            <div>Cash or higher-value store credit</div>
+          </div>
+          <div class="flex gap-3">
+            <i class="fa-solid fa-users text-[var(--teal)] mt-0.5"></i>
+            <div>Guest submissions • No account required</div>
+          </div>
+        </div>
+
+        <div class="pt-6 border-t border-[var(--teal)]/30 text-xs text-gray-400">
+          Syracuse, NY • Est. 2012<br>
+          Trusted by thousands of collectors
+        </div>
+      </div>
+    </div>
+
+    <!-- CENTER SPOTLIGHT WORKFLOW -->
+    <div class="flex-1 max-w-4xl mx-auto px-6 py-12">
+      <div class="max-w-2xl mx-auto">
+        <div class="text-center mb-10">
+          <h2 class="heading-font text-5xl neon-text mb-3">Build Your Trade</h2>
+          <p class="text-gray-300">Search • Select • Add to list • Preview offers • Submit</p>
+        </div>
+
+        <!-- SEARCH AREA -->
+        <div class="bg-zinc-950 border border-[var(--teal)]/50 rounded-3xl p-8 mb-8">
+          <label class="block text-sm mb-3 text-[var(--teal)] font-medium">Search for your exact game on PriceCharting</label>
+          
+          <div class="flex gap-3 mb-4">
+            <input 
+              id="game-search-input" 
+              type="text" 
+              placeholder="e.g. Metroid Prime, Modern Warfare 2 Xbox One" 
+              class="flex-1 bg-black border border-[var(--teal)]/60 p-4 rounded-2xl focus:border-[var(--yellow)] text-white">
+            <button 
+              type="button"
+              id="search-button"
+              class="px-10 bg-[var(--teal)] hover:bg-[var(--yellow)] hover:text-black text-black font-medium rounded-2xl flex items-center gap-2 transition">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              SEARCH
+            </button>
+          </div>
+
+          <div id="search-status" class="text-sm text-gray-400 mb-3 min-h-[1.5rem]"></div>
+
+          <!-- Search Results Container -->
+          <div id="search-results" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto pr-2"></div>
+
+          <!-- Current Selection Spotlight -->
+          <div id="current-selection-spotlight" class="hidden mt-8 bg-black border border-[var(--yellow)]/50 rounded-2xl p-6">
+            <div class="flex justify-between items-start mb-4">
+              <div>
+                <div class="text-xs uppercase tracking-widest text-[var(--yellow)] mb-1">SELECTED GAME</div>
+                <div id="selected-game-title" class="font-semibold text-lg"></div>
+                <div id="selected-game-subtitle" class="text-sm text-gray-400"></div>
+              </div>
+              <button 
+                type="button"
+                id="change-selection-btn"
+                class="text-xs px-4 py-2 border border-red-400/50 hover:bg-red-900/30 text-red-400 transition rounded-xl">
+                CHANGE SELECTION
+              </button>
+            </div>
+            
+            <div id="selected-game-prices" class="grid grid-cols-3 gap-4 text-sm"></div>
+
+            <button
+              type="button"
+              id="add-to-trade-btn"
+              class="mt-6 w-full py-3 bg-gradient-to-r from-[var(--teal)] to-[var(--yellow)] text-black font-bold rounded-2xl hover:scale-[1.02] transition">
+              + ADD TO TRADE LIST
+            </button>
+          </div>
+        </div>
+
+        <!-- BATCH TRADE LIST -->
+        <div id="trade-list-panel" class="hidden bg-zinc-950 border border-[var(--teal)]/40 rounded-3xl overflow-hidden mb-8">
+          <div class="px-8 py-5 border-b border-[var(--teal)]/20 flex justify-between items-center bg-black/50">
+            <div class="uppercase text-sm tracking-widest text-[var(--teal)]">Your Trade List</div>
+            <div id="trade-count" class="text-sm text-gray-400">0 items</div>
+          </div>
+          
+          <div id="trade-items" class="divide-y divide-zinc-900"></div>
+
+          <!-- Live Summary -->
+          <div class="px-8 py-6 bg-black/60 border-t border-[var(--teal)]/30 flex justify-between items-center">
+            <div>
+              <div class="flex justify-between text-sm mb-1">
+                <span class="text-gray-400">Cash total</span>
+                <span id="trade-cash-total" class="font-mono text-[var(--teal)]">$0</span>
+              </div>
+              <div class="flex justify-between text-sm">
+                <span class="text-gray-400">Credit total</span>
+                <span id="trade-credit-total" class="font-mono text-[var(--yellow)]">$0</span>
+              </div>
+            </div>
+            <div id="trade-review-count" class="text-xs text-amber-400 text-right"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT SUBMISSION PANEL -->
+    <div class="w-full lg:w-96 bg-zinc-950 border-l border-[var(--teal)]/30 p-8 lg:sticky lg:top-20 lg:self-start">
+      <h3 class="text-lg font-semibold mb-6 flex items-center gap-2">
+        <i class="fa-solid fa-clipboard-check text-[var(--yellow)]"></i>
+        Submission Details
+      </h3>
+
+      <form id="sell-form" class="space-y-8">
+        <!-- Hidden Fields for exact game selection (preserved exactly from index.html) -->
+        <input type="hidden" id="selected_title" name="selected_title" value="">
+        <input type="hidden" id="selected_platform" name="selected_platform" value="">
+        <input type="hidden" id="external_id" name="external_id" value="">
+        <input type="hidden" name="_subject" value="Voltage Sell Submission">
+        <!-- Batch extension (careful extension) -->
+        <input type="hidden" id="batch_items" name="batch_items" value="[]">
+
+        <div>
+          <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Email *</label>
+          <input type="email" name="email" required placeholder="you@example.com" 
+                 class="w-full bg-black border border-[var(--teal)]/60 p-4 rounded-2xl focus:border-[var(--yellow)] text-white">
+        </div>
+
+        <div>
+          <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Preferred Payout *</label>
+          <select name="preferred_payout" required class="w-full bg-black border border-[var(--teal)]/60 p-4 rounded-2xl focus:border-[var(--yellow)] text-white">
+            <option value="cash">Cash (PayPal / Venmo / Check)</option>
+            <option value="credit" selected>Store Credit (higher value)</option>
+            <option value="hybrid">Hybrid (split)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Photos (strongly recommended)</label>
+          <div class="border-2 border-dashed border-[var(--teal)]/40 rounded-3xl p-8 text-center">
+            <p class="text-gray-400 mb-2">Drag &amp; drop or click to upload</p>
+            <p class="text-xs text-gray-500 mb-4">Front, back, disc/cart, box, damage</p>
+            <input
+              id="photo-input"
+              type="file"
+              multiple
+              accept="image/jpeg,image/png,image/webp"
+              class="hidden">
+            <button type="button" onclick="document.getElementById('photo-input').click()" 
+                    class="px-6 py-2 text-sm border border-[var(--teal)] text-[var(--teal)] hover:bg-[var(--teal)]/10 rounded-2xl transition">
+              SELECT PHOTOS
+            </button>
+            <input type="hidden" id="photo-urls" name="photo_urls" value="[]">
+            <p id="photo-upload-status" class="mt-4 text-xs text-gray-400"></p>
+            <div id="photo-preview" class="mt-6 grid grid-cols-3 gap-3"></div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Notes / Additional Details</label>
+          <textarea name="notes" rows="4" placeholder="e.g. light scratches on disc, missing manual, sealed but corner ding..." 
+                    class="w-full bg-black border border-[var(--teal)]/60 p-4 rounded-3xl focus:border-[var(--yellow)] text-white resize-none"></textarea>
+        </div>
+
+        <button type="submit" 
+                class="w-full py-6 bg-gradient-to-r from-[var(--teal)] to-[var(--yellow)] text-black font-bold text-xl rounded-3xl hover:scale-[1.02] transition flex items-center justify-center gap-3">
+          <i class="fa-solid fa-paper-plane"></i>
+          SUBMIT FULL TRADE
+        </button>
+        
+        <p class="text-center text-xs text-gray-500">Most offers sent within 24 hours • Guest friendly</p>
+      </form>
+    </div>
+  </div>
+
+  <!-- OFFER RESULTS PANEL -->
+  <div id="offer-results" class="hidden fixed inset-0 bg-black/90 flex items-center justify-center z-[200] p-6">
+    <div class="bg-zinc-950 border-4 border-[var(--teal)] rounded-3xl max-w-lg w-full p-10 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-8">
+        <h3 id="result-title" class="heading-font text-4xl neon-text">Your Offer</h3>
+        <button onclick="hideOfferResults()" 
+                class="px-8 py-3 bg-zinc-900 hover:bg-zinc-800 border border-[var(--teal)]/50 rounded-xl text-sm transition">
+          CLOSE
+        </button>
+      </div>
+      <div id="result-content" class="space-y-8"></div>
+      <div class="mt-12 pt-8 border-t border-[var(--teal)]/30 text-center">
+        <p class="text-gray-400">Thank you for submitting to Voltage Video Games.<br>We'll follow up by email if we need more details.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- AUTH MODAL -->
+  <div id="auth-modal" class="hidden fixed inset-0 bg-black/90 flex items-center justify-center z-[300]">
+    <div class="bg-zinc-950 border border-[var(--teal)]/50 rounded-2xl w-full max-w-md mx-4 overflow-hidden">
+      <div class="flex justify-between items-center px-6 py-5 border-b border-[var(--teal)]/30">
+        <div class="flex items-center gap-3">
+          <img src="images/voltage-logo.png" alt="Voltage" class="h-8 w-auto">
+          <span class="heading-font text-xl neon-text">Voltage 2.0</span>
+        </div>
+        <button type="button" onclick="closeAuthModal()" class="text-gray-400 hover:text-white text-2xl leading-none">×</button>
+      </div>
+
+      <div class="p-8">
+        <h2 id="modal-title" class="text-2xl font-semibold mb-6 text-center">Gamertag Login</h2>
+
+        <div id="auth-status" class="hidden mb-4 text-sm text-center py-2 rounded"></div>
+
+        <div class="space-y-5">
+          <div>
+            <label class="block text-sm mb-1.5 text-[var(--teal)]">Email</label>
+            <input id="auth-email" type="email" 
+                   class="w-full bg-black border border-[var(--teal)]/60 p-4 text-white focus:border-[var(--yellow)] rounded-2xl" 
+                   placeholder="you@example.com">
+          </div>
+
+          <div>
+            <label class="block text-sm mb-1.5 text-[var(--teal)]">Password</label>
+            <input id="auth-password" type="password" 
+                   class="w-full bg-black border border-[var(--teal)]/60 p-4 text-white focus:border-[var(--yellow)] rounded-2xl" 
+                   placeholder="••••••••">
+          </div>
+
+          <div id="gamertag-field" class="hidden">
+            <label class="block text-sm mb-1.5 text-[var(--teal)]">Gamertag</label>
+            <input id="auth-gamertag" type="text" 
+                   class="w-full bg-black border border-[var(--teal)]/60 p-4 text-white focus:border-[var(--yellow)] rounded-2xl" 
+                   placeholder="RetroKing87" maxlength="20">
+          </div>
+
+          <div class="flex gap-3 pt-4">
+            <button type="button" onclick="logInWithGamertag()" 
+                    class="flex-1 py-4 bg-black border border-[var(--teal)] hover:bg-[var(--teal)]/10 text-[var(--teal)] font-medium transition rounded-2xl">
+              Log In
+            </button>
+            <button type="button" onclick="signUpWithGamertag()" 
+                    class="flex-1 py-4 bg-gradient-to-r from-[var(--teal)] to-[var(--yellow)] text-black font-semibold transition rounded-2xl">
+              Sign Up
+            </button>
+          </div>
+        </div>
+
+        <div class="text-center text-xs text-gray-500 mt-8">
+          Voltage 2.0 Collector Dashboard • All buying/selling stays with Voltage
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// ====================== PHOTO UPLOAD (exact from index.html) ======================
+const MAX_PHOTOS = 5;
+const MAX_SIZE = 5 * 1024 * 1024;
+
+function setPhotoStatus(msg, error = false) {
+  const el = document.getElementById('photo-upload-status');
+  if (!el) return;
+  el.textContent = msg || '';
+  el.className = `mt-4 text-xs ${error ? 'text-red-400' : 'text-gray-400'}`;
+}
+
+function renderPreview(urls) {
+  const container = document.getElementById('photo-preview');
+  if (!container) return;
+  container.innerHTML = '';
+  urls.forEach(url => {
+    const img = document.createElement('img');
+    img.src = url;
+    img.className = 'w-full aspect-square object-cover border border-[var(--teal)]/30 rounded-xl';
+    img.alt = 'Uploaded submission photo';
+    container.appendChild(img);
+  });
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error(`Failed to read ${file.name}`));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadPhotos(files) {
+  if (!files.length) return [];
+
+  if (files.length > MAX_PHOTOS) {
+    throw new Error('Max 5 photos allowed');
+  }
+
+  const prepared = [];
+
+  for (const file of files) {
+    if (file.size > MAX_SIZE) {
+      throw new Error(`${file.name} is too large. Max size is 5MB.`);
+    }
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      throw new Error(`${file.name} is not a supported image type.`);
+    }
+    prepared.push({
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      dataUrl: await fileToBase64(file)
+    });
+  }
+
+  setPhotoStatus('Uploading photos...');
+
+  const res = await fetch('/.netlify/functions/upload-photos', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ files: prepared })
+  });
+
+  const result = await res.json();
+
+  if (!res.ok || !result.success) {
+    throw new Error(result.error || 'Photo upload failed');
+  }
+
+  const urls = result.photos.map(photo => photo.url);
+  document.getElementById('photo-urls').value = JSON.stringify(urls);
+  renderPreview(urls);
+  setPhotoStatus('Photos uploaded successfully');
+  return urls;
+}
+
+// ====================== GAME SEARCH (exact from index.html) ======================
+function formatPrice(value) {
+  if (value == null) return '—';
+  let num = Number(value);
+  if (isNaN(num)) return '—';
+  if (num > 1000) {
+    num = Math.round(num / 100);
+  } else {
+    num = Math.round(num);
+  }
+  return '$' + num.toLocaleString();
+}
+
+function escapeHtml(unsafe) {
+  if (typeof unsafe !== 'string') return '';
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function clearSelectedGame() {
+  document.getElementById('selected_title').value = '';
+  document.getElementById('selected_platform').value = '';
+  document.getElementById('external_id').value = '';
+  const panel = document.getElementById('current-selection-spotlight');
+  if (panel) panel.classList.add('hidden');
+  const results = document.getElementById('search-results');
+  if (results) results.innerHTML = '';
+  const input = document.getElementById('game-search-input');
+  if (input) input.value = '';
+  const status = document.getElementById('search-status');
+  if (status) status.textContent = '';
+}
+
+function setSelectedGame(product) {
+  if (!product) return;
+  const title = product.title || '';
+  const platform = product.console || '';
+  const id = product.externalId || '';
+  
+  document.getElementById('selected_title').value = title;
+  document.getElementById('selected_platform').value = platform;
+  document.getElementById('external_id').value = id;
+
+  const panel = document.getElementById('current-selection-spotlight');
+  if (panel) {
+    document.getElementById('selected-game-title').textContent = title || 'Unknown Title';
+    document.getElementById('selected-game-subtitle').textContent = 
+      (platform || 'Unknown Platform') + ' • ID: ' + (id || '—');
+
+    const pricesContainer = document.getElementById('selected-game-prices');
+    if (pricesContainer) {
+      pricesContainer.innerHTML = `
+        <div>
+          <div class="text-xs text-gray-400">Loose</div>
+          <div class="font-mono text-[var(--teal)]">${formatPrice(product['loose-price'] || product.loosePrice)}</div>
+        </div>
+        <div>
+          <div class="text-xs text-gray-400">CIB</div>
+          <div class="font-mono text-[var(--teal)]">${formatPrice(product['cib-price'] || product.cibPrice)}</div>
+        </div>
+        <div>
+          <div class="text-xs text-gray-400">New</div>
+          <div class="font-mono text-[var(--teal)]">${formatPrice(product['new-price'] || product.newPrice)}</div>
+        </div>
+      `;
+    }
+    panel.classList.remove('hidden');
+  }
+  
+  const resultsContainer = document.getElementById('search-results');
+  if (resultsContainer) resultsContainer.innerHTML = '';
+  
+  const statusEl = document.getElementById('search-status');
+  if (statusEl) statusEl.textContent = 'Game selected successfully ✓';
+}
+
+function renderSearchResults(results) {
+  const container = document.getElementById('search-results');
+  if (!container) return;
+  
+  container.innerHTML = '';
+
+  if (!results || !Array.isArray(results) || results.length === 0) {
+    container.innerHTML = `<div class="col-span-full text-center py-8 text-gray-400">No matching games found. Try a different search term.</div>`;
+    return;
+  }
+
+  results.forEach(product => {
+    const card = document.createElement('div');
+    card.className = `search-result-card bg-black border border-[var(--teal)]/40 p-4 rounded-2xl cursor-pointer hover:border-[var(--yellow)]`;
+    
+    const title = escapeHtml(product.title || 'Unknown');
+    const consoleName = escapeHtml(product.console || 'Unknown Platform');
+    const imageUrl = product.imageUrl || '';
+    
+    card.innerHTML = `
+      <div class="flex gap-4">
+        <div class="w-20 h-20 bg-zinc-900 flex-shrink-0 rounded-xl overflow-hidden border border-[var(--teal)]/30">
+          ${imageUrl ? `<img src="${escapeHtml(imageUrl)}" class="w-full h-full object-cover" alt="${title}" loading="lazy">` : 
+            `<div class="w-full h-full flex items-center justify-center text-3xl opacity-50">🎮</div>`}
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="font-medium leading-tight line-clamp-2">${title}</div>
+          <div class="text-xs text-gray-400 mt-1">${consoleName}</div>
+          <div class="mt-3 grid grid-cols-3 gap-2 text-[10px]">
+            <div>
+              <span class="text-gray-500">Loose:</span><br>
+              <span class="font-mono text-[var(--teal)]">${formatPrice(product.loosePrice)}</span>
+            </div>
+            <div>
+              <span class="text-gray-500">CIB:</span><br>
+              <span class="font-mono text-[var(--teal)]">${formatPrice(product.cibPrice)}</span>
+            </div>
+            <div>
+              <span class="text-gray-500">New:</span><br>
+              <span class="font-mono text-[var(--teal)]">${formatPrice(product.newPrice)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    card.addEventListener('click', () => setSelectedGame(product));
+    container.appendChild(card);
+  });
+}
+
+async function searchGames() {
+  const queryInput = document.getElementById('game-search-input');
+  if (!queryInput) return;
+  
+  const query = queryInput.value.trim();
+  const statusEl = document.getElementById('search-status');
+  const resultsContainer = document.getElementById('search-results');
+
+  if (!query || query.length < 2) {
+    if (statusEl) {
+      statusEl.textContent = 'Please enter at least 2 characters';
+      statusEl.className = 'text-sm text-red-400 mb-3';
+    }
+    return;
+  }
+
+  if (statusEl) {
+    statusEl.textContent = 'Searching PriceCharting...';
+    statusEl.className = 'text-sm text-gray-400 mb-3';
+  }
+  
+  if (resultsContainer) {
+    resultsContainer.innerHTML = '<div class="col-span-full text-center py-12"><i class="fa-solid fa-spinner fa-spin text-2xl text-[var(--teal)]"></i></div>';
+  }
+
+  try {
+    const response = await fetch('/.netlify/functions/vault-search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ q: query })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || data.message || 'Search failed');
+    }
+
+    const products = data.products || data.results || [];
+    renderSearchResults(products);
+    
+    if (statusEl) {
+      if (products.length === 0) {
+        statusEl.textContent = 'No results found. Try refining your search.';
+      } else {
+        statusEl.textContent = `${products.length} result${products.length === 1 ? '' : 's'} found. Click one to select.`;
+      }
+    }
+  } catch (err) {
+    console.error('Search error:', err);
+    if (statusEl) {
+      statusEl.textContent = 'Search error. Please try again later.';
+      statusEl.className = 'text-sm text-red-400 mb-3';
+    }
+    if (resultsContainer) resultsContainer.innerHTML = '';
+  }
+}
+
+// ====================== BATCH TRADE LIST LOGIC (exact from intake-test.html) ======================
+let tradeList = [];
+
+function formatOfferDisplay(item) {
+  if (item.loading) return 'Calculating...';
+  if (item.reviewRequired) return 'Review';
+  if (item.cashOffer == null || item.creditOffer == null) return '—';
+  return `${formatPrice(item.cashOffer)} cash / ${formatPrice(item.creditOffer)} credit`;
+}
+
+function updateTradeSummary() {
+  let cashTotal = 0;
+  let creditTotal = 0;
+  let reviewCount = 0;
+
+  tradeList.forEach(item => {
+    if (item.reviewRequired) {
+      reviewCount += 1;
+      return;
+    }
+    cashTotal += Number(item.cashOffer || 0);
+    creditTotal += Number(item.creditOffer || 0);
+  });
+
+  document.getElementById('trade-count').textContent = `${tradeList.length} item${tradeList.length === 1 ? '' : 's'}`;
+  document.getElementById('trade-cash-total').textContent = formatPrice(cashTotal);
+  document.getElementById('trade-credit-total').textContent = formatPrice(creditTotal);
+  const reviewEl = document.getElementById('trade-review-count');
+  reviewEl.textContent = reviewCount > 0 ? `${reviewCount} item${reviewCount === 1 ? '' : 's'} require review` : '';
+}
+
+function renderTradeList() {
+  const panel = document.getElementById('trade-list-panel');
+  const container = document.getElementById('trade-items');
+
+  if (!panel || !container) return;
+
+  if (tradeList.length === 0) {
+    panel.classList.add('hidden');
+    container.innerHTML = '';
+    updateTradeSummary();
+    return;
+  }
+
+  panel.classList.remove('hidden');
+
+  container.innerHTML = tradeList.map((item, index) => `
+    <div class="trade-item grid grid-cols-12 gap-3 px-8 py-4 items-center text-sm border-b border-zinc-900 last:border-b-0">
+      <div class="col-span-5 truncate font-medium">${escapeHtml(item.title)}</div>
+      <div class="col-span-2 text-gray-400 truncate">${escapeHtml(item.platform)}</div>
+      <div class="col-span-2">
+        <select onchange="updateTradeItemCondition(${index}, this.value)" class="w-full bg-black border border-zinc-700 text-xs p-2 rounded-xl">
+          <option value="" ${!item.condition ? 'selected' : ''}>Condition...</option>
+          <option value="Loose" ${item.condition === 'Loose' ? 'selected' : ''}>Loose</option>
+          <option value="Complete in Box (CIB)" ${item.condition === 'Complete in Box (CIB)' ? 'selected' : ''}>CIB</option>
+          <option value="Sealed" ${item.condition === 'Sealed' ? 'selected' : ''}>Sealed</option>
+          <option value="Graded" ${item.condition === 'Graded' ? 'selected' : ''}>Graded</option>
+        </select>
+      </div>
+      <div class="col-span-2 text-xs text-right ${item.reviewRequired ? 'text-amber-400' : 'text-[var(--teal)]'}">
+        ${formatOfferDisplay(item)}
+      </div>
+      <div class="col-span-1 text-right">
+        <button type="button" onclick="removeTradeItem(${index})" class="text-red-400 hover:text-red-300 text-xl leading-none">×</button>
+      </div>
+    </div>
+  `).join('');
+
+  updateTradeSummary();
+}
+
+function addSelectedGameToTrade() {
+  const title = document.getElementById('selected_title').value.trim();
+  const platform = document.getElementById('selected_platform').value.trim();
+  const externalId = document.getElementById('external_id').value.trim();
+
+  if (!externalId) {
+    alert('Please select an exact game first.');
+    return;
+  }
+
+  tradeList.push({
+    title,
+    platform,
+    externalId,
+    condition: '',
+    cashOffer: null,
+    creditOffer: null,
+    reviewRequired: false,
+    loading: false
+  });
+
+  renderTradeList();
+  clearSelectedGame();
+}
+
+function removeTradeItem(index) {
+  tradeList.splice(index, 1);
+  renderTradeList();
+}
+
+async function updateTradeItemCondition(index, value) {
+  tradeList[index].condition = value;
+  tradeList[index].cashOffer = null;
+  tradeList[index].creditOffer = null;
+  tradeList[index].reviewRequired = false;
+
+  if (!value) {
+    renderTradeList();
+    return;
+  }
+
+  tradeList[index].loading = true;
+  renderTradeList();
+
+  try {
+    const response = await fetch('/.netlify/functions/calculate-offers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        externalId: tradeList[index].externalId,
+        condition: value,
+        quantity: 1
+      })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || 'Failed to calculate preview pricing');
+    }
+
+    tradeList[index].loading = false;
+
+    if (result.offer_type === 'manual_review') {
+      tradeList[index].reviewRequired = true;
+      tradeList[index].cashOffer = null;
+      tradeList[index].creditOffer = null;
+    } else {
+      tradeList[index].reviewRequired = false;
+      tradeList[index].cashOffer = result.cash_amount ?? null;
+      tradeList[index].creditOffer = result.credit_amount ?? null;
+    }
+
+    renderTradeList();
+  } catch (err) {
+    console.error('Trade item pricing error:', err);
+    tradeList[index].loading = false;
+    tradeList[index].reviewRequired = true;
+    tradeList[index].cashOffer = null;
+    tradeList[index].creditOffer = null;
+    renderTradeList();
+  }
+}
+
+// ====================== FORM SUBMISSION (corrected) ======================
+document.getElementById('sell-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+
+  const form = this;
+  const btn = form.querySelector('button[type="submit"]');
+  if (!btn) return;
+  
+  const originalText = btn.innerHTML;
+  const photoInput = document.getElementById('photo-input');
+
+  // Exact-selection guard from working index.html (mandatory)
+  const externalId = (document.getElementById('external_id') || {}).value || '';
+  if (!externalId.trim() && tradeList.length === 0) {
+    alert('Please search for and select your exact game from the PriceCharting results before submitting.');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = 'Processing your offer...';
+
+  try {
+    let photoUrls = [];
+
+    // Corrected photo upload using actual files array
+    if (photoInput && photoInput.files && photoInput.files.length > 0) {
+      photoUrls = await uploadPhotos([...photoInput.files]);
+    }
+
+    // Preserve original contract fields + careful batch extension
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+
+    data.email = formData.get('email') || '';
+   
+    
+    // Use selected_title if available, otherwise fall back (exact original behavior)
+   
+                                 document.getElementById('game-search-input').value.trim() || '';
+
+    data.photo_urls = photoUrls;
+
+    // Batch extension (does not replace original fields)
+    if (tradeList.length > 0) {
+      data.batch_items = JSON.stringify(tradeList);
+      data.items = tradeList;   // for backend compatibility
+    }
+
+    const response = await fetch('/.netlify/functions/submit-offer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      showOfferResults(result);
+      // reset
+      form.reset();
+      document.getElementById('photo-preview').innerHTML = '';
+      document.getElementById('photo-urls').value = '[]';
+      tradeList = [];
+      renderTradeList();
+      clearSelectedGame();
+      setPhotoStatus('');
+    } else {
+      showErrorResult(result.error || 'There was a problem processing your submission.');
+    }
+  } catch (err) {
+    console.error(err);
+    showErrorResult(err.message || 'Connection error. Please try again.');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalText;
+  }
+});
+
+function showOfferResults(result) {
+  const panel = document.getElementById('offer-results');
+  const content = document.getElementById('result-content');
+  const titleEl = document.getElementById('result-title');
+
+  if (!panel || !content || !titleEl) return;
+
+  content.innerHTML = '';
+
+  let html = `
+    <div class="bg-black border border-[var(--teal)]/40 rounded-2xl p-8">
+      <div class="flex justify-between items-center mb-6 text-sm">
+        <span class="text-gray-400">Submission ID</span>
+        <span class="font-mono text-[var(--yellow)]">${result.submission_id || '—'}</span>
+      </div>
+  `;
+
+  if (result.offer_type === 'instant_offer') {
+    titleEl.textContent = "🎮 Instant Offer Ready!";
+    html += `
+      <div class="text-center py-10 border-y border-[var(--teal)]/30 my-8">
+        <div class="text-6xl font-bold text-[var(--teal)]">$${Math.ceil(result.cash_amount || 0)}</div>
+        <div class="text-gray-400 mt-3">Cash Offer</div>
+        <div class="text-3xl text-[var(--yellow)] mt-8">or $${Math.ceil(result.credit_amount || 0)} Store Credit</div>
+      </div>
+      <p class="text-center text-gray-300">Based on current market value ≈ $${Math.ceil(result.market_value || 0)}</p>
+      <p class="text-xs text-gray-500 mt-10 text-center">This offer is good for 72 hours.</p>
+      <p class="text-xs text-gray-500 mt-6 text-center">
+        All online offers are preliminary and subject to final verification of condition, completeness, and authenticity.
+      </p>
+    `;
+  } else if (result.offer_type === 'instant_range') {
+    titleEl.textContent = "🎮 Instant Offer Range";
+    html += `
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-10 my-10">
+        <div class="text-center">
+          <div class="text-5xl font-bold text-[var(--teal)]">$${Math.ceil(result.cash_low || 0)} – $${Math.ceil(result.cash_high || 0)}</div>
+          <div class="text-gray-400">Cash Range</div>
+        </div>
+        <div class="text-center">
+          <div class="text-5xl font-bold text-[var(--yellow)]">$${Math.ceil(result.credit_low || 0)} – $${Math.ceil(result.credit_high || 0)}</div>
+          <div class="text-gray-400">Store Credit Range</div>
+        </div>
+      </div>
+      <p class="text-center text-gray-300">Estimated market value ≈ $${Math.ceil(result.market_value || 0)}</p>
+    `;
+  } else {
+    titleEl.textContent = "📋 Manual Review Needed";
+    html += `
+      <div class="text-center py-12">
+        <div class="text-6xl mb-6">🔍</div>
+        <p class="text-2xl text-gray-300">Thank you for your detailed submission.</p>
+        <p class="mt-6 max-w-lg mx-auto text-gray-400">Your items require a quick manual review by our team.</p>
+        ${result.manual_review_reason ? `<p class="mt-8 text-amber-400 italic">"${escapeHtml(result.manual_review_reason)}"</p>` : ''}
+      </div>
+      <p class="text-center text-sm text-gray-500">We’ll email you within 24–48 hours with a personalized fair offer.</p>
+    `;
+  }
+
+  html += `</div>`;
+  content.innerHTML = html;
+  panel.classList.remove('hidden');
+  panel.scrollIntoView({ behavior: 'smooth' });
+}
+
+function showErrorResult(message) {
+  const panel = document.getElementById('offer-results');
+  const content = document.getElementById('result-content');
+  const titleEl = document.getElementById('result-title');
+
+  if (!panel || !content || !titleEl) return;
+
+  content.innerHTML = `
+    <div class="bg-red-950/50 border border-red-500/50 rounded-2xl p-10 text-center">
+      <div class="text-5xl mb-4">⚠️</div>
+      <p class="text-xl text-red-400">${escapeHtml(message)}</p>
+      <button onclick="hideOfferResults()" class="mt-8 px-8 py-3 bg-zinc-800 hover:bg-zinc-700 rounded-xl">
+        Try Again
+      </button>
+    </div>
+  `;
+  titleEl.textContent = "Submission Issue";
+  panel.classList.remove('hidden');
+  panel.scrollIntoView({ behavior: 'smooth' });
+}
+
+function hideOfferResults() {
+  const panel = document.getElementById('offer-results');
+  if (panel) panel.classList.add('hidden');
+}
+
+// ====================== EVENT LISTENERS & AUTH ======================
+document.addEventListener('DOMContentLoaded', function() {
+  // Search
+  const searchBtn = document.getElementById('search-button');
+  if (searchBtn) searchBtn.addEventListener('click', searchGames);
+  
+  const searchInput = document.getElementById('game-search-input');
+  if (searchInput) {
+    searchInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        searchGames();
+      }
+    });
+  }
+
+  // Selection controls
+  const changeBtn = document.getElementById('change-selection-btn');
+  if (changeBtn) changeBtn.addEventListener('click', clearSelectedGame);
+
+  const addBtn = document.getElementById('add-to-trade-btn');
+  if (addBtn) addBtn.addEventListener('click', addSelectedGameToTrade);
+
+  // Make batch functions global for inline onclick handlers
+  window.removeTradeItem = removeTradeItem;
+  window.updateTradeItemCondition = updateTradeItemCondition;
+
+  // Photo input is triggered by button - upload happens on submit (exact contract)
+});
+
+// ====================== SUPABASE AUTH (exact from index.html) ======================
+const supabaseUrl = 'https://kdqdebpcemviaubbiuwl.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkcWRlYnBjZW12aWF1YmJpdXdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNjg3NTAsImV4cCI6MjA4OTk0NDc1MH0.QZHcD2RRl5rXkuaVOXPxYxFSABE_5EjsmmDaRbCktNI';
+const authSupabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+let isSignupMode = false;
+
+function gamertagLoginClick() {
+  const modal = document.getElementById('auth-modal');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  document.getElementById('auth-status').classList.add('hidden');
+  document.getElementById('auth-email').value = '';
+  document.getElementById('auth-password').value = '';
+  document.getElementById('auth-gamertag').value = '';
+  toggleGamertagField(false);
+}
+
+function closeAuthModal() {
+  const modal = document.getElementById('auth-modal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function toggleGamertagField(show) {
+  const field = document.getElementById('gamertag-field');
+  if (show) {
+    field.classList.remove('hidden');
+    isSignupMode = true;
+    document.getElementById('modal-title').textContent = 'Create Collector Account';
+  } else {
+    field.classList.add('hidden');
+    isSignupMode = false;
+    document.getElementById('modal-title').textContent = 'Gamertag Login';
+  }
+}
+
+function showAuthStatus(message, isError = false) {
+  const statusEl = document.getElementById('auth-status');
+  statusEl.textContent = message;
+  statusEl.className = `mb-4 text-sm text-center py-2 rounded ${isError ? 'bg-red-950/50 text-red-400' : 'bg-emerald-950/50 text-emerald-400'}`;
+  statusEl.classList.remove('hidden');
+}
+
+async function signUpWithGamertag() {
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value.trim();
+  const gamertag = document.getElementById('auth-gamertag').value.trim();
+
+  if (!email || !password) {
+    showAuthStatus('Email and password are required', true);
+    return;
+  }
+
+  if (isSignupMode && (!gamertag || gamertag.length < 3)) {
+    showAuthStatus('Gamertag must be at least 3 characters', true);
+    return;
+  }
+
+  showAuthStatus('Creating account...', false);
+
+  try {
+    const { data: authData, error: authError } = await authSupabase.auth.signUp({
+      email: email,
+      password: password,
+    });
+
+    if (authError) throw authError;
+
+    if (authData.user) {
+      const { error: profileError } = await authSupabase
+        .from('profiles')
+        .insert({
+          id: authData.user.id,
+          gamertag: gamertag || email.split('@')[0],
+          role: 'collector'
+        });
+      if (profileError) console.warn('Profile insert warning:', profileError);
+    }
+
+    showAuthStatus('Account created! Redirecting...', false);
+    setTimeout(() => {
+      window.location.href = 'collector-dashboardv2.html';
+    }, 800);
+  } catch (err) {
+    console.error(err);
+    showAuthStatus(err.message || 'Signup failed. Please try again.', true);
+  }
+}
+
+async function logInWithGamertag() {
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value.trim();
+
+  if (!email || !password) {
+    showAuthStatus('Email and password are required', true);
+    return;
+  }
+
+  showAuthStatus('Logging in...', false);
+
+  try {
+    const { data, error } = await authSupabase.auth.signInWithPassword({
+      email: email,
+      password: password,
+    });
+
+    if (error) throw error;
+
+    showAuthStatus('Login successful! Redirecting...', false);
+    setTimeout(() => {
+      window.location.href = 'collector-dashboardv2.html';
+    }, 600);
+  } catch (err) {
+    console.error(err);
+    showAuthStatus(err.message || 'Invalid email or password', true);
+  }
+}
+
+// Expose auth functions globally
+window.gamertagLoginClick = gamertagLoginClick;
+window.closeAuthModal = closeAuthModal;
+window.signUpWithGamertag = signUpWithGamertag;
+window.logInWithGamertag = logInWithGamertag;
+</script>
+</body>
+</html>
