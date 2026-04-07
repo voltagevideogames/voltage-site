@@ -549,12 +549,30 @@
         welcomeEl.textContent = `Welcome, ${gamertag}`;
       }
 
-      const identityTitleEl = document.querySelector('.heading-font.text-lg.md\\:text-2xl.neon-text.leading-relaxed');
-      if (identityTitleEl) {
-        identityTitleEl.textContent = gamertag;
-      }
-    }
+  const identityTitleEl = document.querySelector('.heading-font.text-lg.md\\:text-2xl.neon-text.leading-relaxed');
+if (identityTitleEl) {
+  identityTitleEl.textContent = gamertag;
+}
 
+const vaultItems = await loadDashboardVaultItems();
+console.log('Vault items loaded:', vaultItems);
+}
+async function loadDashboardVaultItems() {
+  if (!currentCollector?.id) return [];
+
+  const { data, error } = await dashboardSupabase
+    .from('vault_items')
+    .select('*')
+    .eq('user_id', currentCollector.id)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Failed to load dashboard vault items:', error);
+    return [];
+  }
+
+  return Array.isArray(data) ? data : [];
+}
     async function logout() {
       const { error } = await dashboardSupabase.auth.signOut();
       if (error) {
