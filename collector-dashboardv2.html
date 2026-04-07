@@ -556,6 +556,7 @@ if (identityTitleEl) {
 
 const vaultItems = await loadDashboardVaultItems();
 console.log('Vault items loaded:', vaultItems);
+loadVaultDashboardStats(vaultItems);
 }
 async function loadDashboardVaultItems() {
   if (!currentCollector?.id) return [];
@@ -586,7 +587,7 @@ async function loadDashboardVaultItems() {
     // ============== VAULT DASHBOARD STATS FROM localStorage (voltageVaultV1) ==============
     function loadVaultDashboardStats(items = []) {
     if (!Array.isArray(items)) items = [];
-    loadVaultDashboardStats(vaultItems); 
+   
       // Safe value getter
       const getValue = (item, currKey, fallbackKey) => {
         if (item && item[currKey] != null) return parseFloat(item[currKey]) || 0;
@@ -711,10 +712,9 @@ async function loadDashboardVaultItems() {
     }
 
     // Initialize
-    document.addEventListener('DOMContentLoaded', async () => {
-      await loadCollectorDashboard();
-      loadVaultDashboardStats();
-    });
+   document.addEventListener('DOMContentLoaded', async () => {
+  await loadCollectorDashboard();
+});
   </script>
 </body>
 </html>
