@@ -604,8 +604,8 @@ async function loadDashboardVaultItems() {
         const qty = Math.max(1, parseInt(item.quantity) || 1);
         totalGames += qty;
 
-        const currTotal = getValue(item, 'currentTotalValue', 'totalValue');
-        const unitVal = getValue(item, 'currentUnitValue', 'unitValue');
+       const currTotal = getValue(item, 'current_total_value', 'total_value');
+       const unitVal = getValue(item, 'current_unit_value', 'unit_value');
         const itemTotal = currTotal > 0 ? currTotal : (unitVal * qty);
 
         totalValue += itemTotal;
@@ -622,8 +622,8 @@ async function loadDashboardVaultItems() {
       let originalValue = 0;
       items.forEach(item => {
         const qty = Math.max(1, parseInt(item.quantity) || 1);
-        const purchase = parseFloat(item.purchasePrice) || 0;
-        const unit = parseFloat(item.unitValue) || 0;
+        const purchase = parseFloat(item.purchase_price) || 0;
+        const unit = parseFloat(item.unit_value) || 0;
         originalValue += (purchase > 0 ? purchase * qty : unit * qty);
       });
 
@@ -646,7 +646,7 @@ async function loadDashboardVaultItems() {
       let maxVal = -1;
       items.forEach(item => {
         const qty = Math.max(1, parseInt(item.quantity) || 1);
-        const val = getValue(item, 'currentTotalValue', 'totalValue') || (getValue(item, 'currentUnitValue', 'unitValue') * qty);
+        const val = getValue(item, 'current_total_value', 'total_value') || (getValue(item, 'current_unit_value', 'unit_value') * qty);
         if (val > maxVal) {
           maxVal = val;
           mostVal = item;
@@ -668,8 +668,8 @@ async function loadDashboardVaultItems() {
       let lastRefresh = 'Never';
       let latest = null;
       items.forEach(item => {
-        if (item.lastPriceUpdated) {
-          const d = new Date(item.lastPriceUpdated);
+        if (item.created_at) {
+        const d = new Date(item.created_at);
           if (!isNaN(d.getTime()) && (!latest || d > latest)) latest = d;
         }
       });
@@ -695,7 +695,7 @@ async function loadDashboardVaultItems() {
       // Bind Most Valuable
       if (mostVal && maxVal >= 0) {
         const mvQty = Math.max(1, parseInt(mostVal.quantity) || 1);
-        const mvDisplayVal = getValue(mostVal, 'currentTotalValue', 'totalValue') || (getValue(mostVal, 'currentUnitValue', 'unitValue') * mvQty);
+        const mvDisplayVal = getValue(mostVal, 'current_total_value', 'total_value') || (getValue(mostVal, 'current_unit_value', 'unit_value') * mvQty);
         document.getElementById('most-valuable-title').textContent = mostVal.title || 'Untitled Item';
         document.getElementById('most-valuable-subtitle').textContent = `${mostVal.platform || '—'} • $${Math.round(mvDisplayVal).toLocaleString()}`;
       } else {
