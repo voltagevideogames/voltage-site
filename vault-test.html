@@ -758,25 +758,7 @@ async function loadVault() {
     renderVault();
   }
 }
-  } catch (e) {
-    console.error('loadVault failed:', e);
-
-    // Safe fallback
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          vault = parsed;
-          renderVault();
-        }
-      }
-    } catch (fallbackErr) {
-      console.error('localStorage fallback failed:', fallbackErr);
-    }
-  }
-}
-
+  
     function escapeHtml(unsafe) {
       return String(unsafe ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
     }
