@@ -1474,6 +1474,27 @@ if (gamertagEl) {
         runSearch();
       }
     });
+  window.runSearch = runSearch;
+  window.addManualEntry = addManualEntry;
+  window.addToVault = addToVault;
+  window.filterAndSortVault = filterAndSortVault;
+  window.refreshMarketValues = refreshMarketValues;
+  window.exportVault = exportVault;
+  window.viewItem = viewItem;
+  window.removeFromVault = removeFromVault;
+  window.clearVault = clearVault;
+
+  // Initial load
+  await loadVault();
+  if (!vault.length) {
+    renderVault();
+  }
+
+});
+</script>
+</body>
+</html>
+
 
   // Initial load
 await loadVault();
