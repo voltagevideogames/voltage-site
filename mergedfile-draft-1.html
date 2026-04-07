@@ -783,12 +783,14 @@ document.getElementById('sell-form').addEventListener('submit', async function(e
   const form = this;
   const btn = form.querySelector('button[type="submit"]');
   if (!btn) return;
-  
+
   const originalText = btn.innerHTML;
   const photoInput = document.getElementById('photo-input');
-
-  // Exact-selection guard from working index.html (mandatory)
   const externalId = (document.getElementById('external_id') || {}).value || '';
+  const searchInputValue = (document.getElementById('game-search-input') || {}).value?.trim() || '';
+  const selectedTitle = (document.getElementById('selected_title') || {}).value?.trim() || '';
+
+  // Require exact selection for single-item flow, but allow batch submissions
   if (!externalId.trim() && tradeList.length === 0) {
     alert('Please search for and select your exact game from the PriceCharting results before submitting.');
     return;
@@ -800,28 +802,30 @@ document.getElementById('sell-form').addEventListener('submit', async function(e
   try {
     let photoUrls = [];
 
-    // Corrected photo upload using actual files array
     if (photoInput && photoInput.files && photoInput.files.length > 0) {
       photoUrls = await uploadPhotos([...photoInput.files]);
     }
 
-    // Preserve original contract fields + careful batch extension
     const formData = new FormData(form);
     const data = Object.fromEntries(formData.entries());
 
+    // Preserve original fields
     data.email = formData.get('email') || '';
-   
-    
-    // Use selected_title if available, otherwise fall back (exact original behavior)
-   
-                                 document.getElementById('game-search-input').value.trim() || '';
+    data.preferred_payout = formData.get('preferred_payout') || '';
+
+    // Required backend fallback for title/description
+    data.gameTitleOrDescription = selectedTitle || searchInputValue || (tradeList.length > 0 ? `${tradeList.length} game trade submission` : '');
+
+    // Keep selected_title populated for batch submissions too
+    if (!data.selected_title && tradeList.length > 0) {
+      data.selected_title = data.gameTitleOrDescription;
+    }
 
     data.photo_urls = photoUrls;
 
-    // Batch extension (does not replace original fields)
     if (tradeList.length > 0) {
       data.batch_items = JSON.stringify(tradeList);
-      data.items = tradeList;   // for backend compatibility
+      data.items = tradeList;
     }
 
     const response = await fetch('/.netlify/functions/submit-offer', {
@@ -834,7 +838,6 @@ document.getElementById('sell-form').addEventListener('submit', async function(e
 
     if (result.success) {
       showOfferResults(result);
-      // reset
       form.reset();
       document.getElementById('photo-preview').innerHTML = '';
       document.getElementById('photo-urls').value = '[]';
