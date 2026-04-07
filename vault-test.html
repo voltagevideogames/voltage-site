@@ -937,7 +937,7 @@ async function loadVault() {
     /* ================================================================
        addToVault - safe optional purchase price (works for both search clicks and manual add)
     ================================================================ */
-    async function addToVault(normalizedResult, purchasePriceInput = null) {
+   async function addToVault(normalizedResult, purchasePriceInput = null) {
   try {
     const quantity = parseInt(document.getElementById('quantity').value) || 1;
     const condition = document.getElementById('condition').value || 'Loose';
@@ -1033,69 +1033,6 @@ async function loadVault() {
     alert('Failed to save this item to your account. Please try again.');
   }
 }
-
-      let unitValue = 0;
-      if (condition === 'Loose') unitValue = normalizedResult.loosePrice || 0;
-      else if (condition === 'Complete in Box (CIB)') unitValue = normalizedResult.cibPrice || 0;
-      else if (condition === 'Sealed') unitValue = normalizedResult.newPrice || 0;
-      else if (condition === 'Graded') unitValue = normalizedResult.gradedPrice || normalizedResult.newPrice || 0;
-
-      const existing = vault.find(item =>
-        item.title === normalizedResult.title &&
-        item.platform === selectedPlatform &&
-        item.condition === condition
-      );
-
-      if (existing) {
-        existing.quantity += quantity;
-        existing.totalValue = existing.unitValue * existing.quantity;
-        if (notes) existing.notes = existing.notes ? existing.notes + '; ' + notes : notes;
-        if (purchasePriceInput !== null && Number.isFinite(purchasePriceInput)) {
-          existing.purchasePrice = purchasePriceInput;
-        }
-      } else {
-        const newItem = {
-          id: Date.now() + Math.random().toString(36).substr(2,9),
-          source: normalizedResult.source,
-          externalId: normalizedResult.externalId,
-          title: normalizedResult.title,
-          platform: selectedPlatform,
-          condition: condition,
-          quantity: quantity,
-          unitValue: unitValue,
-          totalValue: unitValue * quantity,
-          purchasePrice: (purchasePriceInput !== null && Number.isFinite(purchasePriceInput)) ? purchasePriceInput : unitValue,
-          imageUrl: normalizedResult.imageUrl || 'images/vault-placeholder.png',
-          notes: notes,
-          addedAt: new Date().toISOString()
-        };
-        vault.push(newItem);
-      }
-
-      renderVault();
-      saveVault();
-      clearForm();
-      document.getElementById('search-results').classList.add('hidden');
-
-      lastSearchResults = [];
-      const resultsGrid = document.getElementById('results-grid');
-      if (resultsGrid) resultsGrid.innerHTML = '';
-
-      const searchLoading = document.getElementById('search-loading');
-      if (searchLoading) searchLoading.classList.add('hidden');
-
-      const searchError = document.getElementById('search-error');
-      if (searchError) {
-        searchError.classList.add('hidden');
-        searchError.textContent = '';
-      }
-
-      const msg = document.getElementById('success-message');
-      document.getElementById('success-text').textContent = `Added ${quantity} × ${normalizedResult.title} to your Vault`;
-      msg.classList.remove('hidden');
-      setTimeout(() => msg.classList.add('hidden'), 3000);
-    }
-
     /* ================================================================
        NEW: COLLECTOR SUMMARY + SYSTEM SHELF HELPERS
     ================================================================ */
