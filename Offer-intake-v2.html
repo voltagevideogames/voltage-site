@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Voltage 2.0 Offer Intake Mockup</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --teal: #00E5B8;
+      --yellow: #FFEB3B;
+      --panel: rgba(10, 14, 16, 0.9);
+      --panel-soft: rgba(255, 255, 255, 0.03);
+      --line: rgba(0,229,184,0.14);
+      --line-strong: rgba(0,229,184,0.26);
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background:
+        radial-gradient(circle at top center, rgba(0,229,184,0.08), transparent 24%),
+        linear-gradient(180deg, #040506 0%, #090b0d 100%);
+      color: #f5f5f5;
+    }
+
+    .heading-font {
+      font-family: 'Press Start 2P', system-ui;
+    }
+
+    .shell {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.005)),
+        rgba(0,0,0,0.48);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.06);
+      box-shadow: 0 24px 60px rgba(0,0,0,0.25);
+    }
+
+    .panel {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)),
+        var(--panel);
+      border: 1px solid var(--line);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.03),
+        0 10px 24px rgba(0,0,0,0.18);
+    }
+
+    .panel-soft {
+      background: var(--panel-soft);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .hero-grid {
+      background-image:
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 26px 26px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      border-radius: 999px;
+      padding: 0.55rem 0.9rem;
+      font-size: 0.76rem;
+      font-weight: 600;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+      color: #d4d4d8;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--yellow), #ffb800);
+      color: #111;
+      border: 1px solid rgba(255,235,59,0.65);
+      box-shadow: 0 0 0 1px rgba(255,235,59,0.15), 0 12px 30px rgba(255,184,0,0.15);
+    }
+
+    .btn-secondary {
+      background: linear-gradient(135deg, rgba(0,229,184,0.24), rgba(0,229,184,0.10));
+      color: white;
+      border: 1px solid rgba(0,229,184,0.34);
+      box-shadow: 0 0 0 1px rgba(0,229,184,0.12), 0 12px 30px rgba(0,229,184,0.12);
+    }
+
+    .btn-ghost {
+      background: rgba(255,255,255,0.02);
+      color: #d4d4d8;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .focus-field:focus {
+      outline: none;
+      border-color: rgba(0,229,184,0.4);
+      box-shadow: 0 0 0 1px rgba(0,229,184,0.18);
+    }
+
+
+    .side-rail .panel {
+      border-color: rgba(255,255,255,0.05);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.02),
+        0 6px 18px rgba(0,0,0,0.12);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.008)),
+        rgba(10,14,16,0.78);
+    }
+
+    .center-spotlight {
+      position: relative;
+      z-index: 0;
+    }
+
+    .center-spotlight::before {
+      content: '';
+      position: absolute;
+      inset: -10px -12px;
+      border-radius: 34px;
+      background: radial-gradient(circle at top center, rgba(0,229,184,0.10), transparent 58%);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .center-spotlight > .panel {
+      border-color: rgba(0,229,184,0.18);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.03),
+        0 16px 34px rgba(0,0,0,0.22);
+    }
+
+
+
+    .section-divider {
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(0,229,184,0.35), transparent);
+    }
+
+    .subtle-kicker {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: rgb(113 113 122);
+    }
+
+  </style>
+</head>
+<body class="min-h-screen text-white">
+  <nav class="sticky top-0 z-50 border-b border-[rgba(0,229,184,0.14)] bg-black/75 backdrop-blur-xl">
+    <div class="max-w-[1300px] mx-auto px-4 md:px-6 xl:px-8 py-4 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-4 min-w-0">
+        <div class="heading-font text-sm sm:text-lg tracking-widest">VOLTAGE 2.0</div>
+        <div class="text-[10px] sm:text-xs text-zinc-500 uppercase tracking-[0.22em]">Offer Intake</div>
+      </div>
+      <div class="hidden lg:flex items-center gap-8 text-sm text-zinc-300">
+        <a href="#" class="text-[var(--teal)]">Offer Intake</a>
+        <a href="#">Shop Inventory</a>
+        <a href="#">Collector Hub</a>
+        <a href="#">Visit Store</a>
+      </div>
+      <div class="flex items-center gap-3">
+        <button class="btn-ghost rounded-xl px-4 py-2 text-sm">Back Home</button>
+        <button class="btn-secondary rounded-xl px-4 py-2 text-sm font-semibold">Sign In</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-[1300px] mx-auto px-4 md:px-6 xl:px-8 py-6 md:py-8 xl:py-10">
+    <div class="shell rounded-[30px] overflow-hidden">
+      <section class="hero-grid border-b border-[rgba(0,229,184,0.08)]">
+        <div class="grid xl:grid-cols-[1.15fr_0.85fr] gap-8 p-6 md:p-8 xl:p-10 items-center">
+          <div>
+            <div class="text-xs uppercase tracking-[0.32em] text-[var(--teal)] mb-4">Trusted Buying Flow</div>
+            <h1 class="text-3xl md:text-5xl xl:text-6xl font-extrabold leading-tight mb-4">Get a real Voltage offer without the marketplace chaos.</h1>
+            <p class="text-base md:text-lg text-zinc-300 max-w-3xl leading-relaxed">Submit a single game, a trade lot, or a larger collection. Voltage reviews market value, condition, and payout options so you can move inventory cleanly and confidently.</p>
+            <div class="flex flex-wrap gap-3 mt-6">
+              <div class="tag">Real Store Since 2012</div>
+              <div class="tag">Nationwide Buying</div>
+              <div class="tag">Higher Store Credit</div>
+              <div class="tag">Collector Focused</div>
+            </div>
+          </div>
+
+          <div class="panel rounded-[28px] p-6 md:p-8">
+            <div class="text-xs uppercase tracking-[0.28em] text-zinc-500 mb-4">How It Works</div>
+            <div class="grid gap-4">
+              <div class="panel-soft rounded-[22px] p-4">
+                <div class="text-sm uppercase tracking-wide text-zinc-500">Step 1</div>
+                <div class="text-xl font-bold mt-2">Search your exact game</div>
+                <div class="text-sm text-zinc-400 mt-2">Use exact-match search to avoid pricing confusion and bad submissions.</div>
+              </div>
+              <div class="panel-soft rounded-[22px] p-4">
+                <div class="text-sm uppercase tracking-wide text-zinc-500">Step 2</div>
+                <div class="text-xl font-bold mt-2">Choose single or batch flow</div>
+                <div class="text-sm text-zinc-400 mt-2">Quick offer for smaller trades. Batch intake for larger collections and bigger lots.</div>
+              </div>
+              <div class="panel-soft rounded-[22px] p-4">
+                <div class="text-sm uppercase tracking-wide text-zinc-500">Step 3</div>
+                <div class="text-xl font-bold mt-2">Review your Voltage options</div>
+                <div class="text-sm text-zinc-400 mt-2">See market value context and choose cash or higher-value store credit.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="p-6 md:p-8 xl:p-10 border-b border-[rgba(255,255,255,0.04)]">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div class="panel rounded-[26px] p-5">
+            <div class="text-xs uppercase tracking-wide text-zinc-500">Offer Mode</div>
+            <div class="text-2xl font-bold text-[var(--teal)] mt-2">Quick Offer</div>
+            <div class="text-sm text-zinc-400 mt-2">Best for smaller trades and fast single-item submissions.</div>
+          </div>
+          <div class="panel rounded-[26px] p-5">
+            <div class="text-xs uppercase tracking-wide text-zinc-500">Store Advantage</div>
+            <div class="text-2xl font-bold text-white mt-2">Higher Credit Path</div>
+            <div class="text-sm text-zinc-400 mt-2">Store credit gives customers a stronger value route inside the ecosystem.</div>
+          </div>
+          <div class="panel rounded-[26px] p-5">
+            <div class="text-xs uppercase tracking-wide text-zinc-500">Larger Sellers</div>
+            <div class="text-2xl font-bold text-white mt-2">Batch Intake Ready</div>
+            <div class="text-sm text-zinc-400 mt-2">Designed to handle larger submissions without clutter or confusion.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="p-6 md:p-8 xl:p-10">
+        <div class="grid xl:grid-cols-[240px_minmax(0,1fr)] gap-8 xl:gap-10">
+          <aside class="side-rail space-y-6">
+            <div class="panel rounded-[28px] p-5">
+              <div class="text-xs uppercase tracking-[0.25em] text-zinc-500 mb-4">Offer Paths</div>
+              <div class="space-y-3">
+                <div class="panel-soft rounded-2xl border border-[rgba(0,229,184,0.18)] bg-[rgba(0,229,184,0.06)] px-4 py-4 text-[var(--teal)] font-semibold">Quick Offer</div>
+                <div class="panel-soft rounded-2xl px-4 py-4 text-zinc-300">Batch Intake</div>
+                <div class="panel-soft rounded-2xl px-4 py-4 text-zinc-300">Trade-In Info</div>
+                <div class="panel-soft rounded-2xl px-4 py-4 text-zinc-300">Shipping / Drop-Off</div>
+              </div>
+            </div>
+
+            <div class="panel rounded-[28px] p-5">
+              <div class="text-xs uppercase tracking-[0.25em] text-zinc-500 mb-3">Need a Different Route?</div>
+              <div class="space-y-3">
+                <div class="panel-soft rounded-2xl p-4">
+                  <div class="font-semibold">Large Collection Seller</div>
+                  <div class="text-sm text-zinc-400 mt-2">Use the batch intake path for bigger submissions.</div>
+                </div>
+                <div class="panel-soft rounded-2xl p-4">
+                  <div class="font-semibold">Store Credit Shopper</div>
+                  <div class="text-sm text-zinc-400 mt-2">Take the stronger value path and spend inside the store.</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel rounded-[28px] p-5">
+              <div class="text-xs uppercase tracking-[0.25em] text-zinc-500 mb-3">Why Trust Voltage</div>
+              <div class="space-y-4 text-sm text-zinc-300">
+                <div>Real brick-and-mortar store in Syracuse, NY</div>
+                <div>Online inventory powered through Shopify</div>
+                <div>Collector-focused buying and trade philosophy</div>
+                <div>Cleaner process than Facebook or marketplace selling</div>
+              </div>
+            </div>
+
+            <div class="panel rounded-[28px] p-5">
+              <div class="text-xs uppercase tracking-[0.25em] text-zinc-500 mb-3">After Submission</div>
+              <div class="text-sm text-zinc-400 leading-6">In the full Voltage system, this can later connect directly to the customer dashboard so users can see offer status, review progress, and next steps.</div>
+            </div>
+          </aside>
+
+          <section class="center-spotlight space-y-6">
+            <div class="panel rounded-[28px] p-6 md:p-7">
+              <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-6">
+                <div>
+                  <div class="text-xs uppercase tracking-[0.25em] text-zinc-500 mb-2">Start Your Offer</div>
+                  <h2 class="text-3xl font-bold leading-tight">Search for your exact game</h2>
+                  <p class="text-zinc-400 mt-2">Keep the powerful exact-match workflow, but present it in a cleaner premium layout.</p>
+                </div>
+                <button class="btn-ghost rounded-xl px-4 py-3 text-sm">Need Batch Intake?</button>
+              </div>
+
+              <div class="panel-soft rounded-[24px] p-5 md:p-6">
+                <label class="block text-sm mb-3 text-[var(--teal)] font-medium">Search PriceCharting title</label>
+                <div class="flex flex-col lg:flex-row gap-3">
+                  <input type="text" value="Metroid Prime" class="focus-field flex-1 bg-black/60 border border-[rgba(0,229,184,0.18)] rounded-2xl px-5 py-4 text-white placeholder:text-zinc-500" />
+                  <button class="btn-primary rounded-2xl px-6 py-4 text-sm font-bold whitespace-nowrap">Search</button>
+                </div>
+                <div class="text-sm text-zinc-500 mt-3">Search results feel like product cards instead of raw boxes.</div>
+              </div>
+
+              <div class="grid gap-4 mt-5">
+                <div class="panel-soft rounded-[24px] p-5 border border-[rgba(0,229,184,0.18)] min-h-[128px] flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div class="min-w-0">
+                    <div class="text-sm uppercase tracking-wide text-zinc-500">Game Match</div>
+                    <div class="text-xl font-bold mt-2">Metroid Prime</div>
+                    <div class="text-sm text-zinc-400 mt-1">GameCube • CIB</div>
+                  </div>
+                  <div class="flex flex-col md:items-end gap-4 md:w-[180px] shrink-0">
+                    <div class="text-2xl font-bold text-[var(--teal)]">$42</div>
+                    <button class="btn-secondary rounded-xl px-4 py-3 text-sm font-bold w-full">Select This Game</button>
+                  </div>
+                </div>
+                <div class="panel-soft rounded-[24px] p-5 min-h-[128px] flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div class="min-w-0">
+                    <div class="text-sm uppercase tracking-wide text-zinc-500">Game Match</div>
+                    <div class="text-xl font-bold mt-2">Metroid Prime</div>
+                    <div class="text-sm text-zinc-400 mt-1">GameCube • Loose</div>
+                  </div>
+                  <div class="flex flex-col md:items-end gap-4 md:w-[180px] shrink-0">
+                    <div class="text-2xl font-bold text-[var(--teal)]">$19</div>
+                    <button class="btn-ghost rounded-xl px-4 py-3 text-sm font-semibold w-full">Select This Game</button>
+                  </div>
+                </div>
+                <div class="panel-soft rounded-[24px] p-5 min-h-[128px] flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div class="min-w-0">
+                    <div class="text-sm uppercase tracking-wide text-zinc-500">Game Match</div>
+                    <div class="text-xl font-bold mt-2">Metroid Prime + Bonus Disc</div>
+                    <div class="text-sm text-zinc-400 mt-1">GameCube • CIB</div>
+                  </div>
+                  <div class="flex flex-col md:items-end gap-4 md:w-[180px] shrink-0">
+                    <div class="text-2xl font-bold text-[var(--teal)]">$87</div>
+                    <button class="btn-ghost rounded-xl px-4 py-3 text-sm font-semibold w-full">Select This Game</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-8 mb-6">
+              <div class="section-divider"></div>
+              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mt-5">
+                <div>
+                  <div class="subtle-kicker mb-2">Continue With Selected Item</div>
+                  <div class="text-2xl font-bold">Metroid Prime <span class="text-zinc-500 font-medium">• GameCube • CIB</span></div>
+                </div>
+                <div class="panel-soft rounded-2xl px-4 py-3 text-sm text-zinc-300">Selected match locked in. Review details and preview before submitting.</div>
+              </div>
+            </div>
+
+            <div class="grid xl:grid-cols-2 gap-6">
+              <div class="panel rounded-[28px] p-6">
+                <div class="text-xs uppercase tracking-[0.25em] text-zinc-500 mb-2">Submission Details</div>
+                <h3 class="text-2xl font-bold mb-5">Tell us about your item</h3>
+                <div class="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm text-zinc-400 mb-2">Condition</label>
+                    <div class="focus-field bg-black/50 border border-white/8 rounded-2xl px-4 py-4">Complete in Box</div>
+                  </div>
+                  <div>
+                    <label class="block text-sm text-zinc-400 mb-2">Quantity</label>
+                    <div class="focus-field bg-black/50 border border-white/8 rounded-2xl px-4 py-4">1</div>
+                  </div>
+                  <div>
+                    <label class="block text-sm text-zinc-400 mb-2">Preferred payout</label>
+                    <div class="focus-field bg-black/50 border border-white/8 rounded-2xl px-4 py-4">Cash or Store Credit</div>
+                  </div>
+                  <div>
+                    <label class="block text-sm text-zinc-400 mb-2">Photos</label>
+                    <div class="focus-field bg-black/50 border border-dashed border-[rgba(0,229,184,0.22)] rounded-2xl px-4 py-4 text-zinc-400">Upload images</div>
+                  </div>
+                </div>
+                <div class="mt-4">
+                  <label class="block text-sm text-zinc-400 mb-2">Notes</label>
+                  <div class="focus-field bg-black/50 border border-white/8 rounded-2xl px-4 py-4 text-zinc-400 min-h-[110px]">Any condition details, missing inserts, or extra context...</div>
+                </div>
+              </div>
+
+              <div class="panel rounded-[28px] p-6">
+                <div class="text-xs uppercase tracking-[0.25em] text-zinc-500 mb-2">Offer Preview</div>
+                <h3 class="text-2xl font-bold mb-5">What the customer sees</h3>
+                <div class="panel-soft rounded-[24px] p-5 space-y-5">
+                  <div class="grid grid-cols-2 gap-4">
+                    <div>
+                      <div class="text-xs uppercase tracking-wide text-zinc-500">Market Value</div>
+                      <div class="text-3xl font-bold text-[var(--teal)] mt-2">$42</div>
+                    </div>
+                    <div>
+                      <div class="text-xs uppercase tracking-wide text-zinc-500">Offer Type</div>
+                      <div class="text-lg font-semibold text-[var(--yellow)] mt-3">Instant Range</div>
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-2 gap-4">
+                    <div class="panel-soft rounded-2xl p-4">
+                      <div class="text-xs uppercase tracking-wide text-zinc-500">Cash</div>
+                      <div class="text-2xl font-bold mt-2">$15</div>
+                    </div>
+                    <div class="panel-soft rounded-2xl p-4">
+                      <div class="text-xs uppercase tracking-wide text-zinc-500">Store Credit</div>
+                      <div class="text-2xl font-bold mt-2">$18</div>
+                    </div>
+                  </div>
+                  <div class="text-sm text-zinc-400 leading-relaxed">This panel should feel calm and premium, so the customer trusts the process instead of feeling like they’re filling out a rough buylist form.</div>
+                  <div class="grid gap-3">
+                    <button class="btn-primary rounded-2xl px-5 py-4 text-sm font-bold">Submit Offer Request</button>
+                    <button class="btn-ghost rounded-2xl px-5 py-4 text-sm font-medium opacity-85">Save for Later</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+                  </div>
+      </section>
+    </div>
+  </main>
+</body>
+</html>
