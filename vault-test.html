@@ -733,28 +733,31 @@ async function clearVaultInSupabase() {
 }
 
 function saveVault() {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(vault)); } catch(e) {}
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(vault));
+  } catch (e) {
+    console.warn('localStorage mirror failed:', e);
+  }
 }
 
 async function loadVault() {
   try {
     const supabaseItems = await loadVaultFromSupabase();
 
-    if (Array.isArray(supabaseItems) && supabaseItems.length > 0) {
+    if (Array.isArray(supabaseItems)) {
       vault = supabaseItems;
       renderVault();
       return;
     }
 
-    // Fallback to localStorage if Supabase is empty
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed)) {
-        vault = parsed;
-        renderVault();
-      }
-    }
+    vault = [];
+    renderVault();
+  } catch (e) {
+    console.error('loadVault failed:', e);
+    vault = [];
+    renderVault();
+  }
+}
   } catch (e) {
     console.error('loadVault failed:', e);
 
