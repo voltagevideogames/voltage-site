@@ -746,12 +746,12 @@ async function loadVault() {
 
     if (Array.isArray(supabaseItems)) {
       vault = supabaseItems;
-      renderVault();
-      return;
+    } else {
+      vault = [];
     }
 
-    vault = [];
     renderVault();
+
   } catch (e) {
     console.error('loadVault failed:', e);
     vault = [];
