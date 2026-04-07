@@ -807,27 +807,39 @@ document.getElementById('sell-form').addEventListener('submit', async function(e
     }
 
     const formData = new FormData(form);
-    const data = Object.fromEntries(formData.entries());
+const data = Object.fromEntries(formData.entries());
 
-    // Preserve original fields
-    data.email = formData.get('email') || '';
-    data.preferred_payout = formData.get('preferred_payout') || '';
+// keep working contract names
+data.email = formData.get('email') || '';
+data.preferredPayout = formData.get('preferred_payout') || '';
 
-    // Required backend fallback for title/description
-    data.gameTitleOrDescription = selectedTitle || searchInputValue || (tradeList.length > 0 ? `${tradeList.length} game trade submission` : '');
+// strongest possible title fallback chain
+const firstBatchTitle = tradeList.length > 0 ? (tradeList[0].title || '') : '';
+const firstBatchPlatform = tradeList.length > 0 ? (tradeList[0].platform || '') : '';
 
-    // Keep selected_title populated for batch submissions too
-    if (!data.selected_title && tradeList.length > 0) {
-      data.selected_title = data.gameTitleOrDescription;
-    }
+data.gameTitleOrDescription =
+  formData.get('selected_title') ||
+  selectedTitle ||
+  searchInputValue ||
+  firstBatchTitle ||
+  (tradeList.length > 0 ? `${tradeList.length} game trade submission` : '');
 
-    data.photo_urls = photoUrls;
+// also keep selected_title populated for backend compatibility
+if (!data.selected_title) {
+  data.selected_title = data.gameTitleOrDescription;
+}
 
-    if (tradeList.length > 0) {
-      data.batch_items = JSON.stringify(tradeList);
-      data.items = tradeList;
-    }
+// helpful for some backends if selected_platform is empty in batch mode
+if (!data.selected_platform && firstBatchPlatform) {
+  data.selected_platform = firstBatchPlatform;
+}
 
+data.photo_urls = photoUrls;
+
+if (tradeList.length > 0) {
+  data.batch_items = JSON.stringify(tradeList);
+  data.items = tradeList;
+}
     const response = await fetch('/.netlify/functions/submit-offer', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
