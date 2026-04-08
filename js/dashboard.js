@@ -7,7 +7,9 @@ const state = {
   selectedId: null,
   activeFilter: 'all',
   searchTerm: '',
-  sortMode: 'newest'
+  sortMode: 'newest',
+  // NEW: batch items state (safe addition)
+  currentBatchItems: []
 };
 
 const queueList = document.getElementById('queue-list');
@@ -64,6 +66,9 @@ const pricingCreditMultiplier = document.getElementById('pricing-credit-multipli
 const pricingMaxAuto = document.getElementById('pricing-max-auto');
 
 const savePricingConfigBtn = document.getElementById('save-pricing-config-btn');
+
+// NEW: Batch items container (safe reference)
+const batchItemsContainer = document.getElementById('batch-items');
 
 // Safe photo parser
 function parsePhotoUrls(value) {
@@ -211,6 +216,12 @@ function getCommittedBuyValue(sub) {
   return Number(sub.final_cash_offer) || Number(sub.cash_amount) || 0;
 }
 
+// NEW: Helper to detect batch submissions
+function isBatchSubmission(item) {
+  if (!item) return false;
+  return item.submission_type === 'batch' || (Number(item.item_count) || 0) > 1;
+}
+
 function renderQueue() {
   if (!queueLoading || !queueList || !queueEmpty) return;
 
@@ -260,6 +271,82 @@ function renderQueue() {
   });
 }
 
+// NEW: Load batch items from backend
+async function loadSubmissionItems(submissionId) {
+  if (!submissionId) return;
+
+  try {
+    const res = await fetch(`/.netlify/functions/get-submission-items?id=${submissionId}`);
+    if (!res.ok) throw new Error('Failed to fetch items');
+
+    const data = await res.json();
+    state.currentBatchItems = Array.isArray(data.items) ? data.items : [];
+    renderBatchItems();
+  } catch (e) {
+    console.error('Failed to load submission items:', e);
+    if (batchItemsContainer) {
+      batchItemsContainer.innerHTML = `<div class="text-red-400 text-sm">Error loading batch items</div>`;
+    }
+  }
+}
+
+// NEW: Render batch items in the dedicated panel
+function renderBatchItems() {
+  if (!batchItemsContainer) return;
+
+  const selected = state.submissions.find(s => s.id === state.selectedId);
+
+  if (!selected) {
+    batchItemsContainer.innerHTML = `<div class="text-gray-500 text-sm">Select a submission</div>`;
+    return;
+  }
+
+  if (!isBatchSubmission(selected)) {
+    batchItemsContainer.innerHTML = `<div class="text-gray-500 text-sm">Single-item submission</div>`;
+    return;
+  }
+
+  if (!state.currentBatchItems || state.currentBatchItems.length === 0) {
+    batchItemsContainer.innerHTML = `<div class="text-gray-500 text-sm">No batch items found</div>`;
+    return;
+  }
+
+  let html = '';
+
+  state.currentBatchItems.forEach(item => {
+    const cash = formatCurrency(item.cash_amount);
+    const credit = formatCurrency(item.credit_amount);
+    const market = formatCurrency(item.market_value);
+    const reviewReason = item.manual_review_reason 
+      ? `<div class="text-xs text-amber-400 mt-1">Review: ${safeText(item.manual_review_reason)}</div>` 
+      : '';
+
+    html += `
+      <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-sm">
+        <div class="font-medium">${safeText(item.title)}</div>
+        <div class="text-xs text-zinc-400 mt-1">${safeText(item.platform)} • ${safeText(item.condition)} • Qty: ${safeText(item.quantity)}</div>
+        <div class="mt-3 grid grid-cols-3 gap-2 text-xs">
+          <div>
+            <div class="text-zinc-500">Market</div>
+            <div class="font-mono">${market}</div>
+          </div>
+          <div>
+            <div class="text-zinc-500">Cash</div>
+            <div class="font-mono text-[var(--yellow)]">${cash}</div>
+          </div>
+          <div>
+            <div class="text-zinc-500">Credit</div>
+            <div class="font-mono text-[var(--teal)]">${credit}</div>
+          </div>
+        </div>
+        ${reviewReason}
+      </div>
+    `;
+  });
+
+  batchItemsContainer.innerHTML = html;
+}
+
 function renderSelectedPanel() {
   const item = state.submissions.find(s => s.id === state.selectedId);
 
@@ -278,6 +365,8 @@ function renderSelectedPanel() {
     if (finalCashInput) finalCashInput.value = '';
     if (finalCreditInput) finalCreditInput.value = '';
     renderPhotoGallery([]);
+    // NEW: reset batch panel
+    if (batchItemsContainer) batchItemsContainer.innerHTML = `<div class="text-gray-500 text-sm">Select a submission</div>`;
     return;
   }
 
@@ -303,6 +392,16 @@ function renderSelectedPanel() {
 
   const photos = parsePhotoUrls(item.photo_urls);
   renderPhotoGallery(photos);
+
+  // NEW: Handle batch items display
+  if (isBatchSubmission(item)) {
+    loadSubmissionItems(item.id);
+  } else {
+    state.currentBatchItems = [];
+    if (batchItemsContainer) {
+      batchItemsContainer.innerHTML = `<div class="text-gray-500 text-sm">Single-item submission</div>`;
+    }
+  }
 }
 
 function renderPhotoGallery(photos) {
