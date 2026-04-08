@@ -28,7 +28,6 @@ exports.handler = async function () {
         status,
         assigned_staff,
         internal_notes,
-        submission_id,
         manual_review_reason,
         external_id,
         market_value,
@@ -38,8 +37,16 @@ exports.handler = async function () {
         cash_high,
         credit_low,
         credit_high,
-	final_cash_offer,
-	final_credit_offer
+        final_cash_offer,
+        final_credit_offer,
+        item_count,
+        market_value_total,
+        cash_amount_total,
+        credit_amount_total,
+        manual_review_count,
+        offer_type_summary,
+        inventory_class_summary,
+        submission_type
       `)
       .order('submitted_at', { ascending: false });
 

@@ -124,8 +124,47 @@ function getSubtitle(sub) {
   return parts.length ? parts.join(' • ') : 'No details';
 }
 
+// NEW: Helper to detect batch submissions
+function isBatchSubmission(item) {
+  if (!item) return false;
+  return normalizeString(item.submission_type) === 'batch' || (Number(item.item_count) || 0) > 1;
+}
+
+// NEW: Display helpers for batch + single compatibility
+function getDisplayMarketValue(sub) {
+  if (!sub) return 0;
+  return isBatchSubmission(sub)
+    ? (Number(sub.market_value_total) || 0)
+    : (Number(sub.market_value) || 0);
+}
+
+function getDisplayCashAmount(sub) {
+  if (!sub) return 0;
+  return Number(sub.final_cash_offer) || (
+    isBatchSubmission(sub)
+      ? (Number(sub.cash_amount_total) || 0)
+      : (Number(sub.cash_amount) || 0)
+  );
+}
+
+function getDisplayCreditAmount(sub) {
+  if (!sub) return 0;
+  return Number(sub.final_credit_offer) || (
+    isBatchSubmission(sub)
+      ? (Number(sub.credit_amount_total) || 0)
+      : (Number(sub.credit_amount) || 0)
+  );
+}
+
+function getDisplayOfferType(sub) {
+  if (!sub) return '—';
+  return isBatchSubmission(sub)
+    ? safeText(sub.offer_type_summary || sub.offer_type, '—')
+    : safeText(sub.offer_type, '—');
+}
+
 function getRiskLabel(sub) {
-  const marketValue = Number(sub.market_value) || 0;
+  const marketValue = getDisplayMarketValue(sub);
 
   // HIGH = real chance we get burned
   if (!marketValue || marketValue <= 0) {
@@ -197,7 +236,7 @@ function getRiskLabel(sub) {
     return 'MEDIUM';
   }
 
-  if (sub.manual_review_reason) {
+  if (sub.manual_review_reason || (Number(sub.manual_review_count) || 0) > 0) {
     return 'MEDIUM';
   }
 
@@ -213,13 +252,7 @@ function getRiskClass(sub) {
 }
 
 function getCommittedBuyValue(sub) {
-  return Number(sub.final_cash_offer) || Number(sub.cash_amount) || 0;
-}
-
-// NEW: Helper to detect batch submissions
-function isBatchSubmission(item) {
-  if (!item) return false;
-  return item.submission_type === 'batch' || (Number(item.item_count) || 0) > 1;
+  return getDisplayCashAmount(sub);
 }
 
 function renderQueue() {
@@ -254,7 +287,7 @@ function renderQueue() {
           <div class="text-xs text-zinc-500 mt-2">${safeText(item.customer_email)}</div>
         </div>
         <div class="text-right shrink-0">
-          <div class="text-lg font-bold text-[var(--teal)]">${formatCurrency(item.market_value)}</div>
+          <div class="text-lg font-bold text-[var(--teal)]">${formatCurrency(getDisplayMarketValue(item))}</div>
           <div class="text-xs mt-1 text-[var(--yellow)]">Buy: ${formatCurrency(getCommittedBuyValue(item))}</div>
           ${photoBadge}
         </div>
@@ -317,8 +350,8 @@ function renderBatchItems() {
     const cash = formatCurrency(item.cash_amount);
     const credit = formatCurrency(item.credit_amount);
     const market = formatCurrency(item.market_value);
-    const reviewReason = item.manual_review_reason 
-      ? `<div class="text-xs text-amber-400 mt-1">Review: ${safeText(item.manual_review_reason)}</div>` 
+    const reviewReason = item.manual_review_reason
+      ? `<div class="text-xs text-amber-400 mt-1">Review: ${safeText(item.manual_review_reason)}</div>`
       : '';
 
     html += `
@@ -375,10 +408,10 @@ function renderSelectedPanel() {
   if (selectedTitleEl) selectedTitleEl.textContent = getPrimaryTitle(item);
   if (selectedSubtitleEl) selectedSubtitleEl.textContent = getSubtitle(item);
   if (selectedNotesEl) selectedNotesEl.textContent = safeText(item.notes, 'No customer notes submitted.');
-  if (selectedMarketValueEl) selectedMarketValueEl.textContent = formatCurrency(item.market_value);
-  if (selectedOfferAmountEl) selectedOfferAmountEl.textContent = formatCurrency(item.cash_amount);
-  if (selectedCreditAmountEl) selectedCreditAmountEl.textContent = formatCurrency(item.credit_amount);
-  if (selectedOfferTypeEl) selectedOfferTypeEl.textContent = safeText(item.offer_type);
+  if (selectedMarketValueEl) selectedMarketValueEl.textContent = formatCurrency(getDisplayMarketValue(item));
+  if (selectedOfferAmountEl) selectedOfferAmountEl.textContent = formatCurrency(getDisplayCashAmount(item));
+  if (selectedCreditAmountEl) selectedCreditAmountEl.textContent = formatCurrency(getDisplayCreditAmount(item));
+  if (selectedOfferTypeEl) selectedOfferTypeEl.textContent = getDisplayOfferType(item);
 
   if (selectedRiskEl) {
     selectedRiskEl.textContent = getRiskLabel(item);
@@ -456,10 +489,10 @@ function applyFiltersAndSort() {
   if (state.activeFilter !== 'all') {
     items = items.filter(item => {
       const status = (item.status || '').toLowerCase();
-      const offerType = (item.offer_type || '').toLowerCase();
+      const offerType = getDisplayOfferType(item).toLowerCase();
       if (state.activeFilter === 'accepted') return status === 'accepted';
       if (state.activeFilter === 'completed') return status === 'completed';
-      if (state.activeFilter === 'manual') return !!item.manual_review_reason || offerType.includes('manual');
+      if (state.activeFilter === 'manual') return !!item.manual_review_reason || (Number(item.manual_review_count) || 0) > 0 || offerType.includes('manual');
       if (state.activeFilter === 'range') return offerType.includes('range');
       if (state.activeFilter === 'instant') return offerType.includes('instant');
       return true;
@@ -476,9 +509,13 @@ function applyFiltersAndSort() {
   }
 
   if (state.sortMode === 'highest_value') {
-    items.sort((a, b) => (Number(b.market_value) || 0) - (Number(a.market_value) || 0));
+    items.sort((a, b) => getDisplayMarketValue(b) - getDisplayMarketValue(a));
   } else if (state.sortMode === 'needs_review') {
-    items.sort((a, b) => (b.manual_review_reason ? 1 : 0) - (a.manual_review_reason ? 1 : 0));
+    items.sort((a, b) => {
+      const aNeedsReview = !!a.manual_review_reason || (Number(a.manual_review_count) || 0) > 0;
+      const bNeedsReview = !!b.manual_review_reason || (Number(b.manual_review_count) || 0) > 0;
+      return (bNeedsReview ? 1 : 0) - (aNeedsReview ? 1 : 0);
+    });
   } else {
     items.sort((a, b) => new Date(b.submitted_at || 0) - new Date(a.submitted_at || 0));
   }
@@ -528,11 +565,13 @@ function updateStats() {
     return new Date(s.submitted_at).toDateString() === today;
   }).length;
 
-  const manualReviewCount = state.submissions.filter(s => !!s.manual_review_reason).length;
+  const manualReviewCount = state.submissions.filter(s =>
+    !!s.manual_review_reason || (Number(s.manual_review_count) || 0) > 0
+  ).length;
   const acceptedCount = state.submissions.filter(s => (s.status || '').toLowerCase() === 'accepted').length;
 
   const potentialBuyCost = state.submissions.reduce((sum, s) => sum + getCommittedBuyValue(s), 0);
-  const incomingRetailValue = state.submissions.reduce((sum, s) => sum + (Number(s.market_value) || 0), 0);
+  const incomingRetailValue = state.submissions.reduce((sum, s) => sum + getDisplayMarketValue(s), 0);
 
   if (statNewToday) statNewToday.textContent = newTodayCount;
   if (statManualReview) statManualReview.textContent = manualReviewCount;
@@ -683,10 +722,10 @@ async function loadPricingConfig() {
       pricingCreditMultiplier.value = data.config.credit_multiplier || '';
       pricingMaxAuto.value = data.config.max_auto_offer_value || '';
 
-      const lastUpdated = data.config.updated_at 
-        ? new Date(data.config.updated_at).toLocaleString() 
+      const lastUpdated = data.config.updated_at
+        ? new Date(data.config.updated_at).toLocaleString()
         : 'Never';
-      
+
       setPricingStatus(`Last updated: ${lastUpdated}`);
     } else {
       setPricingStatus('Failed to load pricing config', true);
@@ -731,10 +770,10 @@ async function savePricingConfig() {
     const data = await res.json();
 
     if (data.success) {
-      const lastUpdated = data.config.updated_at 
-        ? new Date(data.config.updated_at).toLocaleString() 
+      const lastUpdated = data.config.updated_at
+        ? new Date(data.config.updated_at).toLocaleString()
         : 'Just now';
-      
+
       setPricingStatus(`Saved • Last updated: ${lastUpdated}`);
       showMessage('Pricing configuration saved successfully');
     } else {
@@ -757,7 +796,7 @@ function setupPricingControls() {
     pricingControlsToggle.addEventListener('click', () => {
       const isHidden = pricingControlsPanel.classList.contains('hidden');
       pricingControlsPanel.classList.toggle('hidden');
-      
+
       if (pricingControlsChevron) {
         pricingControlsChevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
       }
