@@ -43,6 +43,8 @@ const requestPhotosBtn = document.getElementById('request-photos-btn');
 const sendCounterofferBtn = document.getElementById('send-counteroffer-btn');
 const refreshDashboardBtn = document.getElementById('refresh-dashboard-btn');
 const resetWeeklyBtn = document.getElementById('reset-weekly-btn');
+const showAllDataBtn = document.getElementById('show-all-data-btn');
+const kpiScopeLabel = document.getElementById('kpi-scope-label');
 
 // Photo modal
 const photoModal = document.getElementById('photo-modal');
@@ -116,34 +118,84 @@ function getSubtitle(sub) {
   return parts.length ? parts.join(' • ') : 'No details';
 }
 
-// === STATUS HELPERS ===
+// === STATUS HELPERS - using existing HTML classes for consistency ===
 function getStatusBadge(item) {
   const status = (item.status || 'pending').toLowerCase();
   let label = status.charAt(0).toUpperCase() + status.slice(1);
-  let classes = 'inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full font-medium';
+  let extraClasses = '';
 
   switch (status) {
     case 'pending':
-      classes += ' bg-zinc-700 text-zinc-300';
+      extraClasses = 'status-chip status-pending';
+      label = 'Pending';
       break;
     case 'review':
-      classes += ' bg-blue-500/20 text-blue-400 border border-blue-500/30';
+      extraClasses = 'status-chip status-review';
       label = 'Under Review';
       break;
     case 'accepted':
-      classes += ' bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+      extraClasses = 'status-chip status-accepted';
       break;
     case 'rejected':
-      classes += ' bg-red-500/20 text-red-400 border border-red-500/30';
+      extraClasses = 'status-chip status-rejected';
       break;
     case 'completed':
-      classes += ' bg-purple-500/20 text-purple-400 border border-purple-500/30';
+      extraClasses = 'status-chip status-completed';
       break;
     default:
-      classes += ' bg-zinc-700 text-zinc-300';
+      extraClasses = 'status-chip status-pending';
   }
 
-  return `<span class="${classes}">${label}</span>`;
+  return `<span class="${extraClasses}">${label}</span>`;
+}
+
+// === WEEKLY RESET HELPERS ===
+function getWeeklyResetBaseline() {
+  const ts = localStorage.getItem('voltageDashboardWeeklyResetAt');
+  return ts ? new Date(ts) : null;
+}
+
+function setWeeklyResetBaseline() {
+  localStorage.setItem('voltageDashboardWeeklyResetAt', new Date().toISOString());
+}
+
+function clearWeeklyResetBaseline() {
+  localStorage.removeItem('voltageDashboardWeeklyResetAt');
+}
+
+function formatBaselineDate() {
+  const baseline = getWeeklyResetBaseline();
+  if (!baseline) return null;
+  return baseline.toLocaleString('en-US', {
+    month: '2-digit',
+    day: '2-digit',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  });
+}
+
+function updateKPIScopeLabel() {
+  if (!kpiScopeLabel) return;
+  const baseline = getWeeklyResetBaseline();
+  if (!baseline) {
+    kpiScopeLabel.textContent = 'Showing all data';
+    kpiScopeLabel.className = 'text-xs text-zinc-400';
+  } else {
+    const formatted = formatBaselineDate();
+    kpiScopeLabel.textContent = `Showing submissions since ${formatted}`;
+    kpiScopeLabel.className = 'text-xs text-[var(--teal)]';
+  }
+}
+
+function getSubmissionsSinceBaseline(submissions) {
+  const baseline = getWeeklyResetBaseline();
+  if (!baseline) return submissions;
+  return submissions.filter(s => {
+    if (!s.submitted_at) return false;
+    return new Date(s.submitted_at) >= baseline;
+  });
 }
 
 // === BATCH HELPERS ===
@@ -182,25 +234,6 @@ function getDisplayOfferType(sub) {
   return isBatchSubmission(sub)
     ? safeText(sub.offer_type_summary || sub.offer_type, '—')
     : safeText(sub.offer_type, '—');
-}
-
-// === WEEKLY RESET HELPERS ===
-function getWeeklyResetBaseline() {
-  const ts = localStorage.getItem('voltageDashboardWeeklyResetAt');
-  return ts ? new Date(ts) : null;
-}
-
-function setWeeklyResetBaseline() {
-  localStorage.setItem('voltageDashboardWeeklyResetAt', new Date().toISOString());
-}
-
-function getSubmissionsSinceBaseline(submissions) {
-  const baseline = getWeeklyResetBaseline();
-  if (!baseline) return submissions;
-  return submissions.filter(s => {
-    if (!s.submitted_at) return false;
-    return new Date(s.submitted_at) >= baseline;
-  });
 }
 
 // === RISK & DISPLAY ===
@@ -255,6 +288,7 @@ function renderQueue() {
     const isBatch = isBatchSubmission(item);
     const itemCount = isBatch ? (Number(item.item_count) || 1) : 1;
     const manualCount = Number(item.manual_review_count) || 0;
+    const isAccepted = (item.status || '').toLowerCase() === 'accepted';
 
     const batchBadge = isBatch
       ? `<span class="inline-flex items-center gap-1 text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full">BATCH ×${itemCount}</span>`
@@ -269,7 +303,7 @@ function renderQueue() {
     const statusBadge = getStatusBadge(item);
 
     return `
-      <div class="queue-row p-5 hover:bg-zinc-900 cursor-pointer flex gap-4 border-l-4 ${isActive ? 'queue-item-active' : 'border-transparent'}" data-id="${item.id}">
+      <div class="queue-row p-5 hover:bg-zinc-900 cursor-pointer flex gap-4 border-l-4 ${isActive ? 'queue-item-active' : 'border-transparent'} ${isAccepted ? 'queue-row-accepted' : ''}" data-id="${item.id}">
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-3">
             <div class="text-sm text-zinc-400">#${item.id}</div>
@@ -315,7 +349,6 @@ async function loadSubmissionItems(submissionId) {
   }
 }
 
-// Improved batch items rendering with risk urgency
 function renderBatchItems() {
   if (!batchItemsContainer) return;
   const selected = state.submissions.find(s => s.id === state.selectedId);
@@ -369,7 +402,7 @@ function renderBatchItems() {
 function renderSelectedPanel() {
   const item = state.submissions.find(s => s.id === state.selectedId);
   if (!item) {
-    if (selectedIdEl) selectedIdEl.textContent = '—';
+    if (selectedIdEl) selectedIdEl.innerHTML = '—';
     if (selectedEmailEl) selectedEmailEl.textContent = 'Select a submission';
     if (selectedTitleEl) selectedTitleEl.textContent = '—';
     if (selectedSubtitleEl) selectedSubtitleEl.textContent = '—';
@@ -387,10 +420,8 @@ function renderSelectedPanel() {
     return;
   }
 
-  // Enhanced status visibility in selected panel (safe, preserves all existing IDs/fields)
-  const statusText = (item.status || 'pending').toUpperCase();
-  let statusHTML = `<span class="text-xs px-3 py-1 rounded-full font-medium ${getStatusBadge(item).match(/class="([^"]*)"/)?.[1] || ''}">${statusText}</span>`;
-
+  // Status in selected panel header using existing classes
+  const statusHTML = getStatusBadge(item);
   if (selectedIdEl) {
     selectedIdEl.innerHTML = `#${item.id} ${statusHTML}`;
   }
@@ -547,11 +578,14 @@ function updateStats() {
   const acceptedCount = submissionsToCount.filter(s => (s.status || '').toLowerCase() === 'accepted').length;
   const potentialBuyCost = submissionsToCount.reduce((sum, s) => sum + getCommittedBuyValue(s), 0);
   const incomingRetailValue = submissionsToCount.reduce((sum, s) => sum + getDisplayMarketValue(s), 0);
+
   if (statNewToday) statNewToday.textContent = newTodayCount;
   if (statManualReview) statManualReview.textContent = manualReviewCount;
   if (statAccepted) statAccepted.textContent = acceptedCount;
   if (statPotentialBuyCost) statPotentialBuyCost.textContent = formatCurrency(potentialBuyCost);
   if (statIncomingRetailValue) statIncomingRetailValue.textContent = formatCurrency(incomingRetailValue);
+
+  updateKPIScopeLabel();
 }
 
 async function saveSelectedSubmission(customStatus = null, customNoteAppend = '') {
@@ -583,10 +617,15 @@ async function saveSelectedSubmission(customStatus = null, customNoteAppend = ''
       body: JSON.stringify(payload)
     });
     if (!res.ok) throw new Error('Save failed');
-    showMessage('Saved successfully');
+
     await loadSubmissions();
     state.selectedId = selected.id;
     applyFiltersAndSort();
+
+    // Plain Save Notes confirmation only when no custom status/note is passed
+    if (!customStatus && !customNoteAppend) {
+      showMessage('Notes saved', 'success');
+    }
   } catch (e) {
     console.error(e);
     showMessage('Save failed', 'error');
@@ -601,12 +640,16 @@ async function saveSelectedSubmission(customStatus = null, customNoteAppend = ''
 function setupActionButtons() {
   document.getElementById('accept-offer-btn')?.addEventListener('click', async () => {
     await saveSelectedSubmission('accepted');
-    selectNextSubmission();
+    const hadNext = selectNextSubmission();
+    showMessage(hadNext ? 'Submission Accepted • Next item loaded' : 'Submission Accepted', 'success');
   });
+
   document.getElementById('reject-btn')?.addEventListener('click', async () => {
     await saveSelectedSubmission('rejected');
-    selectNextSubmission();
+    const hadNext = selectNextSubmission();
+    showMessage(hadNext ? 'Submission Rejected • Next item loaded' : 'Submission Rejected', 'success');
   });
+
   document.getElementById('counteroffer-btn')?.addEventListener('click', async () => {
     const ts = new Date().toLocaleString();
     await saveSelectedSubmission(null, `Counteroffer initiated (${ts})`);
@@ -620,7 +663,15 @@ function selectNextSubmission() {
     state.selectedId = filtered[currentIndex + 1].id;
     renderQueue();
     renderSelectedPanel();
+
+    // Safe scroll into view for next item
+    const nextRow = document.querySelector(`.queue-row[data-id="${state.selectedId}"]`);
+    if (nextRow) {
+      nextRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    return true;
   }
+  return false;
 }
 
 function bindEvents() {
@@ -640,30 +691,29 @@ function bindEvents() {
       applyFiltersAndSort();
     });
   });
+
   if (saveSelectedBtn) saveSelectedBtn.addEventListener('click', () => saveSelectedSubmission());
+  if (markReviewedBtn) markReviewedBtn.addEventListener('click', async () => {
+    await saveSelectedSubmission('review');
+    showMessage('Submission moved to Review', 'success');
+  });
 
-  if (markReviewedBtn) markReviewedBtn.addEventListener('click', () => saveSelectedSubmission('review'));
-
-  // FIXED: Request More Photos - strong workflow
+  // Request More Photos
   if (requestPhotosBtn) {
     requestPhotosBtn.addEventListener('click', async () => {
       const now = new Date();
-      const timestamp = now.toLocaleString('en-US', { 
-        month: '2-digit', 
-        day: '2-digit', 
-        year: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true 
+      const timestamp = now.toLocaleString('en-US', {
+        month: '2-digit', day: '2-digit', year: 'numeric',
+        hour: 'numeric', minute: '2-digit', hour12: true
       });
       const note = `More photos requested (${timestamp})`;
       
       await saveSelectedSubmission('review', note);
-      showMessage('More photos requested • Submission moved to review', 'success');
+      showMessage('More photos requested • Status set to Review', 'success');
     });
   }
 
-  // FIXED: Send Counteroffer - validation + strong workflow
+  // Prepare Counteroffer (with validation)
   if (sendCounterofferBtn) {
     sendCounterofferBtn.addEventListener('click', async () => {
       const cashVal = finalCashInput ? finalCashInput.value.trim() : '';
@@ -675,30 +725,36 @@ function bindEvents() {
       }
 
       const now = new Date();
-      const timestamp = now.toLocaleString('en-US', { 
-        month: '2-digit', 
-        day: '2-digit', 
-        year: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true 
+      const timestamp = now.toLocaleString('en-US', {
+        month: '2-digit', day: '2-digit', year: 'numeric',
+        hour: 'numeric', minute: '2-digit', hour12: true
       });
       const note = `Counteroffer prepared (${timestamp})`;
 
       await saveSelectedSubmission('review', note);
-      showMessage('Counteroffer prepared • Submission saved to review', 'success');
+      showMessage('Counteroffer prepared • Status set to Review • Cash/Credit values saved', 'success');
     });
   }
 
   if (refreshDashboardBtn) refreshDashboardBtn.addEventListener('click', loadSubmissions);
 
-  // Fixed Reset Weekly Totals
+  // Weekly Reset UX
   if (resetWeeklyBtn) {
     resetWeeklyBtn.addEventListener('click', () => {
       if (confirm('Reset weekly totals baseline? This will only affect the KPI display (safe & reversible).')) {
         setWeeklyResetBaseline();
         updateStats();
-        showMessage('Weekly totals baseline reset — KPIs now show data from now onward');
+        showMessage('Weekly baseline reset • KPIs now show data from now onward', 'success');
+      }
+    });
+  }
+
+  if (showAllDataBtn) {
+    showAllDataBtn.addEventListener('click', () => {
+      if (confirm('Show all historical data? This will remove the weekly baseline.')) {
+        clearWeeklyResetBaseline();
+        updateStats();
+        showMessage('Showing all data • Weekly baseline cleared', 'success');
       }
     });
   }
@@ -815,4 +871,5 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupPricingControls();
   await loadSubmissions();
   await loadPricingConfig();
+  updateKPIScopeLabel(); // initial scope label
 });
