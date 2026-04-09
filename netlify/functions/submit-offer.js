@@ -1,5 +1,4 @@
-// netlify/functions/submit-offer.js
-// Voltage 2.0 Offer Engine Phase 3 - Batch Support
+/// Voltage 2.0 Offer Engine Phase 3 - Batch Support
 // Safe upgrade from single-item to single + batch
 // - Preserves 100% of existing single-item behavior and response shape
 // - Adds proper batch support via submission_items child table
@@ -51,9 +50,15 @@ exports.handler = async (event) => {
       batchItems = body.batch_items;
     }
 
-    const isBatch = batchItems.length > 0;
+    // SURGICAL FIX: Improved classification to prevent single items being treated as batch
+    const normalizedBatchItems = normalizeBatchItems(batchItems);
+    const itemCount = normalizedBatchItems.length;
 
-    console.log(`Submission type: ${isBatch ? 'BATCH' : 'SINGLE'} (${isBatch ? batchItems.length : 1} item(s))`);
+    // If 0 or 1 item → treat as SINGLE (prevents "1 game trade submission" placeholder)
+    // Only 2+ items → true BATCH path
+    const isBatch = itemCount > 1 && normalizedBatchItems.every(item => item && (item.title ||item.game_title_or_description));
+
+    console.log(`Submission type: ${isBatch ? 'BATCH' : 'SINGLE'} (${itemCount} item(s))`);
 
     // ------------------------------------------------------------
     // Pricing configuration (from Supabase or defaults)
@@ -90,6 +95,28 @@ exports.handler = async (event) => {
     // SINGLE ITEM PATH (preserves exact previous behavior)
     // ------------------------------------------------------------
     if (!isBatch) {
+      // If we received exactly 1 item in batchItems, normalize it into single-item body
+      if (itemCount === 1) {
+        const singleItem = normalizedBatchItems[0];
+        const normalizedBody = { ...body };
+
+        // Safely copy real fields from the single item
+        normalizedBody.selected_title = singleItem.title || singleItem.game_title_or_description;
+        normalizedBody.title = singleItem.title || singleItem.game_title_or_description;
+        normalizedBody.selected_platform = singleItem.platform;
+        normalizedBody.platform = singleItem.platform;
+        normalizedBody.condition = singleItem.condition;
+        normalizedBody.completeness = singleItem.completeness;
+        normalizedBody.quantity = singleItem.quantity;
+        normalizedBody.externalId = singleItem.externalId || singleItem.external_id;
+
+        return await handleSingleSubmission(normalizedBody, supabase, apiKey, {
+          cashPercentUnder30,
+          cashPercent30To100,
+          creditMultiplier,
+        });
+      }
+
       return await handleSingleSubmission(body, supabase, apiKey, {
         cashPercentUnder30,
         cashPercent30To100,
@@ -98,9 +125,9 @@ exports.handler = async (event) => {
     }
 
     // ------------------------------------------------------------
-    // BATCH PATH
+    // BATCH PATH (only for 2+ items)
     // ------------------------------------------------------------
-    return await handleBatchSubmission(batchItems, body, supabase, apiKey, {
+    return await handleBatchSubmission(normalizedBatchItems, body, supabase, apiKey, {
       cashPercentUnder30,
       cashPercent30To100,
       creditMultiplier,
