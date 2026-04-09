@@ -1,6 +1,5 @@
 // dashboard.js - Safe photo support added
 // All existing functionality preserved - V2 batch & weekly reset enhancements
-
 const state = {
   submissions: [],
   filteredSubmissions: [],
@@ -16,17 +15,14 @@ const queueList = document.getElementById('queue-list');
 const queueLoading = document.getElementById('queue-loading');
 const queueEmpty = document.getElementById('queue-empty');
 const globalMessage = document.getElementById('global-message');
-
 const statNewToday = document.getElementById('stat-new-today');
 const statManualReview = document.getElementById('stat-manual-review');
 const statAccepted = document.getElementById('stat-accepted');
 const statPotentialBuyCost = document.getElementById('stat-potential-buy-cost');
 const statIncomingRetailValue = document.getElementById('stat-incoming-retail-value');
-
 const searchInput = document.getElementById('search-input');
 const sortSelect = document.getElementById('sort-select');
 const filterButtons = document.querySelectorAll('.filter-btn');
-
 const selectedIdEl = document.getElementById('selected-id');
 const selectedEmailEl = document.getElementById('selected-email');
 const selectedTitleEl = document.getElementById('selected-title');
@@ -38,10 +34,8 @@ const selectedCreditAmountEl = document.getElementById('selected-credit-amount')
 const selectedOfferTypeEl = document.getElementById('selected-offer-type');
 const selectedRiskEl = document.getElementById('selected-risk');
 const selectedInternalNotesEl = document.getElementById('selected-internal-notes');
-
 const finalCashInput = document.getElementById('final-cash-input');
 const finalCreditInput = document.getElementById('final-credit-input');
-
 const saveSelectedBtn = document.getElementById('save-selected-btn');
 const emailCustomerBtn = document.getElementById('email-customer-btn');
 const markReviewedBtn = document.getElementById('mark-reviewed-btn');
@@ -59,12 +53,10 @@ const pricingControlsToggle = document.getElementById('pricing-controls-toggle')
 const pricingControlsPanel = document.getElementById('pricing-controls-panel');
 const pricingControlsChevron = document.getElementById('pricing-controls-chevron');
 const pricingControlsStatus = document.getElementById('pricing-controls-status');
-
 const pricingUnder30 = document.getElementById('pricing-under-30');
 const pricing30To100 = document.getElementById('pricing-30-100');
 const pricingCreditMultiplier = document.getElementById('pricing-credit-multiplier');
 const pricingMaxAuto = document.getElementById('pricing-max-auto');
-
 const savePricingConfigBtn = document.getElementById('save-pricing-config-btn');
 
 // Batch items container
@@ -124,6 +116,36 @@ function getSubtitle(sub) {
   return parts.length ? parts.join(' • ') : 'No details';
 }
 
+// === STATUS HELPERS ===
+function getStatusBadge(item) {
+  const status = (item.status || 'pending').toLowerCase();
+  let label = status.charAt(0).toUpperCase() + status.slice(1);
+  let classes = 'inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full font-medium';
+
+  switch (status) {
+    case 'pending':
+      classes += ' bg-zinc-700 text-zinc-300';
+      break;
+    case 'review':
+      classes += ' bg-blue-500/20 text-blue-400 border border-blue-500/30';
+      label = 'Under Review';
+      break;
+    case 'accepted':
+      classes += ' bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+      break;
+    case 'rejected':
+      classes += ' bg-red-500/20 text-red-400 border border-red-500/30';
+      break;
+    case 'completed':
+      classes += ' bg-purple-500/20 text-purple-400 border border-purple-500/30';
+      break;
+    default:
+      classes += ' bg-zinc-700 text-zinc-300';
+  }
+
+  return `<span class="${classes}">${label}</span>`;
+}
+
 // === BATCH HELPERS ===
 function isBatchSubmission(item) {
   if (!item) return false;
@@ -175,7 +197,6 @@ function setWeeklyResetBaseline() {
 function getSubmissionsSinceBaseline(submissions) {
   const baseline = getWeeklyResetBaseline();
   if (!baseline) return submissions;
-
   return submissions.filter(s => {
     if (!s.submitted_at) return false;
     return new Date(s.submitted_at) >= baseline;
@@ -186,28 +207,20 @@ function getSubmissionsSinceBaseline(submissions) {
 function getRiskLabel(sub) {
   const marketValue = getDisplayMarketValue(sub);
   const manualCount = Number(sub.manual_review_count) || 0;
-
-  // FIX: Define photos before using photos.length
   const photos = parsePhotoUrls(sub.photo_urls);
-
   if (manualCount > 0) return 'MEDIUM';
-
   if (!marketValue || marketValue <= 0) return 'HIGH';
-
   if (sub.condition && normalizeString(sub.condition).includes('graded')) return 'HIGH';
   if ((sub.condition && normalizeString(sub.condition).includes('sealed')) ||
       (sub.completeness && normalizeString(sub.completeness).includes('sealed'))) return 'HIGH';
   if (normalizeString(sub.platform) === 'other') return 'HIGH';
   if ((Number(sub.quantity) || 0) >= 5) return 'HIGH';
   if (marketValue >= 250) return 'HIGH';
-
   const lowerNotes = normalizeString(sub.notes);
   const suspiciousKeywords = ['not working','broken','cracked','water damage','missing','heavy scratches','wont read',"won't read",'untested','repro','fake','disc rot'];
   if (suspiciousKeywords.some(k => lowerNotes.includes(k))) return 'HIGH';
-
   if (marketValue >= 100) return 'MEDIUM';
   if (photos.length === 0) return 'MEDIUM';
-
   return 'LOW';
 }
 
@@ -224,13 +237,11 @@ function getCommittedBuyValue(sub) {
 
 function renderQueue() {
   if (!queueLoading || !queueList || !queueEmpty) return;
-
   queueLoading.classList.add('hidden');
   queueList.classList.remove('hidden');
   queueEmpty.classList.add('hidden');
 
   const filtered = state.filteredSubmissions || [];
-
   if (!filtered.length) {
     queueList.classList.add('hidden');
     queueEmpty.classList.remove('hidden');
@@ -245,22 +256,25 @@ function renderQueue() {
     const itemCount = isBatch ? (Number(item.item_count) || 1) : 1;
     const manualCount = Number(item.manual_review_count) || 0;
 
-    const batchBadge = isBatch 
-      ? `<span class="inline-flex items-center gap-1 text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full">BATCH ×${itemCount}</span>` 
+    const batchBadge = isBatch
+      ? `<span class="inline-flex items-center gap-1 text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full">BATCH ×${itemCount}</span>`
       : '';
-
-    const manualBadge = manualCount > 0 
-      ? `<span class="inline-flex items-center gap-1 text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full">⚠️ ${manualCount}</span>` 
+    const manualBadge = manualCount > 0
+      ? `<span class="inline-flex items-center gap-1 text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full">⚠️ ${manualCount}</span>`
       : '';
-
     const photoBadge = photos.length > 0
       ? `<span class="inline-flex items-center gap-1 text-xs bg-zinc-800 px-2 py-0.5 rounded-full"><span>📷</span>${photos.length}</span>`
       : '';
 
+    const statusBadge = getStatusBadge(item);
+
     return `
       <div class="queue-row p-5 hover:bg-zinc-900 cursor-pointer flex gap-4 border-l-4 ${isActive ? 'queue-item-active' : 'border-transparent'}" data-id="${item.id}">
         <div class="flex-1 min-w-0">
-          <div class="text-sm text-zinc-400">#${item.id}</div>
+          <div class="flex items-center gap-3">
+            <div class="text-sm text-zinc-400">#${item.id}</div>
+            ${statusBadge}
+          </div>
           <div class="font-medium text-base mt-1 line-clamp-1">${getPrimaryTitle(item)}</div>
           <div class="text-sm text-gray-400 mt-1 line-clamp-1">${getSubtitle(item)}</div>
           <div class="flex gap-2 mt-2">${batchBadge}${manualBadge}</div>
@@ -287,11 +301,9 @@ function renderQueue() {
 // Load batch items
 async function loadSubmissionItems(submissionId) {
   if (!submissionId) return;
-
   try {
     const res = await fetch(`/.netlify/functions/get-submission-items?id=${submissionId}`);
     if (!res.ok) throw new Error('Failed to fetch items');
-
     const data = await res.json();
     state.currentBatchItems = Array.isArray(data.items) ? data.items : [];
     renderBatchItems();
@@ -306,38 +318,29 @@ async function loadSubmissionItems(submissionId) {
 // Improved batch items rendering with risk urgency
 function renderBatchItems() {
   if (!batchItemsContainer) return;
-
   const selected = state.submissions.find(s => s.id === state.selectedId);
-
   if (!selected) {
     batchItemsContainer.innerHTML = `<div class="text-gray-500 text-sm">Select a submission</div>`;
     return;
   }
-
   if (!isBatchSubmission(selected)) {
     batchItemsContainer.innerHTML = `<div class="text-gray-500 text-sm">Single-item submission</div>`;
     return;
   }
-
   if (!state.currentBatchItems || state.currentBatchItems.length === 0) {
     batchItemsContainer.innerHTML = `<div class="text-gray-500 text-sm">No batch items found</div>`;
     return;
   }
-
   let html = '';
-
   state.currentBatchItems.forEach(item => {
     const cash = formatCurrency(item.cash_amount);
     const credit = formatCurrency(item.credit_amount);
     const market = formatCurrency(item.market_value);
     const isRisky = item.manual_review_reason || (Number(item.quantity) || 0) >= 3;
-
     const urgencyClass = isRisky ? 'border-amber-400/50 bg-amber-900/20' : 'border-zinc-800';
-
     const reviewReason = item.manual_review_reason
       ? `<div class="text-xs text-amber-400 mt-2 p-2 bg-amber-900/30 rounded-lg">Review: ${safeText(item.manual_review_reason)}</div>`
       : '';
-
     html += `
       <div class="bg-zinc-900 ${urgencyClass} rounded-xl p-4 text-sm">
         <div class="font-medium">${safeText(item.title)}</div>
@@ -360,13 +363,11 @@ function renderBatchItems() {
       </div>
     `;
   });
-
   batchItemsContainer.innerHTML = html;
 }
 
 function renderSelectedPanel() {
   const item = state.submissions.find(s => s.id === state.selectedId);
-
   if (!item) {
     if (selectedIdEl) selectedIdEl.textContent = '—';
     if (selectedEmailEl) selectedEmailEl.textContent = 'Select a submission';
@@ -386,7 +387,14 @@ function renderSelectedPanel() {
     return;
   }
 
-  if (selectedIdEl) selectedIdEl.textContent = `#${item.id}`;
+  // Enhanced status visibility in selected panel (safe, preserves all existing IDs/fields)
+  const statusText = (item.status || 'pending').toUpperCase();
+  let statusHTML = `<span class="text-xs px-3 py-1 rounded-full font-medium ${getStatusBadge(item).match(/class="([^"]*)"/)?.[1] || ''}">${statusText}</span>`;
+
+  if (selectedIdEl) {
+    selectedIdEl.innerHTML = `#${item.id} ${statusHTML}`;
+  }
+
   if (selectedEmailEl) selectedEmailEl.textContent = safeText(item.customer_email);
   if (selectedTitleEl) selectedTitleEl.textContent = getPrimaryTitle(item);
   if (selectedSubtitleEl) selectedSubtitleEl.textContent = getSubtitle(item);
@@ -395,14 +403,11 @@ function renderSelectedPanel() {
   if (selectedOfferAmountEl) selectedOfferAmountEl.textContent = formatCurrency(getDisplayCashAmount(item));
   if (selectedCreditAmountEl) selectedCreditAmountEl.textContent = formatCurrency(getDisplayCreditAmount(item));
   if (selectedOfferTypeEl) selectedOfferTypeEl.textContent = getDisplayOfferType(item);
-
   if (selectedRiskEl) {
     selectedRiskEl.textContent = getRiskLabel(item);
     selectedRiskEl.className = `mt-1 font-semibold ${getRiskClass(item)}`;
   }
-
   if (selectedInternalNotesEl) selectedInternalNotesEl.value = item.internal_notes || '';
-
   if (finalCashInput) finalCashInput.value = item.final_cash_offer ?? '';
   if (finalCreditInput) finalCreditInput.value = item.final_credit_offer ?? '';
 
@@ -422,14 +427,11 @@ function renderSelectedPanel() {
 function renderPhotoGallery(photos) {
   const gallery = document.getElementById('photo-gallery');
   if (!gallery) return;
-
   gallery.innerHTML = '';
-
   if (photos.length === 0) {
     gallery.innerHTML = '<p class="text-gray-500 text-sm col-span-3">No photos uploaded</p>';
     return;
   }
-
   photos.forEach(url => {
     const thumb = document.createElement('img');
     thumb.src = url;
@@ -467,7 +469,6 @@ if (photoModal) {
 
 function applyFiltersAndSort() {
   let items = [...state.submissions];
-
   if (state.activeFilter !== 'all') {
     items = items.filter(item => {
       const status = (item.status || '').toLowerCase();
@@ -480,7 +481,6 @@ function applyFiltersAndSort() {
       return true;
     });
   }
-
   if (state.searchTerm) {
     const term = state.searchTerm.toLowerCase();
     items = items.filter(item =>
@@ -489,7 +489,6 @@ function applyFiltersAndSort() {
       String(item.id).includes(term)
     );
   }
-
   if (state.sortMode === 'highest_value') {
     items.sort((a, b) => getDisplayMarketValue(b) - getDisplayMarketValue(a));
   } else if (state.sortMode === 'needs_review') {
@@ -501,18 +500,14 @@ function applyFiltersAndSort() {
   } else {
     items.sort((a, b) => new Date(b.submitted_at || 0) - new Date(a.submitted_at || 0));
   }
-
   state.filteredSubmissions = items;
-
   if (!state.selectedId && items.length) {
     state.selectedId = items[0].id;
   }
-
   const selectedStillExists = items.some(item => item.id === state.selectedId);
   if (!selectedStillExists) {
     state.selectedId = items.length ? items[0].id : null;
   }
-
   renderQueue();
   renderSelectedPanel();
 }
@@ -521,7 +516,6 @@ async function loadSubmissions() {
   if (queueLoading) queueLoading.classList.remove('hidden');
   if (queueList) queueList.classList.add('hidden');
   if (queueEmpty) queueEmpty.classList.add('hidden');
-
   try {
     const res = await fetch('/.netlify/functions/get-submissions');
     const data = await res.json();
@@ -542,22 +536,17 @@ async function loadSubmissions() {
 
 function updateStats() {
   const submissionsToCount = getSubmissionsSinceBaseline(state.submissions);
-
   const today = new Date().toDateString();
   const newTodayCount = submissionsToCount.filter(s => {
     if (!s.submitted_at) return false;
     return new Date(s.submitted_at).toDateString() === today;
   }).length;
-
   const manualReviewCount = submissionsToCount.filter(s =>
     !!s.manual_review_reason || (Number(s.manual_review_count) || 0) > 0
   ).length;
-
   const acceptedCount = submissionsToCount.filter(s => (s.status || '').toLowerCase() === 'accepted').length;
-
   const potentialBuyCost = submissionsToCount.reduce((sum, s) => sum + getCommittedBuyValue(s), 0);
   const incomingRetailValue = submissionsToCount.reduce((sum, s) => sum + getDisplayMarketValue(s), 0);
-
   if (statNewToday) statNewToday.textContent = newTodayCount;
   if (statManualReview) statManualReview.textContent = manualReviewCount;
   if (statAccepted) statAccepted.textContent = acceptedCount;
@@ -570,7 +559,6 @@ async function saveSelectedSubmission(customStatus = null, customNoteAppend = ''
   if (!selected) return;
 
   let notesValue = selectedInternalNotesEl ? (selectedInternalNotesEl.value || '') : '';
-
   if (customNoteAppend) {
     notesValue = notesValue ? `${notesValue}\n\n${customNoteAppend}` : customNoteAppend;
     if (selectedInternalNotesEl) selectedInternalNotesEl.value = notesValue;
@@ -589,15 +577,12 @@ async function saveSelectedSubmission(customStatus = null, customNoteAppend = ''
       saveSelectedBtn.disabled = true;
       saveSelectedBtn.textContent = 'Saving...';
     }
-
     const res = await fetch('/.netlify/functions/update-submission', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
-
     if (!res.ok) throw new Error('Save failed');
-
     showMessage('Saved successfully');
     await loadSubmissions();
     state.selectedId = selected.id;
@@ -618,12 +603,10 @@ function setupActionButtons() {
     await saveSelectedSubmission('accepted');
     selectNextSubmission();
   });
-
   document.getElementById('reject-btn')?.addEventListener('click', async () => {
     await saveSelectedSubmission('rejected');
     selectNextSubmission();
   });
-
   document.getElementById('counteroffer-btn')?.addEventListener('click', async () => {
     const ts = new Date().toLocaleString();
     await saveSelectedSubmission(null, `Counteroffer initiated (${ts})`);
@@ -645,12 +628,10 @@ function bindEvents() {
     state.searchTerm = e.target.value;
     applyFiltersAndSort();
   });
-
   if (sortSelect) sortSelect.addEventListener('change', (e) => {
     state.sortMode = e.target.value;
     applyFiltersAndSort();
   });
-
   filterButtons.forEach(btn => {
     btn.addEventListener('click', () => {
       filterButtons.forEach(b => b.classList.remove('active-filter'));
@@ -659,11 +640,56 @@ function bindEvents() {
       applyFiltersAndSort();
     });
   });
-
   if (saveSelectedBtn) saveSelectedBtn.addEventListener('click', () => saveSelectedSubmission());
+
   if (markReviewedBtn) markReviewedBtn.addEventListener('click', () => saveSelectedSubmission('review'));
-  if (requestPhotosBtn) requestPhotosBtn.addEventListener('click', () => saveSelectedSubmission(null, 'More photos requested'));
-  if (sendCounterofferBtn) sendCounterofferBtn.addEventListener('click', () => saveSelectedSubmission(null, 'Counteroffer discussion started.'));
+
+  // FIXED: Request More Photos - strong workflow
+  if (requestPhotosBtn) {
+    requestPhotosBtn.addEventListener('click', async () => {
+      const now = new Date();
+      const timestamp = now.toLocaleString('en-US', { 
+        month: '2-digit', 
+        day: '2-digit', 
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true 
+      });
+      const note = `More photos requested (${timestamp})`;
+      
+      await saveSelectedSubmission('review', note);
+      showMessage('More photos requested • Submission moved to review', 'success');
+    });
+  }
+
+  // FIXED: Send Counteroffer - validation + strong workflow
+  if (sendCounterofferBtn) {
+    sendCounterofferBtn.addEventListener('click', async () => {
+      const cashVal = finalCashInput ? finalCashInput.value.trim() : '';
+      const creditVal = finalCreditInput ? finalCreditInput.value.trim() : '';
+
+      if (!cashVal && !creditVal) {
+        showMessage('Enter at least one final offer amount (cash or credit)', 'error');
+        return;
+      }
+
+      const now = new Date();
+      const timestamp = now.toLocaleString('en-US', { 
+        month: '2-digit', 
+        day: '2-digit', 
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true 
+      });
+      const note = `Counteroffer prepared (${timestamp})`;
+
+      await saveSelectedSubmission('review', note);
+      showMessage('Counteroffer prepared • Submission saved to review', 'success');
+    });
+  }
+
   if (refreshDashboardBtn) refreshDashboardBtn.addEventListener('click', loadSubmissions);
 
   // Fixed Reset Weekly Totals
@@ -688,7 +714,6 @@ function bindEvents() {
 }
 
 // ====================== PRICING CONTROLS ======================
-
 function setPricingStatus(message, isError = false) {
   if (!pricingControlsStatus) return;
   pricingControlsStatus.textContent = message;
@@ -701,21 +726,17 @@ function setPricingStatus(message, isError = false) {
 
 async function loadPricingConfig() {
   if (!pricingUnder30 || !pricing30To100 || !pricingCreditMultiplier || !pricingMaxAuto) return;
-
   try {
     const res = await fetch('/.netlify/functions/get-pricing-config');
     const data = await res.json();
-
     if (data.success && data.config) {
       pricingUnder30.value = data.config.cash_percent_under_30 || '';
       pricing30To100.value = data.config.cash_percent_30_to_100 || '';
       pricingCreditMultiplier.value = data.config.credit_multiplier || '';
       pricingMaxAuto.value = data.config.max_auto_offer_value || '';
-
       const lastUpdated = data.config.updated_at
         ? new Date(data.config.updated_at).toLocaleString()
         : 'Never';
-
       setPricingStatus(`Last updated: ${lastUpdated}`);
     } else {
       setPricingStatus('Failed to load pricing config', true);
@@ -728,14 +749,12 @@ async function loadPricingConfig() {
 
 async function savePricingConfig() {
   if (!savePricingConfigBtn) return;
-
   const payload = {
     cash_percent_under_30: parseFloat(pricingUnder30.value),
     cash_percent_30_to_100: parseFloat(pricing30To100.value),
     credit_multiplier: parseFloat(pricingCreditMultiplier.value),
     max_auto_offer_value: parseFloat(pricingMaxAuto.value)
   };
-
   if (
     isNaN(payload.cash_percent_under_30) ||
     isNaN(payload.cash_percent_30_to_100) ||
@@ -745,24 +764,19 @@ async function savePricingConfig() {
     setPricingStatus('All fields must be valid numbers', true);
     return;
   }
-
   savePricingConfigBtn.disabled = true;
   savePricingConfigBtn.textContent = 'Saving...';
-
   try {
     const res = await fetch('/.netlify/functions/update-pricing-config', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
-
     const data = await res.json();
-
     if (data.success) {
       const lastUpdated = data.config.updated_at
         ? new Date(data.config.updated_at).toLocaleString()
         : 'Just now';
-
       setPricingStatus(`Saved • Last updated: ${lastUpdated}`);
       showMessage('Pricing configuration saved successfully');
     } else {
@@ -789,14 +803,12 @@ function setupPricingControls() {
       }
     });
   }
-
   if (savePricingConfigBtn) {
     savePricingConfigBtn.addEventListener('click', savePricingConfig);
   }
 }
 
 // ====================== INIT ======================
-
 document.addEventListener('DOMContentLoaded', async () => {
   bindEvents();
   setupActionButtons();
