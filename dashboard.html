@@ -117,6 +117,63 @@
     .queue-row:hover {
       background: rgba(39, 39, 42, 0.6);
     }
+
+    /* V2 Layout Enhancements */
+    .queue-scroll-area {
+      max-height: calc(100vh - 280px);
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #00E5B8 #27272A;
+    }
+
+    .queue-scroll-area::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .queue-scroll-area::-webkit-scrollbar-thumb {
+      background: #00E5B8;
+      border-radius: 20px;
+    }
+
+    .workstation-panel {
+      height: calc(100vh - 220px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .workstation-content {
+      flex: 1;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #00E5B8 #27272A;
+    }
+
+    .workstation-content::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .workstation-content::-webkit-scrollbar-thumb {
+      background: #00E5B8;
+      border-radius: 20px;
+    }
+
+    .batch-scroll {
+      max-height: 260px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #00E5B8 #27272A;
+    }
+
+    .decision-zone {
+      background: rgba(24, 24, 27, 0.6);
+      border: 1px solid rgba(0, 229, 184, 0.2);
+    }
+
+    .action-bar {
+      background: rgba(0, 0, 0, 0.8);
+      border-top: 1px solid rgba(0, 229, 184, 0.15);
+    }
   </style>
 </head>
 <body>
@@ -211,8 +268,8 @@
         </aside>
 
         <!-- Center Queue -->
-        <main class="bg-zinc-950 border border-[var(--teal)]/20 rounded-3xl overflow-hidden">
-          <div class="p-5 border-b border-zinc-800 flex items-center justify-between">
+        <main class="bg-zinc-950 border border-[var(--teal)]/20 rounded-3xl overflow-hidden flex flex-col">
+          <div class="p-5 border-b border-zinc-800 flex items-center justify-between flex-shrink-0">
             <div class="text-lg font-semibold">Submissions Queue</div>
             <div class="flex gap-3">
               <input id="search-input" class="bg-black border border-zinc-800 rounded-xl px-4 py-2 text-sm w-64" placeholder="Search by game, email, ID...">
@@ -224,237 +281,237 @@
             </div>
           </div>
 
-          <div id="queue-loading" class="p-5 space-y-3">
+          <div id="queue-loading" class="p-5 space-y-3 flex-shrink-0">
             <div class="h-20 rounded-2xl bg-zinc-900 loading-pulse"></div>
             <div class="h-20 rounded-2xl bg-zinc-900 loading-pulse"></div>
             <div class="h-20 rounded-2xl bg-zinc-900 loading-pulse"></div>
           </div>
 
-          <div id="queue-empty" class="hidden p-12 text-center text-gray-400">
+          <div id="queue-empty" class="hidden p-12 text-center text-gray-400 flex-shrink-0">
             No submissions found.
           </div>
 
-          <div id="queue-list" class="divide-y divide-zinc-800 hidden"></div>
+          <!-- Controlled scroll queue list -->
+          <div id="queue-list" class="queue-scroll-area divide-y divide-zinc-800 flex-1 hidden"></div>
         </main>
 
         <!-- Right Panel - Action Workstation -->
-        <aside class="bg-zinc-950 border border-[var(--teal)]/20 rounded-3xl p-6 space-y-6 overflow-auto">
-          <div>
+        <aside class="bg-zinc-950 border border-[var(--teal)]/20 rounded-3xl overflow-hidden flex flex-col workstation-panel">
+          <div class="p-6 flex-shrink-0">
             <div class="text-xs text-gray-400 uppercase tracking-wide">Selected Submission</div>
             <div id="selected-id" class="text-2xl font-bold mt-1">—</div>
           </div>
 
-          <!-- Photo Gallery -->
-          <div class="rounded-2xl bg-black border border-zinc-800 p-4">
-            <div class="panel-label mb-3">Photos</div>
-            <div id="photo-gallery" class="grid grid-cols-3 gap-2"></div>
-          </div>
+          <div class="workstation-content p-6 pt-0 space-y-6">
 
-          <!-- Customer & Item -->
-          <div class="rounded-2xl bg-black border border-zinc-800 p-5 space-y-4">
-            <div>
-              <div class="panel-label">Customer</div>
-              <div id="selected-email" class="font-medium">—</div>
+            <!-- Photo Gallery -->
+            <div class="rounded-2xl bg-black border border-zinc-800 p-4">
+              <div class="panel-label mb-3">Photos</div>
+              <div id="photo-gallery" class="grid grid-cols-3 gap-2"></div>
             </div>
-            <div>
-              <div class="panel-label">Item</div>
-              <div id="selected-title" class="font-semibold text-lg">—</div>
-              <div id="selected-subtitle" class="text-sm text-gray-400">—</div>
-            </div>
-            <div>
-              <div class="panel-label">Submitted Notes</div>
-              <div id="selected-notes" class="text-sm text-gray-300 whitespace-pre-wrap">—</div>
-            </div>
-          </div>
 
-       <!-- Offer Summary -->
-<div class="rounded-2xl bg-black border border-zinc-800 p-5 space-y-5">
-  <div class="text-xs uppercase tracking-widest text-zinc-500">Offer Summary</div>
-
-  <div class="grid grid-cols-2 gap-4">
-    <div>
-      <div class="panel-label">Market Value</div>
-      <div id="selected-market-value" class="text-3xl font-bold text-[var(--teal)] mt-1">—</div>
-    </div>
-    <div>
-      <div class="panel-label">Offer Type</div>
-      <div id="selected-offer-type" class="mt-1 font-semibold status-chip">—</div>
-    </div>
-  </div>
-
-  <div>
-    <div class="panel-label">Risk Level</div>
-    <div id="selected-risk" class="mt-1 font-semibold">—</div>
-  </div>
-</div>
-
-<!-- NEW: Batch Items -->
-<div class="rounded-2xl bg-black border border-zinc-800 p-5 space-y-4">
-  <div class="panel-label">Batch Items</div>
-  <div id="batch-items" class="space-y-2">
-    <div class="text-gray-500 text-sm">Select a submission</div>
-  </div>
-</div>
-
-            <div class="grid grid-cols-2 gap-4">
-              <div class="bg-zinc-900 rounded-xl p-4">
-                <div class="flex items-center gap-2 text-emerald-400">
-                  <span class="text-xl">💵</span>
-                  <span class="text-xs uppercase tracking-widest">Cash</span>
-                </div>
-                <div id="selected-offer-amount" class="text-2xl font-bold mt-2">—</div>
-              </div>
-              <div class="bg-zinc-900 rounded-xl p-4">
-                <div class="flex items-center gap-2 text-[var(--yellow)]">
-                  <span class="text-xl">🎟️</span>
-                  <span class="text-xs uppercase tracking-widest">Credit</span>
-                </div>
-                <div id="selected-credit-amount" class="text-2xl font-bold mt-2 text-[var(--yellow)]">—</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Final Offer Inputs -->
-          <div class="rounded-2xl bg-black border border-zinc-800 p-5 space-y-4">
-            <div class="text-xs uppercase tracking-widest text-zinc-500">Final Offer (Staff)</div>
-            <div class="grid grid-cols-2 gap-4">
+            <!-- Customer & Item -->
+            <div class="rounded-2xl bg-black border border-zinc-800 p-5 space-y-4">
               <div>
-                <div class="panel-label mb-1">Final Cash</div>
-                <input id="final-cash-input" type="number" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm" placeholder="0.00">
+                <div class="panel-label">Customer</div>
+                <div id="selected-email" class="font-medium">—</div>
               </div>
               <div>
-                <div class="panel-label mb-1">Final Credit</div>
-                <input id="final-credit-input" type="number" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm" placeholder="0.00">
+                <div class="panel-label">Item</div>
+                <div id="selected-title" class="font-semibold text-lg">—</div>
+                <div id="selected-subtitle" class="text-sm text-gray-400">—</div>
               </div>
-            </div>
-          </div>
-
-          <!-- Decision Buttons -->
-          <div class="rounded-2xl bg-black border border-zinc-800 p-5">
-            <div class="text-xs uppercase tracking-widest text-zinc-500 mb-4">Decision</div>
-            <div class="grid grid-cols-1 gap-3">
-              <button id="accept-offer-btn" class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl transition flex items-center justify-center gap-2">
-                <span>✅</span> Accept Offer
-              </button>
-              <button id="counteroffer-btn" class="w-full py-4 bg-[var(--yellow)] hover:brightness-110 text-black font-bold rounded-2xl transition flex items-center justify-center gap-2">
-                <span>↔️</span> Send Counteroffer
-              </button>
-              <button id="reject-btn" class="w-full py-4 bg-red-600 hover:bg-red-500 text-white font-bold rounded-2xl transition flex items-center justify-center gap-2">
-                <span>✕</span> Reject Submission
-              </button>
-            </div>
-          </div>
-
-       
-                 <!-- Internal Notes -->
-          <div class="rounded-2xl bg-black border border-zinc-800 p-5 space-y-4">
-            <div class="panel-label">Internal Notes</div>
-            <textarea id="selected-internal-notes" class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm min-h-[160px]" placeholder="Internal notes..."></textarea>
-            
-            <div class="grid grid-cols-2 gap-3">
-              <button id="save-selected-btn" class="rounded-2xl bg-[var(--teal)] text-black font-semibold py-3 hover:brightness-110">Save Notes</button>
-              <button id="email-customer-btn" class="rounded-2xl bg-zinc-800 border border-zinc-700 hover:border-[var(--teal)] py-3">Email Customer</button>
-            </div>
-          </div>
-
-          <!-- Pricing Controls -->
-          <div class="rounded-2xl bg-black border border-zinc-800 p-5 space-y-4">
-            <button
-              id="pricing-controls-toggle"
-              class="w-full flex items-center justify-between text-left"
-              type="button"
-            >
               <div>
-                <div class="panel-label">Advanced Controls</div>
-                <div class="text-sm font-semibold mt-1">Offer Engine Settings</div>
+                <div class="panel-label">Submitted Notes</div>
+                <div id="selected-notes" class="text-sm text-gray-300 whitespace-pre-wrap">—</div>
               </div>
-              <span id="pricing-controls-chevron" class="text-xl text-zinc-400 transition-transform">▾</span>
-            </button>
+            </div>
 
-            <div id="pricing-controls-panel" class="hidden space-y-4 pt-2 border-t border-zinc-800">
-              <div class="grid grid-cols-1 gap-4">
+            <!-- Offer Summary + Decision Zone -->
+            <div class="decision-zone rounded-2xl border border-[var(--teal)]/30 p-5 space-y-5">
+              <div class="text-xs uppercase tracking-widest text-[var(--teal)]">Offer Summary</div>
+
+              <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <div class="panel-label mb-1">Under $30 Cash %</div>
-                  <input
-                    id="pricing-under-30"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm"
-                    placeholder="0.30"
-                  >
+                  <div class="panel-label">Market Value</div>
+                  <div id="selected-market-value" class="text-3xl font-bold text-[var(--teal)] mt-1">—</div>
                 </div>
-
                 <div>
-                  <div class="panel-label mb-1">$30–100 Cash %</div>
-                  <input
-                    id="pricing-30-100"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm"
-                    placeholder="0.35"
-                  >
-                </div>
-
-                <div>
-                  <div class="panel-label mb-1">Credit Multiplier</div>
-                  <input
-                    id="pricing-credit-multiplier"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm"
-                    placeholder="1.20"
-                  >
-                </div>
-
-                <div>
-                  <div class="panel-label mb-1">Max Auto Offer Value</div>
-                  <input
-                    id="pricing-max-auto"
-                    type="number"
-                    step="1"
-                    min="1"
-                    class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm"
-                    placeholder="100"
-                  >
+                  <div class="panel-label">Offer Type</div>
+                  <div id="selected-offer-type" class="mt-1 font-semibold status-chip">—</div>
                 </div>
               </div>
 
-              <div class="flex items-center justify-between gap-3">
-                <div id="pricing-controls-status" class="text-xs text-zinc-500">
-                  Not loaded yet
+              <div>
+                <div class="panel-label">Risk Level</div>
+                <div id="selected-risk" class="mt-1 font-semibold">—</div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-4 pt-3 border-t border-zinc-800">
+                <div class="bg-zinc-900 rounded-xl p-4">
+                  <div class="flex items-center gap-2 text-emerald-400">
+                    <span class="text-xl">💵</span>
+                    <span class="text-xs uppercase tracking-widest">Cash</span>
+                  </div>
+                  <div id="selected-offer-amount" class="text-2xl font-bold mt-2">—</div>
                 </div>
-                <button
-                  id="save-pricing-config-btn"
-                  class="rounded-2xl bg-[var(--teal)] text-black font-semibold px-5 py-3 hover:brightness-110"
-                  type="button"
-                >
-                  Save Pricing
+                <div class="bg-zinc-900 rounded-xl p-4">
+                  <div class="flex items-center gap-2 text-[var(--yellow)]">
+                    <span class="text-xl">🎟️</span>
+                    <span class="text-xs uppercase tracking-widest">Credit</span>
+                  </div>
+                  <div id="selected-credit-amount" class="text-2xl font-bold mt-2 text-[var(--yellow)]">—</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Batch Items -->
+            <div class="rounded-2xl bg-black border border-zinc-800 p-5 space-y-4">
+              <div class="panel-label">Batch Items</div>
+              <div id="batch-items" class="batch-scroll space-y-2">
+                <div class="text-gray-500 text-sm">Select a submission</div>
+              </div>
+            </div>
+
+            <!-- Final Offer Inputs -->
+            <div class="rounded-2xl bg-black border border-zinc-800 p-5 space-y-4">
+              <div class="text-xs uppercase tracking-widest text-zinc-500">Final Offer (Staff)</div>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <div class="panel-label mb-1">Final Cash</div>
+                  <input id="final-cash-input" type="number" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm" placeholder="0.00">
+                </div>
+                <div>
+                  <div class="panel-label mb-1">Final Credit</div>
+                  <input id="final-credit-input" type="number" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm" placeholder="0.00">
+                </div>
+              </div>
+            </div>
+
+            <!-- Decision Buttons -->
+            <div class="rounded-2xl bg-black border border-zinc-800 p-5 action-bar">
+              <div class="text-xs uppercase tracking-widest text-zinc-500 mb-4">Decision</div>
+              <div class="grid grid-cols-1 gap-3">
+                <button id="accept-offer-btn" class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl transition flex items-center justify-center gap-2">
+                  <span>✅</span> Accept Offer
+                </button>
+                <button id="counteroffer-btn" class="w-full py-4 bg-[var(--yellow)] hover:brightness-110 text-black font-bold rounded-2xl transition flex items-center justify-center gap-2">
+                  <span>↔️</span> Send Counteroffer
+                </button>
+                <button id="reject-btn" class="w-full py-4 bg-red-600 hover:bg-red-500 text-white font-bold rounded-2xl transition flex items-center justify-center gap-2">
+                  <span>✕</span> Reject Submission
                 </button>
               </div>
             </div>
-          </div> 
 
-</aside>
+            <!-- Internal Notes -->
+            <div class="rounded-2xl bg-black border border-zinc-800 p-5 space-y-4">
+              <div class="panel-label">Internal Notes</div>
+              <textarea id="selected-internal-notes" class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3 text-sm min-h-[160px]" placeholder="Internal notes..."></textarea>
+              
+              <div class="grid grid-cols-2 gap-3">
+                <button id="save-selected-btn" class="rounded-2xl bg-[var(--teal)] text-black font-semibold py-3 hover:brightness-110">Save Notes</button>
+                <button id="email-customer-btn" class="rounded-2xl bg-zinc-800 border border-zinc-700 hover:border-[var(--teal)] py-3">Email Customer</button>
+              </div>
+            </div>
+
+            <!-- Pricing Controls -->
+            <div class="rounded-2xl bg-black border border-zinc-800 p-5 space-y-4">
+              <button
+                id="pricing-controls-toggle"
+                class="w-full flex items-center justify-between text-left"
+                type="button"
+              >
+                <div>
+                  <div class="panel-label">Advanced Controls</div>
+                  <div class="text-sm font-semibold mt-1">Offer Engine Settings</div>
+                </div>
+                <span id="pricing-controls-chevron" class="text-xl text-zinc-400 transition-transform">▾</span>
+              </button>
+
+              <div id="pricing-controls-panel" class="hidden space-y-4 pt-2 border-t border-zinc-800">
+                <div class="grid grid-cols-1 gap-4">
+                  <div>
+                    <div class="panel-label mb-1">Under $30 Cash %</div>
+                    <input
+                      id="pricing-under-30"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm"
+                      placeholder="0.30"
+                    >
+                  </div>
+
+                  <div>
+                    <div class="panel-label mb-1">$30–100 Cash %</div>
+                    <input
+                      id="pricing-30-100"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm"
+                      placeholder="0.35"
+                    >
+                  </div>
+
+                  <div>
+                    <div class="panel-label mb-1">Credit Multiplier</div>
+                    <input
+                      id="pricing-credit-multiplier"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm"
+                      placeholder="1.20"
+                    >
+                  </div>
+
+                  <div>
+                    <div class="panel-label mb-1">Max Auto Offer Value</div>
+                    <input
+                      id="pricing-max-auto"
+                      type="number"
+                      step="1"
+                      min="1"
+                      class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm"
+                      placeholder="100"
+                    >
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between gap-3">
+                  <div id="pricing-controls-status" class="text-xs text-zinc-500">
+                    Not loaded yet
+                  </div>
+                  <button
+                    id="save-pricing-config-btn"
+                    class="rounded-2xl bg-[var(--teal)] text-black font-semibold px-5 py-3 hover:brightness-110"
+                    type="button"
+                  >
+                    Save Pricing
+                  </button>
+                </div>
+              </div>
+            </div> 
+
+          </div>
+        </aside>
       </div>
     </div>
   </div>
 
- </div>
-
-<!-- Photo Lightbox Modal (PASTE HERE) -->
-<div id="photo-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center">
-  <div class="relative max-w-4xl w-full p-4">
-    <button onclick="closePhotoModal()"
-      class="absolute -top-4 -right-4 bg-black text-white w-10 h-10 rounded-full flex items-center justify-center text-2xl hover:bg-zinc-800">
-      ×
-    </button>
-    <img id="modal-image" src="" alt="Photo"
-      class="max-h-[85vh] mx-auto rounded-2xl shadow-2xl border border-[var(--teal)]/30 object-contain">
+  <!-- Photo Lightbox Modal -->
+  <div id="photo-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center">
+    <div class="relative max-w-4xl w-full p-4">
+      <button onclick="closePhotoModal()"
+        class="absolute -top-4 -right-4 bg-black text-white w-10 h-10 rounded-full flex items-center justify-center text-2xl hover:bg-zinc-800">
+        ×
+      </button>
+      <img id="modal-image" src="" alt="Photo"
+        class="max-h-[85vh] mx-auto rounded-2xl shadow-2xl border border-[var(--teal)]/30 object-contain">
+    </div>
   </div>
-</div>
 
 <script src="/js/dashboard.js"></script>
 </body>
