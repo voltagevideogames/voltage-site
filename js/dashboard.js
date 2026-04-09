@@ -438,6 +438,23 @@ function renderSelectedPanel() {
     selectedRiskEl.textContent = getRiskLabel(item);
     selectedRiskEl.className = `mt-1 font-semibold ${getRiskClass(item)}`;
   }
+   // Customer Preferred Payout
+   const payoutEl = document.getElementById('selected-payout-preference');
+
+   if (payoutEl) {
+   const pref = (item.preferred_payout || item.preferredPayout || '').toLowerCase();
+
+  if (pref === 'cash') {
+    payoutEl.textContent = 'Cash';
+  } else if (pref === 'credit') {
+    payoutEl.textContent = 'Store Credit';
+  } else if (pref === 'hybrid') {
+    payoutEl.textContent = 'Hybrid';
+  } else {
+    payoutEl.textContent = 'Not specified';
+  }
+}
+
   if (selectedInternalNotesEl) selectedInternalNotesEl.value = item.internal_notes || '';
   if (finalCashInput) finalCashInput.value = item.final_cash_offer ?? '';
   if (finalCreditInput) finalCreditInput.value = item.final_credit_offer ?? '';
