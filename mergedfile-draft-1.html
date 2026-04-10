@@ -1047,23 +1047,7 @@ window.signUpWithGamertag = signUpWithGamertag;
 window.logInWithGamertag = logInWithGamertag;
 
 
-// ====================== PHOTO INPUT CHANGE LISTENER (NEW) ======================
-document.addEventListener('DOMContentLoaded', () => {
-  const input = document.getElementById('photo-input');
-  if (!input) return;
 
-  input.addEventListener('change', function () {
-    const files = this.files;
-
-    if (!files || files.length === 0) {
-      clearPhotos();
-      return;
-    }
-
-    renderStagedPreview(files);
-    setPhotoStatus(`${files.length} photo${files.length === 1 ? '' : 's'} selected • Will upload on submit`);
-  });
-});
 
 
 </script>
