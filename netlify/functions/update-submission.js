@@ -1,6 +1,6 @@
 const { createClient } = require('@supabase/supabase-js');
 
-const ALLOWED_STATUSES = ['pending', 'review', 'counter_sent', 'accepted', 'completed', 'rejected'];
+const ALLOWED_STATUSES = ['pending', 'review', 'counter_sent', 'accepted', 'received', 'completed', 'rejected'];
 
 const supabase = createClient(
   process.env.SUPABASE_URL,

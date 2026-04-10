@@ -808,25 +808,24 @@ function bindEvents() {
       showMessage('More photos requested • Status set to Review', 'success');
     });
   }
-  // Prepare/Send Counteroffer - now uses counter_sent status
-  if (sendCounterofferBtn) {
-    sendCounterofferBtn.addEventListener('click', async () => {
-      const cashVal = finalCashInput ? finalCashInput.value.trim() : '';
-      const creditVal = finalCreditInput ? finalCreditInput.value.trim() : '';
-      if (!cashVal && !creditVal) {
-        showMessage('Enter at least one final offer amount (cash or credit)', 'error');
-        return;
-      }
-      const now = new Date();
-      const timestamp = now.toLocaleString('en-US', {
-        month: '2-digit', day: '2-digit', year: 'numeric',
-        hour: 'numeric', minute: '2-digit', hour12: true
-      });
-      const note = `Counteroffer prepared (${timestamp})`;
-      await saveSelectedSubmission('counter_sent', note);
-      showMessage('Counteroffer prepared • Status set to Counter Sent • Cash/Credit values saved', 'success');
+  // Prepare/Send Counteroffer - now uses counter_sent statusif (sendCounterofferBtn) {
+  sendCounterofferBtn.addEventListener('click', async () => {
+    const now = new Date();
+    const timestamp = now.toLocaleString('en-US', {
+      month: '2-digit',
+      day: '2-digit',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
     });
-  }
+
+    const note = `Items received (${timestamp})`;
+    await saveSelectedSubmission('received', note);
+
+    showMessage('Items marked as received', 'success');
+  });
+}
   if (refreshDashboardBtn) refreshDashboardBtn.addEventListener('click', loadSubmissions);
   // Weekly Reset UX
   if (resetWeeklyBtn) {
