@@ -199,7 +199,9 @@
         <input type="hidden" name="_subject" value="Voltage Sell Submission">
         <!-- Batch extension (careful extension) -->
         <input type="hidden" id="batch_items" name="batch_items" value="[]">
-        <div>
+        <input type="hidden" id="photos-requested-flag" name="photos_requested" value="false">
+
+      <div>
           <label class="block text-sm mb-2 text-[var(--teal)] font-medium">Email *</label>
           <input type="email" name="email" required placeholder="you@example.com"
                  class="w-full bg-black border border-[var(--teal)]/60 p-4 rounded-2xl focus:border-[var(--yellow)] text-white">
@@ -405,10 +407,11 @@ async function uploadPhotos(files) {
     throw new Error(result.error || 'Photo upload failed');
   }
   const urls = result.photos.map(photo => photo.url);
-  document.getElementById('photo-urls').value = JSON.stringify(urls);
-  renderPreview(urls);
-  setPhotoStatus('Photos uploaded successfully');
-  return urls;
+document.getElementById('photo-urls').value = JSON.stringify(urls);
+document.getElementById('photos-requested-flag')?.setAttribute('value', 'false');
+renderPreview(urls);
+setPhotoStatus('Photos uploaded successfully');
+return urls;
 }
 // ====================== GAME SEARCH (exact from index.html) ======================
 function formatPrice(value) {
