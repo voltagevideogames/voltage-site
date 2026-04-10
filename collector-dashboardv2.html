@@ -5,15 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Voltage 2.0 Collector Dashboard – Track your collection, monitor values, and manage your trades." />
   <title>Voltage 2.0 • Collector Dashboard</title>
-
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-
     :root {
       --teal: #00E5B8;
       --yellow: #FFEB3B;
@@ -22,7 +19,6 @@
       --line: rgba(0, 229, 184, 0.16);
       --line-strong: rgba(0, 229, 184, 0.34);
     }
-
     body {
       font-family: 'Inter', system-ui, sans-serif;
       background:
@@ -30,25 +26,21 @@
         linear-gradient(to bottom, #050607 0%, #0a0a0a 100%);
       color: #f5f5f5;
     }
-
     .heading-font {
       font-family: 'Press Start 2P', system-ui;
     }
-
     .neon-text {
       text-shadow:
         0 0 10px rgba(0,229,184,0.55),
         0 0 24px rgba(0,229,184,0.18),
         0 0 36px rgba(255,235,59,0.10);
     }
-
     .dashboard-shell {
       background:
         linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.005)),
         rgba(0,0,0,0.55);
       backdrop-filter: blur(10px);
     }
-
     .panel {
       background:
         linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)),
@@ -58,33 +50,27 @@
         inset 0 1px 0 rgba(255,255,255,0.03),
         0 0 0 1px rgba(255,255,255,0.01);
     }
-
     .panel-soft {
       background: rgba(255,255,255,0.015);
       border: 1px solid rgba(255,255,255,0.06);
     }
-
     .stat-card {
       background: linear-gradient(180deg, rgba(14,16,18,0.98), rgba(10,11,13,0.98));
       border: 1px solid rgba(255,255,255,0.07);
       box-shadow: 0 8px 28px rgba(0,0,0,0.30);
     }
-
     .feature-card {
       transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
     }
-
     .feature-card:hover {
       transform: translateY(-3px);
       border-color: var(--line-strong);
       box-shadow: 0 0 0 1px rgba(0,229,184,0.10), 0 12px 30px rgba(0,0,0,0.28);
     }
-
     .glow-divider {
       height: 1px;
       background: linear-gradient(to right, transparent, rgba(0,229,184,0.4), transparent);
     }
-
     .status-pill {
       display: inline-flex;
       align-items: center;
@@ -96,29 +82,24 @@
       border: 1px solid rgba(255,255,255,0.08);
       background: rgba(255,255,255,0.03);
     }
-
     .status-teal {
       color: var(--teal);
       border-color: rgba(0,229,184,0.24);
       background: rgba(0,229,184,0.08);
     }
-
     .status-yellow {
       color: var(--yellow);
       border-color: rgba(255,235,59,0.22);
       background: rgba(255,235,59,0.08);
     }
-
     .nav-link {
       color: #cfcfcf;
       transition: color 0.2s ease;
     }
-
     .nav-link:hover,
     .nav-link.active {
       color: var(--teal);
     }
-
     .grid-line {
       background-image:
         linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
@@ -128,7 +109,6 @@
   </style>
 </head>
 <body class="min-h-screen text-white">
-
   <!-- TOP NAV -->
   <nav class="sticky top-0 z-50 border-b border-[rgba(0,229,184,0.14)] bg-black/75 backdrop-blur-xl">
     <div class="max-w-[1600px] mx-auto px-4 md:px-6 xl:px-8 py-4 flex items-center justify-between gap-4">
@@ -139,22 +119,18 @@
           <div class="text-[10px] sm:text-xs text-zinc-500 uppercase tracking-[0.22em]">Collector Dashboard</div>
         </div>
       </div>
-
       <div class="hidden lg:flex items-center gap-8 text-sm font-medium">
         <a href="#" class="nav-link active">Dashboard</a>
         <a href="vault-test.html" class="nav-link">Vault</a>
         <a href="#" class="nav-link">Trades</a>
         <a href="#" class="nav-link">Community</a>
       </div>
-
       <div class="flex items-center gap-3">
         <div id="user-gamertag" class="hidden sm:flex items-center px-4 py-2 rounded-full border border-[rgba(0,229,184,0.22)] bg-black/40 text-[var(--yellow)] text-sm font-semibold"></div>
-
         <a href="index.html"
            class="hidden sm:inline-flex px-4 py-2 text-sm border border-[rgba(0,229,184,0.22)] hover:bg-[rgba(0,229,184,0.08)] transition rounded-xl">
           Home
         </a>
-
         <button onclick="logout()"
                 class="px-4 py-2 text-sm rounded-xl border border-red-500/25 text-red-300 hover:bg-red-950/30 transition">
           Logout
@@ -162,24 +138,19 @@
       </div>
     </div>
   </nav>
-
   <main class="max-w-[1600px] mx-auto px-4 md:px-6 xl:px-8 py-6 md:py-8 xl:py-10">
     <div class="dashboard-shell rounded-[28px] border border-[rgba(255,255,255,0.05)] overflow-hidden">
-
       <!-- HERO -->
       <section class="relative grid-line border-b border-[rgba(0,229,184,0.08)]">
         <div class="grid xl:grid-cols-[1.2fr_0.8fr] gap-8 p-6 md:p-8 xl:p-10 items-center">
           <div>
             <div class="text-xs uppercase tracking-[0.32em] text-[var(--teal)] mb-4">Collector Experience</div>
-
            <div id="welcome-message" class="text-3xl md:text-5xl xl:text-6xl font-extrabold leading-tight mb-4">
               Welcome...
            </div>
-
             <p class="text-base md:text-lg text-zinc-300 max-w-2xl leading-relaxed">
               Track your collection. Monitor live values. Manage trades. Build your legacy inside the Voltage ecosystem.
             </p>
-
             <div class="flex flex-wrap gap-3 mt-6">
               <div class="status-pill status-teal">
                 <i class="fa-solid fa-shield-halved"></i>
@@ -191,24 +162,19 @@
               </div>
             </div>
           </div>
-
           <div class="panel rounded-[28px] p-6 md:p-8 relative overflow-hidden">
             <div class="absolute inset-0 opacity-30"
                  style="background: radial-gradient(circle at center, rgba(0,229,184,0.22), transparent 55%);"></div>
-
             <div class="relative">
               <div class="text-xs uppercase tracking-[0.28em] text-zinc-500 mb-4">Voltage Identity</div>
-
               <div class="rounded-[24px] border border-[rgba(0,229,184,0.18)] bg-black/40 p-6 md:p-8 text-center">
                 <div class="w-20 h-20 md:w-24 md:h-24 mx-auto rounded-[24px] border border-[rgba(0,229,184,0.20)] bg-black flex items-center justify-center text-4xl text-[var(--teal)] mb-5">
                   <i class="fa-solid fa-shield"></i>
                 </div>
-
                 <div class="heading-font text-lg md:text-2xl neon-text leading-relaxed">Loading...</div>
                 <div class="mt-3 text-sm md:text-base text-zinc-400">
                   Your collector hub for value, identity, and trades.
                 </div>
-
                 <div class="mt-6 grid grid-cols-3 gap-3">
                   <div class="panel-soft rounded-2xl p-3">
                     <div class="text-[10px] uppercase tracking-wide text-zinc-500">Level</div>
@@ -226,10 +192,8 @@
               </div>
             </div>
           </div>
-
         </div>
       </section>
-
       <!-- KPI STRIP -->
 <section class="p-6 md:p-8 xl:p-10 border-b border-[rgba(255,255,255,0.04)]">
   <div class="grid grid-cols-2 xl:grid-cols-5 gap-4">
@@ -238,25 +202,21 @@
       <div id="kpi-vault-value" class="text-3xl font-bold text-[var(--teal)] mt-2">—</div>
       <div id="kpi-30day" class="text-xs text-zinc-400 mt-1">Loading...</div>
     </div>
-
     <div class="stat-card rounded-3xl p-5">
       <div class="text-xs uppercase tracking-wide text-zinc-500">Total Games</div>
       <div id="kpi-total-games" class="text-3xl font-bold text-white mt-2">—</div>
       <div class="text-xs text-zinc-400 mt-1">Tracked in collection</div>
     </div>
-
     <div class="stat-card rounded-3xl p-5">
       <div class="text-xs uppercase tracking-wide text-zinc-500">Unique Systems</div>
       <div id="kpi-unique-systems" class="text-3xl font-bold text-white mt-2">—</div>
       <div class="text-xs text-zinc-400 mt-1">Across your vault</div>
     </div>
-
     <div class="stat-card rounded-3xl p-5">
       <div class="text-xs uppercase tracking-wide text-zinc-500">Trades Submitted</div>
-      <div class="text-3xl font-bold text-white mt-2">12</div>
-      <div class="text-xs text-zinc-400 mt-1">2 currently active</div>
+      <div id="kpi-trades-submitted" class="text-3xl font-bold text-white mt-2">—</div>
+      <div id="kpi-trades-active" class="text-xs text-zinc-400 mt-1">— currently active</div>
     </div>
-
     <div class="stat-card rounded-3xl p-5">
       <div class="text-xs uppercase tracking-wide text-zinc-500">Collector Rank</div>
       <div class="text-3xl font-bold text-[var(--yellow)] mt-2">Top 5%</div>
@@ -264,32 +224,26 @@
     </div>
   </div>
 </section>
-
 <!-- MAIN DASHBOARD GRID -->
 <section class="p-6 md:p-8 xl:p-10">
   <div class="grid xl:grid-cols-[260px_minmax(0,1fr)_320px] gap-6">
-
    <!-- LEFT RAIL -->
 <aside class="space-y-6">
   <div class="panel rounded-[28px] p-5">
     <div class="text-xs uppercase tracking-[0.25em] text-zinc-500 mb-4">My Hub</div>
-
     <div class="space-y-2">
       <a href="#" class="feature-card flex items-center gap-3 rounded-2xl border border-[rgba(0,229,184,0.16)] bg-[rgba(0,229,184,0.06)] px-4 py-3 text-[var(--teal)] font-semibold">
         <i class="fa-solid fa-chart-line w-5"></i>
         Dashboard
       </a>
-
       <a href="vault-test.html" class="feature-card flex items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-3 text-zinc-300">
         <i class="fa-solid fa-box-archive w-5"></i>
         My Vault
       </a>
-
       <a href="#" class="feature-card flex items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-3 text-zinc-300">
         <i class="fa-solid fa-arrow-right-arrow-left w-5"></i>
         My Trades
       </a>
-
       <a href="vault-test.html" class="feature-card flex items-center justify-between rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-3 text-zinc-300">
         <div class="flex items-center gap-3">
           <i class="fa-solid fa-chart-simple w-5"></i>
@@ -297,7 +251,6 @@
         </div>
         <span class="text-[10px] uppercase tracking-wide text-zinc-500">Vault</span>
       </a>
-
       <div class="feature-card flex items-center justify-between rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-3 text-zinc-400">
         <div class="flex items-center gap-3">
           <i class="fa-solid fa-users w-5"></i>
@@ -307,10 +260,8 @@
       </div>
     </div>
   </div>
-
   <div class="panel rounded-[28px] p-5">
     <div class="text-xs uppercase tracking-[0.25em] text-zinc-500 mb-4">Quick Actions</div>
-
     <div class="space-y-3">
       <a href="index.html#sell"
          class="feature-card flex items-center justify-between rounded-2xl border border-[rgba(255,235,59,0.16)] bg-[rgba(255,235,59,0.06)] px-4 py-4">
@@ -320,7 +271,6 @@
         </div>
         <i class="fa-solid fa-arrow-right text-[var(--yellow)]"></i>
       </a>
-
       <a href="vault-test.html"
          class="feature-card flex items-center justify-between rounded-2xl border border-[rgba(0,229,184,0.16)] bg-[rgba(0,229,184,0.06)] px-4 py-4">
         <div>
@@ -334,7 +284,6 @@
 </aside>
     <!-- CENTER CONTENT -->
     <div class="space-y-6">
-
       <!-- Vault Overview -->
 <section class="panel rounded-[28px] p-6">
 <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
@@ -342,13 +291,11 @@
     <div class="text-xs uppercase tracking-[0.25em] text-zinc-500 mb-2">Vault Overview</div>
     <h2 class="text-3xl font-bold leading-tight mb-1">Your Collection Command Center</h2>
   </div>
-
   <a href="vault-test.html"
      class="px-5 py-3 rounded-2xl border border-[rgba(0,229,184,0.20)] text-sm font-medium text-[var(--teal)] hover:bg-[rgba(0,229,184,0.08)] transition">
     Manage Vault
   </a>
 </div>
-
 <div class="grid lg:grid-cols-[1.15fr_0.85fr] gap-5">
   <!-- LEFT: MAIN VAULT CARD -->
   <div class="rounded-[28px] border border-[rgba(0,229,184,0.16)] bg-black/35 p-6">
@@ -357,12 +304,10 @@
         <div class="w-24 h-24 rounded-[24px] border border-[rgba(0,229,184,0.16)] bg-black flex items-center justify-center text-[var(--teal)] text-4xl mb-6">
           <i class="fa-solid fa-layer-group"></i>
         </div>
-
        <div class="text-sm uppercase tracking-wide text-zinc-500 mb-2">Total Collection Value</div>
         <div id="total-collection-value" class="text-5xl font-bold text-[var(--teal)] leading-none">—</div>
         <div id="games-systems-line" class="text-zinc-400 mt-3 text-lg">Loading...</div>
       </div>
-
       <div class="mt-8">
         <div class="flex items-center justify-between text-sm mb-2">
           <span class="text-zinc-500">30-Day Performance</span>
@@ -374,7 +319,6 @@
       </div>
     </div>
   </div>
-
   <!-- RIGHT: STACKED INSIGHT CARDS -->
   <div class="grid gap-4">
     <div class="panel-soft rounded-[28px] p-5">
@@ -382,26 +326,21 @@
       <div id="most-valuable-title" class="text-3xl font-bold text-white leading-tight">Loading...</div>
       <div id="most-valuable-subtitle" class="text-zinc-400 mt-3 text-lg">Please wait</div>
     </div>
-
     <div class="panel-soft rounded-[28px] p-5">
       <div class="text-xs uppercase tracking-wide text-zinc-500 mb-2">Collection Snapshot</div>
-
       <div class="grid grid-cols-2 gap-4 mt-4">
         <div>
           <div class="text-[11px] uppercase tracking-wide text-zinc-500">Average Value</div>
           <div id="snapshot-average" class="text-2xl font-bold text-white mt-1">—</div>
         </div>
-
         <div>
           <div class="text-[11px] uppercase tracking-wide text-zinc-500">Top Platform</div>
           <div id="snapshot-top-platform" class="text-2xl font-bold text-white mt-1">—</div>
         </div>
-
         <div>
           <div class="text-[11px] uppercase tracking-wide text-zinc-500">Last Refresh</div>
           <div id="snapshot-last-refresh" class="text-lg font-semibold text-zinc-300 mt-1">Loading...</div>
         </div>
-
         <div>
           <div class="text-[11px] uppercase tracking-wide text-zinc-500">Status</div>
           <div id="snapshot-status" class="text-lg font-semibold text-zinc-400 mt-1">Loading...</div>
@@ -411,23 +350,35 @@
   </div>
 </div>
 </section>
+      <!-- My Trades -->
+      <section class="panel rounded-[28px] p-6">
+        <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
+          <div>
+            <div class="text-xs uppercase tracking-[0.25em] text-zinc-500 mb-2">My Trades</div>
+            <h2 class="text-3xl font-bold leading-tight mb-1">Your Voltage Trade Center</h2>
+          </div>
+          <a href="index.html#sell" 
+             class="px-5 py-3 rounded-2xl border border-[rgba(255,235,59,0.20)] text-sm font-medium text-[var(--yellow)] hover:bg-[rgba(255,235,59,0.08)] transition whitespace-nowrap">
+            Submit New Trade
+          </a>
+        </div>
+        <div id="my-trades-list" class="space-y-6">
+        </div>
+      </section>
       <section class="panel rounded-[28px] p-6">
         <div class="text-xs uppercase tracking-[0.25em] text-zinc-500 mb-2">Quick Actions</div>
         <h2 class="text-2xl font-bold mb-5">What do you want to do?</h2>
-
         <div class="grid gap-4">
           <a href="vault-test.html" class="feature-card rounded-3xl border border-[rgba(0,229,184,0.14)] bg-[rgba(0,229,184,0.05)] p-5">
             <div class="text-3xl text-[var(--teal)] mb-3"><i class="fa-solid fa-box-archive"></i></div>
             <div class="font-semibold text-lg">Build Your Vault</div>
             <div class="text-sm text-zinc-400 mt-1">Add, organize, and track your collection.</div>
           </a>
-
           <a href="index.html#sell" class="feature-card rounded-3xl border border-[rgba(255,235,59,0.14)] bg-[rgba(255,235,59,0.05)] p-5">
             <div class="text-3xl text-[var(--yellow)] mb-3"><i class="fa-solid fa-arrow-right-arrow-left"></i></div>
             <div class="font-semibold text-lg">Submit a Trade</div>
             <div class="text-sm text-zinc-400 mt-1">Get a fast offer from Voltage.</div>
           </a>
-
           <a href="#" class="feature-card rounded-3xl border border-white/6 bg-white/[0.02] p-5">
             <div class="text-3xl text-[var(--teal)] mb-3"><i class="fa-solid fa-chart-simple"></i></div>
            <div class="font-semibold text-lg">Value Tracker</div>
@@ -438,13 +389,11 @@
       </section>
     </div>
   </div>
-
   <!-- RIGHT RAIL -->
   <aside class="space-y-6">
     <section class="panel rounded-[28px] p-5">
       <div class="text-xs uppercase tracking-[0.25em] text-zinc-500 mb-2">Sell or Trade Inventory</div>
       <h2 class="text-2xl font-bold mb-4">Get an Offer</h2>
-
       <div class="rounded-3xl border border-[rgba(255,235,59,0.14)] bg-[rgba(255,235,59,0.05)] p-5">
         <div class="text-sm text-zinc-300 mb-4">
           Ready to move part of your collection? Start a trade-in and get a fair Voltage offer.
@@ -455,7 +404,6 @@
         </a>
       </div>
     </section>
-
     <section class="panel rounded-[28px] p-5">
       <div class="flex items-center justify-between mb-4">
         <div>
@@ -463,33 +411,12 @@
           <h2 class="text-xl font-bold">What’s happening</h2>
         </div>
       </div>
-
-      <div class="space-y-4 text-sm">
-        <div>
-          <div class="font-medium text-white">Offer submitted</div>
-          <div class="text-zinc-400 mt-1">Zelda lot entered for mixed Genesis / NES offer.</div>
-        </div>
-
-        <div class="glow-divider"></div>
-
-        <div>
-          <div class="font-medium text-white">Vault refreshed</div>
-          <div class="text-zinc-400 mt-1">Latest value refresh completed this morning.</div>
-        </div>
-
-        <div class="glow-divider"></div>
-
-        <div>
-          <div class="font-medium text-white">Profile unlocked</div>
-          <div class="text-zinc-400 mt-1">Collector hub activated after Gamertag signup.</div>
-        </div>
+      <div id="recent-activity-list" class="space-y-4 text-sm">
       </div>
     </section>
-
     <section class="panel rounded-[28px] p-5">
       <div class="text-xs uppercase tracking-[0.25em] text-zinc-500 mb-2">Community</div>
       <h2 class="text-xl font-bold mb-4">Collector Spotlight</h2>
-
       <div class="rounded-3xl border border-white/5 bg-white/[0.02] p-5">
         <div class="text-sm text-zinc-300">
           Track your collection, monitor value, and eventually showcase your best pieces inside the Voltage community.
@@ -500,78 +427,65 @@
       </div>
     </section>
   </aside>
-
 </div>
 </section>
-
     </div>
    </main>
-
   <script>
     const supabaseUrl = 'https://kdqdebpcemviaubbiuwl.supabase.co';
     const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkcWRlYnBjZW12aWF1YmJpdXdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNjg3NTAsImV4cCI6MjA4OTk0NDc1MH0.QZHcD2RRl5rXkuaVOXPxYxFSABE_5EjsmmDaRbCktNI';
     const dashboardSupabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
-
     let currentCollector = null;
     let currentProfile = null;
-
+    let currentSession = null;
     async function loadCollectorDashboard() {
       const { data: { session }, error: sessionError } = await dashboardSupabase.auth.getSession();
-
       if (sessionError || !session) {
         window.location.href = 'index.html';
         return;
       }
-
       currentCollector = session.user;
-
+      currentSession = session;
       const { data: profile, error: profileError } = await dashboardSupabase
         .from('profiles')
         .select('gamertag, role')
         .eq('id', currentCollector.id)
         .maybeSingle();
-
       if (profileError) {
         console.error('Failed to load profile:', profileError);
       }
-
       currentProfile = profile || null;
-
       const gamertag = (profile && profile.gamertag) ? profile.gamertag : 'Collector';
-
       const topGamertagEl = document.getElementById('user-gamertag');
       if (topGamertagEl) {
         topGamertagEl.textContent = gamertag;
       }
-
       const welcomeEl = document.getElementById('welcome-message');
       if (welcomeEl) {
         welcomeEl.textContent = `Welcome, ${gamertag}`;
       }
-
   const identityTitleEl = document.querySelector('.heading-font.text-lg.md\\:text-2xl.neon-text.leading-relaxed');
 if (identityTitleEl) {
   identityTitleEl.textContent = gamertag;
 }
-
-const vaultItems = await loadDashboardVaultItems();
-
-loadVaultDashboardStats(vaultItems);
+  const vaultItems = await loadDashboardVaultItems();
+  loadVaultDashboardStats(vaultItems);
+      const submissions = await loadMySubmissions();
+      renderTradeKPIs(submissions);
+      renderRecentActivity(submissions);
+      renderMyTrades(submissions);
 }
 async function loadDashboardVaultItems() {
   if (!currentCollector?.id) return [];
-
   const { data, error } = await dashboardSupabase
     .from('vault_items')
     .select('*')
     .eq('user_id', currentCollector.id)
     .order('created_at', { ascending: false });
-
   if (error) {
     console.error('Failed to load dashboard vault items:', error);
     return [];
   }
-
   return Array.isArray(data) ? data : [];
 }
     async function logout() {
@@ -580,44 +494,35 @@ async function loadDashboardVaultItems() {
         console.error('Logout failed:', error);
         return;
       }
-
       window.location.href = 'index.html';
     }
-
     // ============== VAULT DASHBOARD STATS FROM localStorage (voltageVaultV1) ==============
     function loadVaultDashboardStats(items = []) {
     if (!Array.isArray(items)) items = [];
-   
+  
       // Safe value getter
       const getValue = (item, currKey, fallbackKey) => {
         if (item && item[currKey] != null) return parseFloat(item[currKey]) || 0;
         if (item && item[fallbackKey] != null) return parseFloat(item[fallbackKey]) || 0;
         return 0;
       };
-
       // Totals
       let totalValue = 0;
       let totalGames = 0;
       const platformMap = new Map();
-
       items.forEach(item => {
         const qty = Math.max(1, parseInt(item.quantity) || 1);
         totalGames += qty;
-
        const currTotal = getValue(item, 'current_total_value', 'total_value');
        const unitVal = getValue(item, 'current_unit_value', 'unit_value');
         const itemTotal = currTotal > 0 ? currTotal : (unitVal * qty);
-
         totalValue += itemTotal;
-
         const plat = String(item.platform || 'Unknown').trim();
         if (plat) {
           platformMap.set(plat, (platformMap.get(plat) || 0) + itemTotal);
         }
       });
-
       const uniqueSystems = platformMap.size;
-
       // 30-Day Performance (temporary)
       let originalValue = 0;
       items.forEach(item => {
@@ -626,21 +531,18 @@ async function loadDashboardVaultItems() {
         const unit = parseFloat(item.unit_value) || 0;
         originalValue += (purchase > 0 ? purchase * qty : unit * qty);
       });
-
       let perfPercent = 0;
       if (originalValue > 0) {
         perfPercent = ((totalValue - originalValue) / originalValue) * 100;
       }
       const perfText = (perfPercent >= 0 ? '+' : '') + perfPercent.toFixed(2) + '%';
       const isPositive = perfPercent >= 0;
-
       // Bar width (visual clamp)
       let barWidth = 68;
       if (originalValue > 0) {
         const ratio = Math.max(0, totalValue / originalValue);
         barWidth = Math.min(100, Math.max(8, Math.round(ratio * 75)));
       }
-
       // Most Valuable Item
       let mostVal = null;
       let maxVal = -1;
@@ -652,7 +554,6 @@ async function loadDashboardVaultItems() {
           mostVal = item;
         }
       });
-
       // Average & Top Platform
       const avgValue = totalGames > 0 ? (totalValue / totalGames).toFixed(2) : '0';
       let topPlatform = '—';
@@ -663,7 +564,6 @@ async function loadDashboardVaultItems() {
           topPlatform = plat;
         }
       });
-
       // Last Refresh
       let lastRefresh = 'Never';
       let latest = null;
@@ -676,22 +576,18 @@ async function loadDashboardVaultItems() {
       if (latest) {
         lastRefresh = latest.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
       }
-
       const statusText = items.length > 0 ? 'Tracking' : 'Ready';
       const statusClass = items.length > 0 ? 'text-emerald-400' : 'text-zinc-400';
-
       // Bind KPI Strip
       document.getElementById('kpi-vault-value').textContent = '$' + Math.round(totalValue).toLocaleString();
       document.getElementById('kpi-total-games').textContent = totalGames;
       document.getElementById('kpi-unique-systems').textContent = uniqueSystems;
-
       // Bind Vault Overview
       document.getElementById('total-collection-value').textContent = '$' + Math.round(totalValue).toLocaleString();
       document.getElementById('games-systems-line').textContent = `${totalGames} games • ${uniqueSystems} systems`;
       document.getElementById('performance-percent').textContent = perfText;
       document.getElementById('performance-percent').className = `font-semibold ${isPositive ? 'text-emerald-400' : 'text-red-400'}`;
       document.getElementById('performance-bar').style.width = `${barWidth}%`;
-
       // Bind Most Valuable
       if (mostVal && maxVal >= 0) {
         const mvQty = Math.max(1, parseInt(mostVal.quantity) || 1);
@@ -702,13 +598,194 @@ async function loadDashboardVaultItems() {
         document.getElementById('most-valuable-title').textContent = 'No items in vault';
         document.getElementById('most-valuable-subtitle').textContent = 'Add games to begin tracking';
       }
-
       // Bind Collection Snapshot
       document.getElementById('snapshot-average').textContent = '$' + parseFloat(avgValue).toLocaleString();
       document.getElementById('snapshot-top-platform').textContent = topPlatform;
       document.getElementById('snapshot-last-refresh').textContent = lastRefresh;
       document.getElementById('snapshot-status').textContent = statusText;
       document.getElementById('snapshot-status').className = `text-lg font-semibold ${statusClass} mt-1`;
+    }
+
+    async function loadMySubmissions() {
+  if (!currentSession?.access_token) {
+    return [];
+  }
+
+  try {
+    const res = await fetch('/.netlify/functions/get-my-submissions', {
+      headers: {
+        Authorization: `Bearer ${currentSession.access_token}`,
+      },
+    });
+
+    if (!res.ok) {
+      console.error('Failed to load submissions');
+      return [];
+    }
+
+    const data = await res.json();
+
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data.submissions)) return data.submissions;
+
+    return [];
+  } catch (err) {
+    console.error('Submissions fetch error:', err);
+    return [];
+  }
+}
+
+    function getCustomerFriendlyStatus(sub) {
+      if (sub.photos_requested === true || sub.photos_requested === 'true') {
+        return {
+          text: "Action Needed: Upload Photos",
+          className: "status-yellow"
+        };
+      }
+      const map = {
+        "pending": { text: "Submitted", className: "status-teal" },
+        "review": { text: "In Review", className: "status-teal" },
+        "counter_sent": { text: "Offer Sent", className: "status-yellow" },
+        "accepted": { text: "Accepted", className: "status-teal" },
+        "received": { text: "Items Received", className: "status-teal" },
+        "completed": { text: "Paid", className: "status-teal" },
+        "rejected": { text: "Declined", className: "status-yellow" },
+      };
+      return map[sub.status] || { text: sub.status ? sub.status.charAt(0).toUpperCase() + sub.status.slice(1) : "Unknown", className: "status-teal" };
+    }
+
+    function renderTradeKPIs(submissions) {
+      const total = submissions.length;
+      const activeStatuses = ["pending", "review", "counter_sent", "accepted", "received"];
+      const active = submissions.filter(s => activeStatuses.includes(s.status)).length;
+      const submittedEl = document.getElementById('kpi-trades-submitted');
+      if (submittedEl) submittedEl.textContent = total;
+      const activeEl = document.getElementById('kpi-trades-active');
+      if (activeEl) activeEl.textContent = `${active} currently active`;
+    }
+
+    function renderRecentActivity(submissions) {
+      const container = document.getElementById('recent-activity-list');
+      if (!container) return;
+      const recent = submissions.slice(0, 3);
+      if (recent.length === 0) {
+        container.innerHTML = `<div class="text-zinc-400 py-8 text-center text-sm">No recent activity.<br>Submit your first trade to get started.</div>`;
+        return;
+      }
+      let html = '';
+      recent.forEach((sub, index) => {
+        const statusInfo = getCustomerFriendlyStatus(sub);
+        const dateStr = new Date(sub.submitted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        let activityTitle = '';
+        let activityDesc = sub.game_title_or_description || 'Trade submission';
+        if (sub.photos_requested) {
+          activityTitle = 'Action Needed';
+          activityDesc = `Upload photos for ${activityDesc}`;
+        } else if (sub.status === 'counter_sent') {
+          activityTitle = 'Offer Sent';
+        } else if (sub.status === 'pending') {
+          activityTitle = 'Trade Submitted';
+        } else {
+          activityTitle = statusInfo.text;
+        }
+        html += `
+          <div>
+            <div class="font-medium text-white">${activityTitle}</div>
+            <div class="text-zinc-400 mt-1">${activityDesc} • ${dateStr}</div>
+          </div>
+        `;
+        if (index < recent.length - 1) {
+          html += `<div class="glow-divider"></div>`;
+        }
+      });
+      container.innerHTML = html;
+    }
+
+    function renderMyTrades(submissions) {
+      const container = document.getElementById('my-trades-list');
+      if (!container) return;
+      if (submissions.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-12 border border-dashed border-white/20 rounded-3xl">
+            <div class="text-[var(--teal)] text-5xl mb-4"><i class="fa-solid fa-arrow-right-arrow-left"></i></div>
+            <div class="font-semibold text-xl">No trades yet</div>
+            <div class="text-zinc-400 mt-2">Your Voltage Trade Center is ready.<br>Head to Sell or Trade to submit your first batch.</div>
+            <a href="index.html#sell" class="mt-6 inline-flex px-8 py-3 rounded-2xl bg-gradient-to-r from-[var(--teal)] to-[var(--yellow)] text-black font-bold text-sm">Submit a Trade</a>
+          </div>
+        `;
+        return;
+      }
+      let html = '';
+      submissions.forEach(sub => {
+        const statusInfo = getCustomerFriendlyStatus(sub);
+        const submittedDate = new Date(sub.submitted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        let title = '';
+        if (sub.item_count > 1 || (sub.submission_type && sub.submission_type.includes('batch'))) {
+          title = `${sub.item_count || 1} Game Trade Submission`;
+        } else {
+          title = sub.game_title_or_description || 'Trade Submission';
+        }
+        let photoCount = 0;
+        if (sub.photo_urls) {
+          if (Array.isArray(sub.photo_urls)) {
+            photoCount = sub.photo_urls.length;
+          } else if (typeof sub.photo_urls === 'string') {
+            photoCount = sub.photo_urls.split(',').filter(Boolean).length || 1;
+          } else {
+            photoCount = 1;
+          }
+        }
+        const marketVal = sub.market_value_total || sub.market_value || 0;
+        let offerHTML = '';
+        if (sub.final_cash_offer != null || sub.final_credit_offer != null) {
+          const cashOffer = sub.final_cash_offer ? `$${parseFloat(sub.final_cash_offer).toLocaleString()}` : '—';
+          const creditOffer = sub.final_credit_offer ? `$${parseFloat(sub.final_credit_offer).toLocaleString()}` : '—';
+          offerHTML = `<span class="text-emerald-400">Current Offer:</span> ${cashOffer} cash / ${creditOffer} credit`;
+        } else {
+          const cashAmt = sub.item_count > 1 ? (sub.cash_amount_total || sub.cash_amount || 0) : (sub.cash_amount || 0);
+          const creditAmt = sub.item_count > 1 ? (sub.credit_amount_total || sub.credit_amount || 0) : (sub.credit_amount || 0);
+          offerHTML = `Offer: $${parseFloat(cashAmt).toLocaleString()} cash / $${parseFloat(creditAmt).toLocaleString()} credit`;
+        }
+        const preferred = sub.preferred_payout ? sub.preferred_payout.charAt(0).toUpperCase() + sub.preferred_payout.slice(1) : 'Mixed';
+        html += `
+<div class="panel-soft rounded-3xl p-6">
+  <div class="flex items-start justify-between gap-4">
+    <div class="flex-1 min-w-0">
+      <div class="font-semibold text-lg leading-tight">${title}</div>
+      <div class="text-xs text-zinc-400 mt-1">${submittedDate}</div>
+    </div>
+    <div class="status-pill ${statusInfo.className} whitespace-nowrap">
+      ${statusInfo.text}
+    </div>
+  </div>
+  <div class="mt-8 grid grid-cols-3 gap-4 text-center">
+    <div>
+      <div class="text-[10px] uppercase text-zinc-500">Items</div>
+      <div class="text-2xl font-bold text-white mt-1">${sub.item_count || 1}</div>
+    </div>
+    <div>
+      <div class="text-[10px] uppercase text-zinc-500">Photos</div>
+      <div class="text-2xl font-bold text-white mt-1">${photoCount}</div>
+    </div>
+    <div>
+      <div class="text-[10px] uppercase text-zinc-500">Market</div>
+      <div class="text-2xl font-bold text-[var(--teal)] mt-1">$${Math.round(marketVal).toLocaleString()}</div>
+    </div>
+  </div>
+  <div class="mt-8 pt-6 border-t border-white/10 flex items-end justify-between">
+    <div>
+      <div class="text-xs uppercase tracking-widest text-zinc-400">Preferred</div>
+      <div class="font-medium">${preferred}</div>
+    </div>
+    <div class="text-right max-w-[180px]">
+      <div class="text-xs uppercase tracking-widest text-zinc-400">Offer</div>
+      <div class="text-sm font-semibold text-[var(--teal)] leading-tight">${offerHTML}</div>
+    </div>
+  </div>
+</div>
+        `;
+      });
+      container.innerHTML = html;
     }
 
     // Initialize
