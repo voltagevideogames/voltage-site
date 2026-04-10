@@ -160,7 +160,7 @@
           <div class="text-xs uppercase tracking-[0.35em] text-[var(--teal)]">Voltage 2.0 Internal</div>
           <h1 class="heading-font text-3xl xl:text-4xl mt-2 neon-text">Offer Intake Dashboard</h1>
         </div>
-        <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 w-full xl:w-auto">
+        <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-7 gap-4 w-full xl:w-auto">
           <div class="bg-black border border-[var(--teal)]/20 rounded-2xl p-4">
             <div class="text-xs text-gray-400">New Today</div>
             <div id="stat-new-today" class="text-3xl font-bold text-[var(--teal)] mt-1">0</div>
@@ -176,6 +176,10 @@
           <div class="bg-black border border-[var(--teal)]/20 rounded-2xl p-4">
             <div class="text-xs text-gray-400">Potential Buy Cost</div>
             <div id="stat-potential-buy-cost" class="text-3xl font-bold text-[var(--yellow)] mt-1">$0</div>
+          </div>
+          <div class="bg-black border border-[var(--teal)]/20 rounded-2xl p-4">
+            <div class="text-xs text-gray-400">Committed Cash Out</div>
+            <div id="stat-committed-buy-cost" class="text-3xl font-bold text-emerald-400 mt-1">$0</div>
           </div>
           <div class="bg-black border border-[var(--teal)]/20 rounded-2xl p-4">
             <div class="text-xs text-gray-400">Incoming Retail Value</div>
@@ -197,9 +201,7 @@
           </div>
         </div>
       </header>
-
       <div id="global-message" class="hidden rounded-2xl border px-4 py-3 text-sm"></div>
-
       <!-- Main 3-column grid -->
       <div class="grid grid-cols-1 xl:grid-cols-[240px_1fr_340px] gap-6">
         <!-- Left Sidebar -->
@@ -245,7 +247,6 @@
             </div>
           </section>
         </aside>
-
         <!-- Center Queue -->
         <main class="bg-zinc-950 border border-[var(--teal)]/20 rounded-3xl overflow-hidden flex flex-col">
           <div class="p-5 border-b border-zinc-800 flex items-center justify-between flex-shrink-0">
@@ -270,7 +271,6 @@
           <!-- Controlled scroll queue list -->
           <div id="queue-list" class="queue-scroll-area divide-y divide-zinc-800 flex-1 hidden"></div>
         </main>
-
         <!-- Right Panel - Action Workstation -->
         <aside class="bg-zinc-950 border border-[var(--teal)]/20 rounded-3xl overflow-hidden flex flex-col workstation-panel">
           <div class="p-6 flex-shrink-0">
@@ -312,12 +312,10 @@
       <div id="selected-offer-type" class="mt-1 font-semibold status-chip">—</div>
     </div>
   </div>
-
   <div>
     <div class="panel-label">Customer Preference</div>
     <div id="selected-payout-preference" class="mt-1 font-semibold text-[var(--yellow)]">—</div>
   </div>
-
   <div>
     <div class="panel-label">Risk Level</div>
     <div id="selected-risk" class="mt-1 font-semibold">—</div>
@@ -425,7 +423,6 @@
       </div>
     </div>
   </div>
-
   <!-- Photo Lightbox Modal -->
   <div id="photo-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center">
     <div class="relative max-w-4xl w-full p-4">
@@ -433,7 +430,6 @@
       <img id="modal-image" src="" alt="Photo" class="max-h-[85vh] mx-auto rounded-2xl shadow-2xl border border-[var(--teal)]/30 object-contain">
     </div>
   </div>
-
 <script src="/js/dashboard.js"></script>
 </body>
 </html>

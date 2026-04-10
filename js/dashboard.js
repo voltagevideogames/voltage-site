@@ -20,6 +20,7 @@ const statManualReview = document.getElementById('stat-manual-review');
 const statAccepted = document.getElementById('stat-accepted');
 const statPotentialBuyCost = document.getElementById('stat-potential-buy-cost');
 const statIncomingRetailValue = document.getElementById('stat-incoming-retail-value');
+const statCommittedBuyCost = document.getElementById('stat-committed-buy-cost');
 const searchInput = document.getElementById('search-input');
 const sortSelect = document.getElementById('sort-select');
 const filterButtons = document.querySelectorAll('.filter-btn');
@@ -116,6 +117,34 @@ function getPrimaryTitle(sub) {
 function getSubtitle(sub) {
   const parts = [sub.platform, sub.condition, sub.completeness].filter(Boolean);
   return parts.length ? parts.join(' • ') : 'No details';
+}
+
+// === PAYOUT BADGE HELPER ===
+function getPayoutBadge(item) {
+  const pref = (item.preferred_payout || item.preferredPayout || '').toLowerCase().trim();
+  if (!pref) return '';
+  
+  let label = '';
+  let classes = '';
+  
+  switch (pref) {
+    case 'cash':
+      label = 'Cash';
+      classes = 'inline-flex items-center gap-1 text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full';
+      break;
+    case 'credit':
+      label = 'Credit';
+      classes = 'inline-flex items-center gap-1 text-xs bg-violet-500/20 text-violet-400 px-2 py-0.5 rounded-full';
+      break;
+    case 'hybrid':
+      label = 'Hybrid';
+      classes = 'inline-flex items-center gap-1 text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full';
+      break;
+    default:
+      return '';
+  }
+  
+  return `<span class="${classes}">${label}</span>`;
 }
 
 // === STATUS HELPERS - using existing HTML classes for consistency ===
@@ -301,6 +330,7 @@ function renderQueue() {
       : '';
 
     const statusBadge = getStatusBadge(item);
+    const payoutBadge = getPayoutBadge(item);
 
     return `
       <div class="queue-row p-5 hover:bg-zinc-900 cursor-pointer flex gap-4 border-l-4 ${isActive ? 'queue-item-active' : 'border-transparent'} ${isAccepted ? 'queue-row-accepted' : ''}" data-id="${item.id}">
@@ -308,6 +338,7 @@ function renderQueue() {
           <div class="flex items-center gap-3">
             <div class="text-sm text-zinc-400">#${item.id}</div>
             ${statusBadge}
+            ${payoutBadge}
           </div>
           <div class="font-medium text-base mt-1 line-clamp-1">${getPrimaryTitle(item)}</div>
           <div class="text-sm text-gray-400 mt-1 line-clamp-1">${getSubtitle(item)}</div>
@@ -596,11 +627,21 @@ function updateStats() {
   const potentialBuyCost = submissionsToCount.reduce((sum, s) => sum + getCommittedBuyValue(s), 0);
   const incomingRetailValue = submissionsToCount.reduce((sum, s) => sum + getDisplayMarketValue(s), 0);
 
+  // NEW: Committed Buy Cost (only accepted + completed)
+  const committedBuyCost = submissionsToCount.reduce((sum, s) => {
+    const status = (s.status || '').toLowerCase();
+    if (status === 'accepted' || status === 'completed') {
+      return sum + getCommittedBuyValue(s);
+    }
+    return sum;
+  }, 0);
+
   if (statNewToday) statNewToday.textContent = newTodayCount;
   if (statManualReview) statManualReview.textContent = manualReviewCount;
   if (statAccepted) statAccepted.textContent = acceptedCount;
   if (statPotentialBuyCost) statPotentialBuyCost.textContent = formatCurrency(potentialBuyCost);
   if (statIncomingRetailValue) statIncomingRetailValue.textContent = formatCurrency(incomingRetailValue);
+  if (statCommittedBuyCost) statCommittedBuyCost.textContent = formatCurrency(committedBuyCost);
 
   updateKPIScopeLabel();
 }
