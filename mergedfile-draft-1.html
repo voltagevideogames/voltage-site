@@ -911,7 +911,16 @@ if (photoInput) {
     const files = Array.from(this.files || []);
     if (!files.length) return;
 
-    stagedPhotos = [...stagedPhotos, ...files];
+    const existingKeys = new Set(
+      stagedPhotos.map(file => `${file.name}_${file.size}_${file.lastModified}`)
+    );
+
+    files.forEach(file => {
+      const key = `${file.name}_${file.size}_${file.lastModified}`;
+      if (!existingKeys.has(key)) {
+        stagedPhotos.push(file);
+      }
+    });
 
     if (stagedPhotos.length > MAX_PHOTOS) {
       stagedPhotos = stagedPhotos.slice(0, MAX_PHOTOS);
@@ -922,7 +931,7 @@ if (photoInput) {
 
     renderStagedPreview(stagedPhotos);
 
-    // allow selecting more files again
+    // allow selecting same file again
     this.value = '';
   });
 }
