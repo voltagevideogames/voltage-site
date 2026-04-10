@@ -147,6 +147,13 @@ function getPayoutBadge(item) {
   return `<span class="${classes}">${label}</span>`;
 }
 
+// === NEEDS PHOTOS BADGE HELPER ===
+function getPhotosRequestedBadge(item) {
+  if (!item?.photos_requested) return '';
+
+  return `<span class="inline-flex items-center gap-1 text-xs bg-[var(--yellow)]/20 text-[var(--yellow)] px-2 py-0.5 rounded-full">Needs Photos</span>`;
+}
+
 // === STATUS HELPERS - using existing HTML classes for consistency ===
 function getStatusBadge(item) {
   const status = (item.status || 'pending').toLowerCase();
@@ -357,14 +364,16 @@ function renderQueue() {
       : '';
     const statusBadge = getStatusBadge(item);
     const payoutBadge = getPayoutBadge(item);
+    const photosRequestedBadge = getPhotosRequestedBadge(item); 
     return `
       <div class="queue-row p-5 hover:bg-zinc-900 cursor-pointer flex gap-4 border-l-4 ${isActive ? 'queue-item-active' : 'border-transparent'} ${isAccepted ? 'queue-row-accepted' : ''}" data-id="${item.id}">
         <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-3">
-            <div class="text-sm text-zinc-400">#${item.id}</div>
-            ${statusBadge}
-            ${payoutBadge}
-          </div>
+         <div class="flex items-center gap-3 flex-wrap">
+        <div class="text-sm text-zinc-400">#${item.id}</div>
+        ${statusBadge}
+        ${payoutBadge}
+       ${photosRequestedBadge}
+      </div>
           <div class="font-medium text-base mt-1 line-clamp-1">${getPrimaryTitle(item)}</div>
           <div class="text-sm text-gray-400 mt-1 line-clamp-1">${getSubtitle(item)}</div>
           <div class="flex gap-2 mt-2">${batchBadge}${manualBadge}</div>
@@ -721,9 +730,29 @@ function setupActionButtons() {
     showMessage(hadNext ? 'Submission Rejected • Next item loaded' : 'Submission Rejected', 'success');
   });
   document.getElementById('counteroffer-btn')?.addEventListener('click', async () => {
-    const ts = new Date().toLocaleString();
-    await saveSelectedSubmission(null, `Counteroffer initiated (${ts})`);
+  const cashVal = finalCashInput ? finalCashInput.value.trim() : '';
+  const creditVal = finalCreditInput ? finalCreditInput.value.trim() : '';
+
+  if (!cashVal && !creditVal) {
+    showMessage('Enter at least one final offer amount (cash or credit)', 'error');
+    return;
+  }
+
+  const now = new Date();
+  const timestamp = now.toLocaleString('en-US', {
+    month: '2-digit',
+    day: '2-digit',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
   });
+
+  const note = `Counteroffer prepared (${timestamp})`;
+  await saveSelectedSubmission('counter_sent', note);
+  showMessage('Counteroffer prepared • Status set to Counter Sent • Cash/Credit values saved', 'success');
+});
+
 }
 
 function selectNextSubmission() {
