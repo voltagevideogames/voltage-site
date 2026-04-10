@@ -352,7 +352,7 @@ function renderStagedPreview(files) {
 
   container.innerHTML = '';
 
-  files.forEach(file => {
+  Array.from(files).forEach(file => {
     const url = URL.createObjectURL(file);
     const img = document.createElement('img');
     img.src = url;
@@ -905,7 +905,8 @@ document.addEventListener('DOMContentLoaded', function() {
     payoutSelect.value = 'cash';
   }
 
-  // Photo staging preview (frontend only)const photoInput = document.getElementById('photo-input');
+  // Photo staging preview (frontend only)
+const photoInput = document.getElementById('photo-input');
 if (photoInput) {
   photoInput.addEventListener('change', function() {
     const files = Array.from(this.files || []);
