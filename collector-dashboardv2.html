@@ -357,34 +357,12 @@
             <div class="text-xs uppercase tracking-[0.25em] text-zinc-500 mb-2">My Trades</div>
             <h2 class="text-3xl font-bold leading-tight mb-1">Your Voltage Trade Center</h2>
           </div>
-          <a href="index.html#sell" 
+          <a href="index.html#sell"
              class="px-5 py-3 rounded-2xl border border-[rgba(255,235,59,0.20)] text-sm font-medium text-[var(--yellow)] hover:bg-[rgba(255,235,59,0.08)] transition whitespace-nowrap">
             Submit New Trade
           </a>
         </div>
-        <div id="my-trades-list" class="space-y-6">
-        </div>
-      </section>
-      <section class="panel rounded-[28px] p-6">
-        <div class="text-xs uppercase tracking-[0.25em] text-zinc-500 mb-2">Quick Actions</div>
-        <h2 class="text-2xl font-bold mb-5">What do you want to do?</h2>
-        <div class="grid gap-4">
-          <a href="vault-test.html" class="feature-card rounded-3xl border border-[rgba(0,229,184,0.14)] bg-[rgba(0,229,184,0.05)] p-5">
-            <div class="text-3xl text-[var(--teal)] mb-3"><i class="fa-solid fa-box-archive"></i></div>
-            <div class="font-semibold text-lg">Build Your Vault</div>
-            <div class="text-sm text-zinc-400 mt-1">Add, organize, and track your collection.</div>
-          </a>
-          <a href="index.html#sell" class="feature-card rounded-3xl border border-[rgba(255,235,59,0.14)] bg-[rgba(255,235,59,0.05)] p-5">
-            <div class="text-3xl text-[var(--yellow)] mb-3"><i class="fa-solid fa-arrow-right-arrow-left"></i></div>
-            <div class="font-semibold text-lg">Submit a Trade</div>
-            <div class="text-sm text-zinc-400 mt-1">Get a fast offer from Voltage.</div>
-          </a>
-          <a href="#" class="feature-card rounded-3xl border border-white/6 bg-white/[0.02] p-5">
-            <div class="text-3xl text-[var(--teal)] mb-3"><i class="fa-solid fa-chart-simple"></i></div>
-           <div class="font-semibold text-lg">Value Tracker</div>
-           <div class="text-sm text-zinc-400 mt-1">Track real-time value of your collection.</div>
-            <div class="text-sm text-zinc-400 mt-1">Monitor game values across your collection.</div>
-          </a>
+        <div id="my-trades-list" class="max-h-[440px] overflow-y-auto space-y-6 pr-2">
         </div>
       </section>
     </div>
@@ -499,7 +477,7 @@ async function loadDashboardVaultItems() {
     // ============== VAULT DASHBOARD STATS FROM localStorage (voltageVaultV1) ==============
     function loadVaultDashboardStats(items = []) {
     if (!Array.isArray(items)) items = [];
-  
+ 
       // Safe value getter
       const getValue = (item, currKey, fallbackKey) => {
         if (item && item[currKey] != null) return parseFloat(item[currKey]) || 0;
@@ -605,36 +583,29 @@ async function loadDashboardVaultItems() {
       document.getElementById('snapshot-status').textContent = statusText;
       document.getElementById('snapshot-status').className = `text-lg font-semibold ${statusClass} mt-1`;
     }
-
     async function loadMySubmissions() {
   if (!currentSession?.access_token) {
     return [];
   }
-
   try {
     const res = await fetch('/.netlify/functions/get-my-submissions', {
       headers: {
         Authorization: `Bearer ${currentSession.access_token}`,
       },
     });
-
     if (!res.ok) {
       console.error('Failed to load submissions');
       return [];
     }
-
     const data = await res.json();
-
     if (Array.isArray(data)) return data;
     if (Array.isArray(data.submissions)) return data.submissions;
-
     return [];
   } catch (err) {
     console.error('Submissions fetch error:', err);
     return [];
   }
 }
-
     function getCustomerFriendlyStatus(sub) {
       if (sub.photos_requested === true || sub.photos_requested === 'true') {
         return {
@@ -653,7 +624,6 @@ async function loadDashboardVaultItems() {
       };
       return map[sub.status] || { text: sub.status ? sub.status.charAt(0).toUpperCase() + sub.status.slice(1) : "Unknown", className: "status-teal" };
     }
-
     function renderTradeKPIs(submissions) {
       const total = submissions.length;
       const activeStatuses = ["pending", "review", "counter_sent", "accepted", "received"];
@@ -663,7 +633,6 @@ async function loadDashboardVaultItems() {
       const activeEl = document.getElementById('kpi-trades-active');
       if (activeEl) activeEl.textContent = `${active} currently active`;
     }
-
     function renderRecentActivity(submissions) {
       const container = document.getElementById('recent-activity-list');
       if (!container) return;
@@ -700,7 +669,6 @@ async function loadDashboardVaultItems() {
       });
       container.innerHTML = html;
     }
-
     function renderMyTrades(submissions) {
       const container = document.getElementById('my-trades-list');
       if (!container) return;
@@ -787,7 +755,6 @@ async function loadDashboardVaultItems() {
       });
       container.innerHTML = html;
     }
-
     // Initialize
    document.addEventListener('DOMContentLoaded', async () => {
   await loadCollectorDashboard();
