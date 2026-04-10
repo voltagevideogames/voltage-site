@@ -123,10 +123,10 @@ function getSubtitle(sub) {
 function getPayoutBadge(item) {
   const pref = (item.preferred_payout || item.preferredPayout || '').toLowerCase().trim();
   if (!pref) return '';
-  
+ 
   let label = '';
   let classes = '';
-  
+ 
   switch (pref) {
     case 'cash':
       label = 'Cash';
@@ -143,7 +143,7 @@ function getPayoutBadge(item) {
     default:
       return '';
   }
-  
+ 
   return `<span class="${classes}">${label}</span>`;
 }
 
@@ -152,7 +152,6 @@ function getStatusBadge(item) {
   const status = (item.status || 'pending').toLowerCase();
   let label = status.charAt(0).toUpperCase() + status.slice(1);
   let extraClasses = '';
-
   switch (status) {
     case 'pending':
       extraClasses = 'status-chip status-pending';
@@ -171,11 +170,42 @@ function getStatusBadge(item) {
     case 'completed':
       extraClasses = 'status-chip status-completed';
       break;
+    case 'counter_sent':
+      extraClasses = 'status-chip status-review'; // safe reuse of review styling
+      label = 'Counter Sent';
+      break;
     default:
       extraClasses = 'status-chip status-pending';
   }
-
   return `<span class="${extraClasses}">${label}</span>`;
+}
+
+// === CUSTOMER FACING STATUS HELPER (for future customer comms / collector sync) ===
+function getCustomerFacingStatus(item) {
+  if (!item) return 'Submitted';
+  
+  if (item.photos_requested) {
+    return "Action Needed: Upload Photos";
+  }
+  
+  const status = (item.status || 'pending').toLowerCase();
+  
+  switch (status) {
+    case 'pending':
+      return "Submitted";
+    case 'review':
+      return "In Review";
+    case 'counter_sent':
+      return "Offer Updated";
+    case 'accepted':
+      return "Accepted";
+    case 'rejected':
+      return "Unable to Make Offer";
+    case 'completed':
+      return "Completed";
+    default:
+      return "Submitted";
+  }
 }
 
 // === WEEKLY RESET HELPERS ===
@@ -302,7 +332,6 @@ function renderQueue() {
   queueLoading.classList.add('hidden');
   queueList.classList.remove('hidden');
   queueEmpty.classList.add('hidden');
-
   const filtered = state.filteredSubmissions || [];
   if (!filtered.length) {
     queueList.classList.add('hidden');
@@ -310,7 +339,6 @@ function renderQueue() {
     queueEmpty.textContent = 'No submissions match your current filter.';
     return;
   }
-
   queueList.innerHTML = filtered.map(item => {
     const isActive = item.id === state.selectedId;
     const photos = parsePhotoUrls(item.photo_urls);
@@ -318,7 +346,6 @@ function renderQueue() {
     const itemCount = isBatch ? (Number(item.item_count) || 1) : 1;
     const manualCount = Number(item.manual_review_count) || 0;
     const isAccepted = (item.status || '').toLowerCase() === 'accepted';
-
     const batchBadge = isBatch
       ? `<span class="inline-flex items-center gap-1 text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full">BATCH ×${itemCount}</span>`
       : '';
@@ -328,10 +355,8 @@ function renderQueue() {
     const photoBadge = photos.length > 0
       ? `<span class="inline-flex items-center gap-1 text-xs bg-zinc-800 px-2 py-0.5 rounded-full"><span>📷</span>${photos.length}</span>`
       : '';
-
     const statusBadge = getStatusBadge(item);
     const payoutBadge = getPayoutBadge(item);
-
     return `
       <div class="queue-row p-5 hover:bg-zinc-900 cursor-pointer flex gap-4 border-l-4 ${isActive ? 'queue-item-active' : 'border-transparent'} ${isAccepted ? 'queue-row-accepted' : ''}" data-id="${item.id}">
         <div class="flex-1 min-w-0">
@@ -353,7 +378,6 @@ function renderQueue() {
       </div>
     `;
   }).join('');
-
   document.querySelectorAll('.queue-row').forEach(row => {
     row.addEventListener('click', () => {
       state.selectedId = Number(row.dataset.id);
@@ -450,13 +474,11 @@ function renderSelectedPanel() {
     if (batchItemsContainer) batchItemsContainer.innerHTML = `<div class="text-gray-500 text-sm">Select a submission</div>`;
     return;
   }
-
   // Status in selected panel header using existing classes
   const statusHTML = getStatusBadge(item);
   if (selectedIdEl) {
     selectedIdEl.innerHTML = `#${item.id} ${statusHTML}`;
   }
-
   if (selectedEmailEl) selectedEmailEl.textContent = safeText(item.customer_email);
   if (selectedTitleEl) selectedTitleEl.textContent = getPrimaryTitle(item);
   if (selectedSubtitleEl) selectedSubtitleEl.textContent = getSubtitle(item);
@@ -471,10 +493,8 @@ function renderSelectedPanel() {
   }
    // Customer Preferred Payout
    const payoutEl = document.getElementById('selected-payout-preference');
-
    if (payoutEl) {
    const pref = (item.preferred_payout || item.preferredPayout || '').toLowerCase();
-
   if (pref === 'cash') {
     payoutEl.textContent = 'Cash';
   } else if (pref === 'credit') {
@@ -485,14 +505,11 @@ function renderSelectedPanel() {
     payoutEl.textContent = 'Not specified';
   }
 }
-
   if (selectedInternalNotesEl) selectedInternalNotesEl.value = item.internal_notes || '';
   if (finalCashInput) finalCashInput.value = item.final_cash_offer ?? '';
   if (finalCreditInput) finalCreditInput.value = item.final_credit_offer ?? '';
-
   const photos = parsePhotoUrls(item.photo_urls);
   renderPhotoGallery(photos);
-
   if (isBatchSubmission(item)) {
     loadSubmissionItems(item.id);
   } else {
@@ -626,7 +643,6 @@ function updateStats() {
   const acceptedCount = submissionsToCount.filter(s => (s.status || '').toLowerCase() === 'accepted').length;
   const potentialBuyCost = submissionsToCount.reduce((sum, s) => sum + getCommittedBuyValue(s), 0);
   const incomingRetailValue = submissionsToCount.reduce((sum, s) => sum + getDisplayMarketValue(s), 0);
-
   // NEW: Committed Buy Cost (only accepted + completed)
   const committedBuyCost = submissionsToCount.reduce((sum, s) => {
     const status = (s.status || '').toLowerCase();
@@ -635,18 +651,17 @@ function updateStats() {
     }
     return sum;
   }, 0);
-
   if (statNewToday) statNewToday.textContent = newTodayCount;
   if (statManualReview) statManualReview.textContent = manualReviewCount;
   if (statAccepted) statAccepted.textContent = acceptedCount;
   if (statPotentialBuyCost) statPotentialBuyCost.textContent = formatCurrency(potentialBuyCost);
   if (statIncomingRetailValue) statIncomingRetailValue.textContent = formatCurrency(incomingRetailValue);
   if (statCommittedBuyCost) statCommittedBuyCost.textContent = formatCurrency(committedBuyCost);
-
   updateKPIScopeLabel();
 }
 
-async function saveSelectedSubmission(customStatus = null, customNoteAppend = '') {
+// === SAFE PAYLOAD SUPPORT (with optional extraUpdates) ===
+async function saveSelectedSubmission(customStatus = null, customNoteAppend = '', extraUpdates = {}) {
   const selected = state.submissions.find(s => s.id === state.selectedId);
   if (!selected) return;
 
@@ -661,7 +676,8 @@ async function saveSelectedSubmission(customStatus = null, customNoteAppend = ''
     status: customStatus || selected.status || 'pending',
     internal_notes: notesValue,
     final_cash_offer: finalCashInput && finalCashInput.value !== '' ? Number(finalCashInput.value) : null,
-    final_credit_offer: finalCreditInput && finalCreditInput.value !== '' ? Number(finalCreditInput.value) : null
+    final_credit_offer: finalCreditInput && finalCreditInput.value !== '' ? Number(finalCreditInput.value) : null,
+    ...extraUpdates  // safely merge any additional fields (photos_requested, etc.)
   };
 
   try {
@@ -675,13 +691,11 @@ async function saveSelectedSubmission(customStatus = null, customNoteAppend = ''
       body: JSON.stringify(payload)
     });
     if (!res.ok) throw new Error('Save failed');
-
     await loadSubmissions();
     state.selectedId = selected.id;
     applyFiltersAndSort();
-
     // Plain Save Notes confirmation only when no custom status/note is passed
-    if (!customStatus && !customNoteAppend) {
+    if (!customStatus && !customNoteAppend && Object.keys(extraUpdates).length === 0) {
       showMessage('Notes saved', 'success');
     }
   } catch (e) {
@@ -701,13 +715,11 @@ function setupActionButtons() {
     const hadNext = selectNextSubmission();
     showMessage(hadNext ? 'Submission Accepted • Next item loaded' : 'Submission Accepted', 'success');
   });
-
   document.getElementById('reject-btn')?.addEventListener('click', async () => {
     await saveSelectedSubmission('rejected');
     const hadNext = selectNextSubmission();
     showMessage(hadNext ? 'Submission Rejected • Next item loaded' : 'Submission Rejected', 'success');
   });
-
   document.getElementById('counteroffer-btn')?.addEventListener('click', async () => {
     const ts = new Date().toLocaleString();
     await saveSelectedSubmission(null, `Counteroffer initiated (${ts})`);
@@ -721,7 +733,6 @@ function selectNextSubmission() {
     state.selectedId = filtered[currentIndex + 1].id;
     renderQueue();
     renderSelectedPanel();
-
     // Safe scroll into view for next item
     const nextRow = document.querySelector(`.queue-row[data-id="${state.selectedId}"]`);
     if (nextRow) {
@@ -749,14 +760,12 @@ function bindEvents() {
       applyFiltersAndSort();
     });
   });
-
   if (saveSelectedBtn) saveSelectedBtn.addEventListener('click', () => saveSelectedSubmission());
   if (markReviewedBtn) markReviewedBtn.addEventListener('click', async () => {
     await saveSelectedSubmission('review');
     showMessage('Submission moved to Review', 'success');
   });
-
-  // Request More Photos
+  // Request More Photos - now also sets photos_requested flag
   if (requestPhotosBtn) {
     requestPhotosBtn.addEventListener('click', async () => {
       const now = new Date();
@@ -765,37 +774,31 @@ function bindEvents() {
         hour: 'numeric', minute: '2-digit', hour12: true
       });
       const note = `More photos requested (${timestamp})`;
-      
-      await saveSelectedSubmission('review', note);
+     
+      await saveSelectedSubmission('review', note, { photos_requested: true });
       showMessage('More photos requested • Status set to Review', 'success');
     });
   }
-
-  // Prepare Counteroffer (with validation)
+  // Prepare/Send Counteroffer - now uses counter_sent status
   if (sendCounterofferBtn) {
     sendCounterofferBtn.addEventListener('click', async () => {
       const cashVal = finalCashInput ? finalCashInput.value.trim() : '';
       const creditVal = finalCreditInput ? finalCreditInput.value.trim() : '';
-
       if (!cashVal && !creditVal) {
         showMessage('Enter at least one final offer amount (cash or credit)', 'error');
         return;
       }
-
       const now = new Date();
       const timestamp = now.toLocaleString('en-US', {
         month: '2-digit', day: '2-digit', year: 'numeric',
         hour: 'numeric', minute: '2-digit', hour12: true
       });
       const note = `Counteroffer prepared (${timestamp})`;
-
-      await saveSelectedSubmission('review', note);
-      showMessage('Counteroffer prepared • Status set to Review • Cash/Credit values saved', 'success');
+      await saveSelectedSubmission('counter_sent', note);
+      showMessage('Counteroffer prepared • Status set to Counter Sent • Cash/Credit values saved', 'success');
     });
   }
-
   if (refreshDashboardBtn) refreshDashboardBtn.addEventListener('click', loadSubmissions);
-
   // Weekly Reset UX
   if (resetWeeklyBtn) {
     resetWeeklyBtn.addEventListener('click', () => {
@@ -806,7 +809,6 @@ function bindEvents() {
       }
     });
   }
-
   if (showAllDataBtn) {
     showAllDataBtn.addEventListener('click', () => {
       if (confirm('Show all historical data? This will remove the weekly baseline.')) {
@@ -816,7 +818,6 @@ function bindEvents() {
       }
     });
   }
-
   if (emailCustomerBtn) {
     emailCustomerBtn.addEventListener('click', () => {
       const selected = state.submissions.find(s => s.id === state.selectedId);
