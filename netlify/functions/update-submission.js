@@ -1,6 +1,6 @@
 const { createClient } = require('@supabase/supabase-js');
 
-const ALLOWED_STATUSES = ['pending', 'review', 'accepted', 'completed', 'rejected'];
+const ALLOWED_STATUSES = ['pending', 'review', 'counter_sent', 'accepted', 'completed', 'rejected'];
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -22,6 +22,7 @@ exports.handler = async function (event) {
     const internalNotes = body.internal_notes || '';
     const finalCashOffer = body.final_cash_offer;
     const finalCreditOffer = body.final_credit_offer;
+    const photosRequested = body.photos_requested;
 
     if (!id) {
       return {
@@ -43,7 +44,8 @@ exports.handler = async function (event) {
         status,
         internal_notes: internalNotes,
         final_cash_offer: finalCashOffer,
-        final_credit_offer: finalCreditOffer
+        final_credit_offer: finalCreditOffer,
+        photos_requested: photosRequested
       })
       .eq('id', id)
       .select()
