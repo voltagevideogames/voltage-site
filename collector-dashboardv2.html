@@ -106,6 +106,39 @@
         linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
       background-size: 26px 26px;
     }
+
+    /* Accordion Enhancements */
+    .trade-card {
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+    }
+    .trade-card:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 0 0 1px rgba(0,229,184,0.25);
+    }
+    .trade-card.expanded {
+      box-shadow: 0 0 0 1px rgba(0,229,184,0.4);
+    }
+    .accordion-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .trade-card.expanded .accordion-content {
+      max-height: 520px;
+    }
+    .chevron {
+      transition: transform 0.3s ease;
+    }
+    .trade-card.expanded .chevron {
+      transform: rotate(180deg);
+    }
+    .action-btn {
+      transition: all 0.2s ease;
+    }
+    .action-btn:hover {
+      transform: translateY(-1px);
+    }
   </style>
 </head>
 <body class="min-h-screen text-white">
@@ -402,6 +435,8 @@
     let currentCollector = null;
     let currentProfile = null;
     let currentSession = null;
+    let currentlyExpandedTradeId = null; // For single open accordion
+
     async function loadCollectorDashboard() {
       const { data: { session }, error: sessionError } = await dashboardSupabase.auth.getSession();
       if (sessionError || !session) {
@@ -438,20 +473,22 @@ if (identityTitleEl) {
       renderTradeKPIs(submissions);
       renderRecentActivity(submissions);
       renderMyTrades(submissions);
-}
-async function loadDashboardVaultItems() {
-  if (!currentCollector?.id) return [];
-  const { data, error } = await dashboardSupabase
-    .from('vault_items')
-    .select('*')
-    .eq('user_id', currentCollector.id)
-    .order('created_at', { ascending: false });
-  if (error) {
-    console.error('Failed to load dashboard vault items:', error);
-    return [];
-  }
-  return Array.isArray(data) ? data : [];
-}
+    }
+
+    async function loadDashboardVaultItems() {
+      if (!currentCollector?.id) return [];
+      const { data, error } = await dashboardSupabase
+        .from('vault_items')
+        .select('*')
+        .eq('user_id', currentCollector.id)
+        .order('created_at', { ascending: false });
+      if (error) {
+        console.error('Failed to load dashboard vault items:', error);
+        return [];
+      }
+      return Array.isArray(data) ? data : [];
+    }
+
     async function logout() {
       const { error } = await dashboardSupabase.auth.signOut();
       if (error) {
@@ -460,6 +497,7 @@ async function loadDashboardVaultItems() {
       }
       window.location.href = 'index.html';
     }
+
     // ============== VAULT DASHBOARD STATS FROM localStorage (voltageVaultV1) ==============
     function loadVaultDashboardStats(items = []) {
     if (!Array.isArray(items)) items = [];
@@ -568,6 +606,7 @@ async function loadDashboardVaultItems() {
       document.getElementById('snapshot-status').textContent = statusText;
       document.getElementById('snapshot-status').className = `text-lg font-semibold ${statusClass} mt-1`;
     }
+
     async function loadMySubmissions() {
   if (!currentSession?.access_token) {
     return [];
@@ -591,6 +630,7 @@ async function loadDashboardVaultItems() {
     return [];
   }
 }
+
     function getCustomerFriendlyStatus(sub) {
       if (sub.photos_requested === true || sub.photos_requested === 'true') {
         return {
@@ -609,6 +649,7 @@ async function loadDashboardVaultItems() {
       };
       return map[sub.status] || { text: sub.status ? sub.status.charAt(0).toUpperCase() + sub.status.slice(1) : "Unknown", className: "status-teal" };
     }
+
     function renderTradeKPIs(submissions) {
       const total = submissions.length;
       const activeStatuses = ["pending", "review", "counter_sent", "accepted", "received"];
@@ -618,6 +659,7 @@ async function loadDashboardVaultItems() {
       const activeEl = document.getElementById('kpi-trades-active');
       if (activeEl) activeEl.textContent = `${active} currently active`;
     }
+
     function renderRecentActivity(submissions) {
       const container = document.getElementById('recent-activity-list');
       if (!container) return;
@@ -654,9 +696,36 @@ async function loadDashboardVaultItems() {
       });
       container.innerHTML = html;
     }
+
+    function toggleTradeExpansion(tradeId) {
+      const allCards = document.querySelectorAll('.trade-card');
+      const clickedCard = document.getElementById(`trade-card-${tradeId}`);
+
+      // Close all others first (single open behavior)
+      allCards.forEach(card => {
+        if (card.id !== `trade-card-${tradeId}`) {
+          card.classList.remove('expanded');
+        }
+      });
+
+      // Toggle the clicked one
+      if (clickedCard) {
+        const wasExpanded = clickedCard.classList.contains('expanded');
+        clickedCard.classList.toggle('expanded');
+
+        // If we just closed it, clear the tracking variable
+        if (!clickedCard.classList.contains('expanded')) {
+          currentlyExpandedTradeId = null;
+        } else {
+          currentlyExpandedTradeId = tradeId;
+        }
+      }
+    }
+
     function renderMyTrades(submissions) {
       const container = document.getElementById('my-trades-list');
       if (!container) return;
+
       if (submissions.length === 0) {
         container.innerHTML = `
           <div class="text-center py-12 border border-dashed border-white/20 rounded-3xl">
@@ -668,16 +737,21 @@ async function loadDashboardVaultItems() {
         `;
         return;
       }
+
       let html = '';
       submissions.forEach(sub => {
+        const tradeId = sub.id || `trade-${Math.random().toString(36).substr(2, 9)}`;
         const statusInfo = getCustomerFriendlyStatus(sub);
         const submittedDate = new Date(sub.submitted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const submittedDateFull = new Date(sub.submitted_at).toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' });
+
         let title = '';
         if (sub.item_count > 1 || (sub.submission_type && sub.submission_type.includes('batch'))) {
           title = `${sub.item_count || 1} Game Trade Submission`;
         } else {
           title = sub.game_title_or_description || 'Trade Submission';
         }
+
         let photoCount = 0;
         if (sub.photo_urls) {
           if (Array.isArray(sub.photo_urls)) {
@@ -688,29 +762,46 @@ async function loadDashboardVaultItems() {
             photoCount = 1;
           }
         }
+
         const marketVal = sub.market_value_total || sub.market_value || 0;
-        let offerHTML = '';
-        if (sub.final_cash_offer != null || sub.final_credit_offer != null) {
-          const cashOffer = sub.final_cash_offer ? `$${parseFloat(sub.final_cash_offer).toLocaleString()}` : '—';
-          const creditOffer = sub.final_credit_offer ? `$${parseFloat(sub.final_credit_offer).toLocaleString()}` : '—';
-          offerHTML = `<span class="text-emerald-400">Current Offer:</span> ${cashOffer} cash / ${creditOffer} credit`;
-        } else {
-          const cashAmt = sub.item_count > 1 ? (sub.cash_amount_total || sub.cash_amount || 0) : (sub.cash_amount || 0);
-          const creditAmt = sub.item_count > 1 ? (sub.credit_amount_total || sub.credit_amount || 0) : (sub.credit_amount || 0);
-          offerHTML = `Offer: $${parseFloat(cashAmt).toLocaleString()} cash / $${parseFloat(creditAmt).toLocaleString()} credit`;
-        }
+        const initialCash = sub.cash_amount || sub.cash_amount_total || 0;
+        const initialCredit = sub.credit_amount || sub.credit_amount_total || 0;
+        const currentCash = sub.final_cash_offer || initialCash;
+        const currentCredit = sub.final_credit_offer || initialCredit;
+
         const preferred = sub.preferred_payout ? sub.preferred_payout.charAt(0).toUpperCase() + sub.preferred_payout.slice(1) : 'Mixed';
+
+        let notesHTML = '';
+        if (sub.notes && sub.notes.trim() !== '') {
+          notesHTML = `
+            <div class="mt-6 pt-5 border-t border-white/10">
+              <div class="text-xs uppercase tracking-widest text-zinc-400 mb-2">Notes</div>
+              <div class="text-sm text-zinc-300 italic">"${sub.notes}"</div>
+            </div>
+          `;
+        }
+
         html += `
-<div class="panel-soft rounded-3xl p-5">
+<div id="trade-card-${tradeId}" class="trade-card panel-soft rounded-3xl p-5" onclick="toggleTradeExpansion('${tradeId}')">
+  <!-- Collapsed Header -->
   <div class="flex items-start justify-between gap-4">
     <div class="flex-1 min-w-0">
       <div class="font-semibold text-lg leading-tight">${title}</div>
-      <div class="text-xs text-zinc-400 mt-1">${submittedDate}</div>
+      <div class="flex items-center gap-3 text-xs text-zinc-400 mt-1.5">
+        <span>${submittedDate}</span>
+        <span class="w-1 h-1 bg-zinc-600 rounded-full"></span>
+        <span class="text-[var(--teal)]">${sub.item_count || 1} item${(sub.item_count || 1) > 1 ? 's' : ''}</span>
+      </div>
     </div>
-    <div class="status-pill ${statusInfo.className} whitespace-nowrap">
-      ${statusInfo.text}
+    <div class="flex items-center gap-3">
+      <div class="status-pill ${statusInfo.className} whitespace-nowrap text-sm">
+        ${statusInfo.text}
+      </div>
+      <i class="chevron fa-solid fa-chevron-down text-zinc-400 text-xl"></i>
     </div>
   </div>
+
+  <!-- Compact Summary -->
   <div class="mt-5 grid grid-cols-3 gap-4 text-center">
     <div>
       <div class="text-[10px] uppercase text-zinc-500">Items</div>
@@ -725,14 +816,51 @@ async function loadDashboardVaultItems() {
       <div class="text-2xl font-bold text-[var(--teal)] mt-1">$${Math.round(marketVal).toLocaleString()}</div>
     </div>
   </div>
-  <div class="mt-5 pt-4 border-t border-white/10 flex items-end justify-between">
-    <div>
-      <div class="text-xs uppercase tracking-widest text-zinc-400">Preferred</div>
-      <div class="font-medium">${preferred}</div>
+
+  <!-- Expanded Content -->
+  <div class="accordion-content mt-6 pt-6 border-t border-white/10">
+    <div class="grid grid-cols-2 gap-6 text-sm">
+      <div>
+        <div class="text-xs uppercase tracking-widest text-zinc-400">Submitted</div>
+        <div class="font-medium mt-1">${submittedDateFull}</div>
+      </div>
+      <div>
+        <div class="text-xs uppercase tracking-widest text-zinc-400">Preferred Payout</div>
+        <div class="font-medium mt-1">${preferred}</div>
+      </div>
+      <div>
+        <div class="text-xs uppercase tracking-widest text-zinc-400">Initial Offer</div>
+        <div class="font-medium mt-1 text-zinc-300">$${parseFloat(initialCash).toLocaleString()} cash / $${parseFloat(initialCredit).toLocaleString()} credit</div>
+      </div>
+      <div>
+        <div class="text-xs uppercase tracking-widest text-zinc-400">Current Offer</div>
+        <div class="font-medium mt-1 text-[var(--teal)]">$${parseFloat(currentCash).toLocaleString()} cash / $${parseFloat(currentCredit).toLocaleString()} credit</div>
+      </div>
     </div>
-    <div class="text-right max-w-[180px]">
-      <div class="text-xs uppercase tracking-widest text-zinc-400">Offer</div>
-      <div class="text-sm font-semibold text-[var(--teal)] leading-tight">${offerHTML}</div>
+
+    ${notesHTML}
+
+    <!-- Future Actions Placeholder -->
+    <div class="mt-8 pt-6 border-t border-white/10">
+      <div class="text-xs uppercase tracking-widest text-zinc-400 mb-4">Next Steps</div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <button onclick="event.stopImmediatePropagation(); alert('Photo upload coming soon');" 
+                class="action-btn flex items-center justify-center gap-2 rounded-2xl border border-[rgba(0,229,184,0.3)] bg-[rgba(0,229,184,0.08)] hover:bg-[rgba(0,229,184,0.15)] px-5 py-4 text-sm font-medium text-[var(--teal)]">
+          <i class="fa-solid fa-camera"></i>
+          Upload Photos
+        </button>
+        <button onclick="event.stopImmediatePropagation(); alert('Offer acceptance coming soon');" 
+                class="action-btn flex items-center justify-center gap-2 rounded-2xl border border-[rgba(255,235,59,0.3)] bg-[rgba(255,235,59,0.08)] hover:bg-[rgba(255,235,59,0.15)] px-5 py-4 text-sm font-medium text-[var(--yellow)]">
+          <i class="fa-solid fa-check"></i>
+          Accept Offer
+        </button>
+        <button onclick="event.stopImmediatePropagation(); alert('Offer rejection coming soon');" 
+                class="action-btn flex items-center justify-center gap-2 rounded-2xl border border-red-500/30 bg-red-950/30 hover:bg-red-950/50 px-5 py-4 text-sm font-medium text-red-300">
+          <i class="fa-solid fa-xmark"></i>
+          Reject Offer
+        </button>
+      </div>
+      <div class="text-[10px] text-center text-zinc-500 mt-4">Actions will be enabled in a future update</div>
     </div>
   </div>
 </div>
@@ -740,6 +868,7 @@ async function loadDashboardVaultItems() {
       });
       container.innerHTML = html;
     }
+
     // Initialize
    document.addEventListener('DOMContentLoaded', async () => {
   await loadCollectorDashboard();
