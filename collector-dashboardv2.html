@@ -106,7 +106,6 @@
         linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
       background-size: 26px 26px;
     }
-
     /* Accordion Enhancements */
     .trade-card {
       transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -436,7 +435,8 @@
     let currentProfile = null;
     let currentSession = null;
     let currentlyExpandedTradeId = null; // For single open accordion
-
+    let currentSubmissions = [];
+    let acceptingSubmissionId = null;
     async function loadCollectorDashboard() {
       const { data: { session }, error: sessionError } = await dashboardSupabase.auth.getSession();
       if (sessionError || !session) {
@@ -470,11 +470,11 @@ if (identityTitleEl) {
   const vaultItems = await loadDashboardVaultItems();
   loadVaultDashboardStats(vaultItems);
       const submissions = await loadMySubmissions();
+      currentSubmissions = submissions;
       renderTradeKPIs(submissions);
       renderRecentActivity(submissions);
       renderMyTrades(submissions);
     }
-
     async function loadDashboardVaultItems() {
       if (!currentCollector?.id) return [];
       const { data, error } = await dashboardSupabase
@@ -488,7 +488,6 @@ if (identityTitleEl) {
       }
       return Array.isArray(data) ? data : [];
     }
-
     async function logout() {
       const { error } = await dashboardSupabase.auth.signOut();
       if (error) {
@@ -497,7 +496,6 @@ if (identityTitleEl) {
       }
       window.location.href = 'index.html';
     }
-
     // ============== VAULT DASHBOARD STATS FROM localStorage (voltageVaultV1) ==============
     function loadVaultDashboardStats(items = []) {
     if (!Array.isArray(items)) items = [];
@@ -606,7 +604,6 @@ if (identityTitleEl) {
       document.getElementById('snapshot-status').textContent = statusText;
       document.getElementById('snapshot-status').className = `text-lg font-semibold ${statusClass} mt-1`;
     }
-
     async function loadMySubmissions() {
   if (!currentSession?.access_token) {
     return [];
@@ -630,7 +627,6 @@ if (identityTitleEl) {
     return [];
   }
 }
-
     function getCustomerFriendlyStatus(sub) {
       if (sub.photos_requested === true || sub.photos_requested === 'true') {
         return {
@@ -649,7 +645,6 @@ if (identityTitleEl) {
       };
       return map[sub.status] || { text: sub.status ? sub.status.charAt(0).toUpperCase() + sub.status.slice(1) : "Unknown", className: "status-teal" };
     }
-
     function renderTradeKPIs(submissions) {
       const total = submissions.length;
       const activeStatuses = ["pending", "review", "counter_sent", "accepted", "received"];
@@ -659,7 +654,6 @@ if (identityTitleEl) {
       const activeEl = document.getElementById('kpi-trades-active');
       if (activeEl) activeEl.textContent = `${active} currently active`;
     }
-
     function renderRecentActivity(submissions) {
       const container = document.getElementById('recent-activity-list');
       if (!container) return;
@@ -696,23 +690,19 @@ if (identityTitleEl) {
       });
       container.innerHTML = html;
     }
-
     function toggleTradeExpansion(tradeId) {
       const allCards = document.querySelectorAll('.trade-card');
       const clickedCard = document.getElementById(`trade-card-${tradeId}`);
-
       // Close all others first (single open behavior)
       allCards.forEach(card => {
         if (card.id !== `trade-card-${tradeId}`) {
           card.classList.remove('expanded');
         }
       });
-
       // Toggle the clicked one
       if (clickedCard) {
         const wasExpanded = clickedCard.classList.contains('expanded');
         clickedCard.classList.toggle('expanded');
-
         // If we just closed it, clear the tracking variable
         if (!clickedCard.classList.contains('expanded')) {
           currentlyExpandedTradeId = null;
@@ -721,11 +711,46 @@ if (identityTitleEl) {
         }
       }
     }
-
+    async function acceptTradeOffer(submissionId) {
+      if (!currentSession?.access_token) {
+        alert('No active session. Please log in again.');
+        return;
+      }
+      if (!window.confirm("Accept this offer?")) {
+        return;
+      }
+      acceptingSubmissionId = submissionId;
+      renderMyTrades(currentSubmissions);
+      try {
+        const res = await fetch('/.netlify/functions/accept-customer-offer', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${currentSession.access_token}`,
+          },
+          body: JSON.stringify({ submissionId }),
+        });
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(errorText || 'Failed to accept the offer');
+        }
+        const submissions = await loadMySubmissions();
+        currentSubmissions = submissions;
+        renderTradeKPIs(submissions);
+        renderRecentActivity(submissions);
+        renderMyTrades(submissions);
+      } catch (err) {
+        console.error('Accept offer error:', err);
+        alert(`Failed to accept offer: ${err.message}`);
+      } finally {
+        acceptingSubmissionId = null;
+        renderMyTrades(currentSubmissions);
+      }
+    }
+    window.acceptTradeOffer = acceptTradeOffer;
     function renderMyTrades(submissions) {
       const container = document.getElementById('my-trades-list');
       if (!container) return;
-
       if (submissions.length === 0) {
         container.innerHTML = `
           <div class="text-center py-12 border border-dashed border-white/20 rounded-3xl">
@@ -737,21 +762,18 @@ if (identityTitleEl) {
         `;
         return;
       }
-
       let html = '';
       submissions.forEach(sub => {
         const tradeId = sub.id || `trade-${Math.random().toString(36).substr(2, 9)}`;
         const statusInfo = getCustomerFriendlyStatus(sub);
         const submittedDate = new Date(sub.submitted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         const submittedDateFull = new Date(sub.submitted_at).toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' });
-
         let title = '';
         if (sub.item_count > 1 || (sub.submission_type && sub.submission_type.includes('batch'))) {
           title = `${sub.item_count || 1} Game Trade Submission`;
         } else {
           title = sub.game_title_or_description || 'Trade Submission';
         }
-
         let photoCount = 0;
         if (sub.photo_urls) {
           if (Array.isArray(sub.photo_urls)) {
@@ -762,15 +784,14 @@ if (identityTitleEl) {
             photoCount = 1;
           }
         }
-
         const marketVal = sub.market_value_total || sub.market_value || 0;
         const initialCash = sub.cash_amount || sub.cash_amount_total || 0;
         const initialCredit = sub.credit_amount || sub.credit_amount_total || 0;
         const currentCash = sub.final_cash_offer || initialCash;
         const currentCredit = sub.final_credit_offer || initialCredit;
-
         const preferred = sub.preferred_payout ? sub.preferred_payout.charAt(0).toUpperCase() + sub.preferred_payout.slice(1) : 'Mixed';
-
+        const showAcceptAction = sub.status === 'counter_sent';
+        const isAccepting = acceptingSubmissionId === sub.id;
         let notesHTML = '';
         if (sub.notes && sub.notes.trim() !== '') {
           notesHTML = `
@@ -780,7 +801,6 @@ if (identityTitleEl) {
             </div>
           `;
         }
-
         html += `
 <div id="trade-card-${tradeId}" class="trade-card panel-soft rounded-3xl p-5" onclick="toggleTradeExpansion('${tradeId}')">
   <!-- Collapsed Header -->
@@ -800,7 +820,6 @@ if (identityTitleEl) {
       <i class="chevron fa-solid fa-chevron-down text-zinc-400 text-xl"></i>
     </div>
   </div>
-
   <!-- Compact Summary -->
   <div class="mt-5 grid grid-cols-3 gap-4 text-center">
     <div>
@@ -816,7 +835,6 @@ if (identityTitleEl) {
       <div class="text-2xl font-bold text-[var(--teal)] mt-1">$${Math.round(marketVal).toLocaleString()}</div>
     </div>
   </div>
-
   <!-- Expanded Content -->
   <div class="accordion-content mt-6 pt-6 border-t border-white/10">
     <div class="grid grid-cols-2 gap-6 text-sm">
@@ -837,38 +855,23 @@ if (identityTitleEl) {
         <div class="font-medium mt-1 text-[var(--teal)]">$${parseFloat(currentCash).toLocaleString()} cash / $${parseFloat(currentCredit).toLocaleString()} credit</div>
       </div>
     </div>
-
     ${notesHTML}
-
-    <!-- Future Actions Placeholder -->
+    ${showAcceptAction ? `
     <div class="mt-8 pt-6 border-t border-white/10">
-      <div class="text-xs uppercase tracking-widest text-zinc-400 mb-4">Next Steps</div>
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <button onclick="event.stopImmediatePropagation(); alert('Photo upload coming soon');" 
-                class="action-btn flex items-center justify-center gap-2 rounded-2xl border border-[rgba(0,229,184,0.3)] bg-[rgba(0,229,184,0.08)] hover:bg-[rgba(0,229,184,0.15)] px-5 py-4 text-sm font-medium text-[var(--teal)]">
-          <i class="fa-solid fa-camera"></i>
-          Upload Photos
-        </button>
-        <button onclick="event.stopImmediatePropagation(); alert('Offer acceptance coming soon');" 
-                class="action-btn flex items-center justify-center gap-2 rounded-2xl border border-[rgba(255,235,59,0.3)] bg-[rgba(255,235,59,0.08)] hover:bg-[rgba(255,235,59,0.15)] px-5 py-4 text-sm font-medium text-[var(--yellow)]">
-          <i class="fa-solid fa-check"></i>
-          Accept Offer
-        </button>
-        <button onclick="event.stopImmediatePropagation(); alert('Offer rejection coming soon');" 
-                class="action-btn flex items-center justify-center gap-2 rounded-2xl border border-red-500/30 bg-red-950/30 hover:bg-red-950/50 px-5 py-4 text-sm font-medium text-red-300">
-          <i class="fa-solid fa-xmark"></i>
-          Reject Offer
-        </button>
-      </div>
-      <div class="text-[10px] text-center text-zinc-500 mt-4">Actions will be enabled in a future update</div>
+      <div class="text-xs uppercase tracking-widest text-zinc-400 mb-4">Your Response</div>
+      <button onclick="event.stopPropagation(); acceptTradeOffer('${sub.id}')"
+              class="action-btn flex items-center justify-center gap-2 rounded-2xl border border-[rgba(255,235,59,0.3)] bg-[rgba(255,235,59,0.08)] hover:bg-[rgba(255,235,59,0.15)] px-5 py-4 text-sm font-medium text-[var(--yellow)] w-full">
+        <i class="fa-solid fa-check"></i>
+        ${isAccepting ? 'Accepting...' : 'Accept Offer'}
+      </button>
     </div>
+    ` : ''}
   </div>
 </div>
         `;
       });
       container.innerHTML = html;
     }
-
     // Initialize
    document.addEventListener('DOMContentLoaded', async () => {
   await loadCollectorDashboard();
@@ -876,3 +879,5 @@ if (identityTitleEl) {
   </script>
 </body>
 </html>
+  
+ 
