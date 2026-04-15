@@ -438,6 +438,8 @@
     let currentSubmissions = [];
     let acceptingSubmissionId = null;
     let decliningSubmissionId = null;
+    let uploadingSubmissionId = null;
+    let selectedUploadFilesBySubmission = {};
     async function loadCollectorDashboard() {
       const { data: { session }, error: sessionError } = await dashboardSupabase.auth.getSession();
       if (sessionError || !session) {
@@ -784,8 +786,69 @@ if (identityTitleEl) {
         renderMyTrades(currentSubmissions);
       }
     }
+    function setSubmissionUploadFiles(submissionId, input) {
+      if (!input || !input.files) return;
+      selectedUploadFilesBySubmission[submissionId] = Array.from(input.files);
+      updateSubmissionUploadFileCount(submissionId);
+    }
+    function updateSubmissionUploadFileCount(submissionId) {
+      const countEl = document.getElementById(`upload-file-count-${submissionId}`);
+      if (!countEl) return;
+      const files = selectedUploadFilesBySubmission[submissionId] || [];
+      const count = files.length;
+      if (count === 0) {
+        countEl.textContent = '';
+      } else {
+        countEl.textContent = `${count} file${count !== 1 ? 's' : ''} selected`;
+      }
+    }
+    async function uploadSubmissionPhotos(submissionId) {
+      if (!currentSession?.access_token) {
+        alert('No active session. Please log in again.');
+        return;
+      }
+      const files = selectedUploadFilesBySubmission[submissionId] || [];
+      if (files.length === 0) {
+        alert('Please select at least one photo to upload.');
+        return;
+      }
+      uploadingSubmissionId = submissionId;
+      renderMyTrades(currentSubmissions);
+      const formData = new FormData();
+      formData.append('submissionId', submissionId);
+      files.forEach(file => {
+        formData.append('photos', file);
+      });
+      try {
+        const res = await fetch('/.netlify/functions/upload-customer-submission-photos', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${currentSession.access_token}`,
+          },
+          body: formData,
+        });
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          throw new Error(errorData.message || 'Upload failed');
+        }
+        delete selectedUploadFilesBySubmission[submissionId];
+        const submissions = await loadMySubmissions();
+        currentSubmissions = submissions;
+        renderTradeKPIs(submissions);
+        renderRecentActivity(submissions);
+        renderMyTrades(submissions);
+      } catch (err) {
+        console.error('Photo upload error:', err);
+        alert(`Failed to upload photos: ${err.message}`);
+      } finally {
+        uploadingSubmissionId = null;
+        renderMyTrades(currentSubmissions);
+      }
+    }
     window.acceptTradeOffer = acceptTradeOffer;
     window.declineTradeOffer = declineTradeOffer;
+    window.setSubmissionUploadFiles = setSubmissionUploadFiles;
+    window.uploadSubmissionPhotos = uploadSubmissionPhotos;
     function renderMyTrades(submissions) {
       const container = document.getElementById('my-trades-list');
       if (!container) return;
@@ -831,6 +894,10 @@ if (identityTitleEl) {
         const showAcceptAction = sub.status === 'counter_sent';
         const isAccepting = acceptingSubmissionId === sub.id;
         const isDeclining = decliningSubmissionId === sub.id;
+        const showPhotoUploadAction = sub.photos_requested === true || sub.photos_requested === 'true';
+        const isUploading = uploadingSubmissionId === sub.id;
+        const selectedFiles = selectedUploadFilesBySubmission[sub.id] || [];
+        const selectedFileCount = selectedFiles.length;
         let notesHTML = '';
         if (sub.notes && sub.notes.trim() !== '') {
           notesHTML = `
@@ -910,6 +977,25 @@ if (identityTitleEl) {
           ${isDeclining ? 'Declining...' : 'Decline Offer'}
         </button>
       </div>
+    </div>
+    ` : ''}
+    ${showPhotoUploadAction ? `
+    <div class="mt-8 pt-6 border-t border-white/10">
+      <div class="text-xs uppercase tracking-widest text-zinc-400 mb-3">Requested Photos</div>
+      <p class="text-sm text-zinc-400 mb-5">Voltage requested additional photos for this submission.</p>
+      <input 
+        type="file" 
+        accept="image/jpeg,image/png,image/webp" 
+        multiple 
+        onchange="event.stopPropagation(); setSubmissionUploadFiles('${sub.id}', this)"
+        class="w-full text-sm text-zinc-300 file:mr-4 file:py-3 file:px-6 file:rounded-2xl file:border file:border-[rgba(0,229,184,0.3)] file:bg-[rgba(0,229,184,0.08)] file:text-[var(--teal)] hover:file:bg-[rgba(0,229,184,0.15)] transition"
+      >
+      <button onclick="event.stopPropagation(); uploadSubmissionPhotos('${sub.id}')"
+              class="action-btn mt-4 w-full flex items-center justify-center gap-2 rounded-2xl border border-[rgba(0,229,184,0.3)] bg-[rgba(0,229,184,0.08)] hover:bg-[rgba(0,229,184,0.15)] px-5 py-4 text-sm font-medium text-[var(--teal)]">
+        <i class="fa-solid fa-cloud-upload"></i>
+        ${isUploading ? 'Uploading...' : 'Upload Photos'}
+      </button>
+      <div id="upload-file-count-${sub.id}" class="text-xs text-zinc-400 mt-3 text-center">${selectedFileCount > 0 ? `${selectedFileCount} file${selectedFileCount !== 1 ? 's' : ''} selected` : ''}</div>
     </div>
     ` : ''}
   </div>
