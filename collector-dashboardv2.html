@@ -437,6 +437,7 @@
     let currentlyExpandedTradeId = null; // For single open accordion
     let currentSubmissions = [];
     let acceptingSubmissionId = null;
+    let decliningSubmissionId = null;
     async function loadCollectorDashboard() {
       const { data: { session }, error: sessionError } = await dashboardSupabase.auth.getSession();
       if (sessionError || !session) {
@@ -747,7 +748,44 @@ if (identityTitleEl) {
         renderMyTrades(currentSubmissions);
       }
     }
+    async function declineTradeOffer(submissionId) {
+      if (!currentSession?.access_token) {
+        alert('No active session. Please log in again.');
+        return;
+      }
+      if (!window.confirm("Decline this offer?")) {
+        return;
+      }
+      decliningSubmissionId = submissionId;
+      renderMyTrades(currentSubmissions);
+      try {
+        const res = await fetch('/.netlify/functions/decline-customer-offer', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${currentSession.access_token}`,
+          },
+          body: JSON.stringify({ submissionId }),
+        });
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(errorText || 'Failed to decline the offer');
+        }
+        const submissions = await loadMySubmissions();
+        currentSubmissions = submissions;
+        renderTradeKPIs(submissions);
+        renderRecentActivity(submissions);
+        renderMyTrades(submissions);
+      } catch (err) {
+        console.error('Decline offer error:', err);
+        alert(`Failed to decline offer: ${err.message}`);
+      } finally {
+        decliningSubmissionId = null;
+        renderMyTrades(currentSubmissions);
+      }
+    }
     window.acceptTradeOffer = acceptTradeOffer;
+    window.declineTradeOffer = declineTradeOffer;
     function renderMyTrades(submissions) {
       const container = document.getElementById('my-trades-list');
       if (!container) return;
@@ -792,6 +830,7 @@ if (identityTitleEl) {
         const preferred = sub.preferred_payout ? sub.preferred_payout.charAt(0).toUpperCase() + sub.preferred_payout.slice(1) : 'Mixed';
         const showAcceptAction = sub.status === 'counter_sent';
         const isAccepting = acceptingSubmissionId === sub.id;
+        const isDeclining = decliningSubmissionId === sub.id;
         let notesHTML = '';
         if (sub.notes && sub.notes.trim() !== '') {
           notesHTML = `
@@ -859,11 +898,18 @@ if (identityTitleEl) {
     ${showAcceptAction ? `
     <div class="mt-8 pt-6 border-t border-white/10">
       <div class="text-xs uppercase tracking-widest text-zinc-400 mb-4">Your Response</div>
-      <button onclick="event.stopPropagation(); acceptTradeOffer('${sub.id}')"
-              class="action-btn flex items-center justify-center gap-2 rounded-2xl border border-[rgba(255,235,59,0.3)] bg-[rgba(255,235,59,0.08)] hover:bg-[rgba(255,235,59,0.15)] px-5 py-4 text-sm font-medium text-[var(--yellow)] w-full">
-        <i class="fa-solid fa-check"></i>
-        ${isAccepting ? 'Accepting...' : 'Accept Offer'}
-      </button>
+      <div class="grid grid-cols-2 gap-3">
+        <button onclick="event.stopPropagation(); acceptTradeOffer('${sub.id}')"
+                class="action-btn flex items-center justify-center gap-2 rounded-2xl border border-[rgba(255,235,59,0.3)] bg-[rgba(255,235,59,0.08)] hover:bg-[rgba(255,235,59,0.15)] px-5 py-4 text-sm font-medium text-[var(--yellow)]">
+          <i class="fa-solid fa-check"></i>
+          ${isAccepting ? 'Accepting...' : 'Accept Offer'}
+        </button>
+        <button onclick="event.stopPropagation(); declineTradeOffer('${sub.id}')"
+                class="action-btn flex items-center justify-center gap-2 rounded-2xl border border-red-500/30 bg-red-950/30 hover:bg-red-950/50 px-5 py-4 text-sm font-medium text-red-300">
+          <i class="fa-solid fa-xmark"></i>
+          ${isDeclining ? 'Declining...' : 'Decline Offer'}
+        </button>
+      </div>
     </div>
     ` : ''}
   </div>
@@ -879,5 +925,3 @@ if (identityTitleEl) {
   </script>
 </body>
 </html>
-  
- 
