@@ -217,26 +217,45 @@ exports.handler = async (event, context) => {
     const { data: urlData } = supabase.storage.from(BUCKET_NAME).getPublicUrl(filePath);
     newPhotoUrls.push(urlData.publicUrl);
   }
+// Build updated photo_urls (preserve existing, append new, handle string vs array safely)
+let currentPhotoUrls = [];
 
-  // Build updated photo_urls (preserve existing, append new, handle string vs array)
-  let currentPhotoUrls = [];
-  if (submission.photo_urls) {
-    if (Array.isArray(submission.photo_urls)) {
-      currentPhotoUrls = [...submission.photo_urls];
-    } else if (typeof submission.photo_urls === 'string') {
-      currentPhotoUrls = submission.photo_urls
+if (submission.photo_urls) {
+  if (Array.isArray(submission.photo_urls)) {
+    currentPhotoUrls = [...submission.photo_urls];
+
+  } else if (typeof submission.photo_urls === 'string') {
+    const raw = submission.photo_urls.trim();
+
+    try {
+      const parsed = JSON.parse(raw);
+
+      if (Array.isArray(parsed)) {
+        currentPhotoUrls = parsed
+          .map(url => String(url).trim())
+          .filter(url => url.length > 0);
+      } else {
+        throw new Error('Not an array');
+      }
+
+    } catch {
+      // fallback: comma-separated string
+      currentPhotoUrls = raw
         .split(',')
-        .map((url) => url.trim())
-        .filter((url) => url.length > 0);
+        .map(url => url.trim())
+        .filter(url => url.length > 0);
     }
   }
+}
 
-  const updatedPhotoUrls = [...currentPhotoUrls];
-  for (const url of newPhotoUrls) {
-    if (!updatedPhotoUrls.includes(url)) {
-      updatedPhotoUrls.push(url);
-    }
+// Deduplicate + append new
+const updatedPhotoUrls = [...currentPhotoUrls];
+
+for (const url of newPhotoUrls) {
+  if (!updatedPhotoUrls.includes(url)) {
+    updatedPhotoUrls.push(url);
   }
+}
 
   // Update submission record
   try {
