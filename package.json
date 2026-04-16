@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/voltagevideogames/voltage-site#readme",
   "dependencies": {
-    "@supabase/supabase-js": "^2.100.0"
+    "@supabase/supabase-js": "^2.100.0",
+    "formidable": "^3.5.4"
   }
 }
