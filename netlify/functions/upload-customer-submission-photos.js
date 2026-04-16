@@ -1,9 +1,11 @@
 const { createClient } = require('@supabase/supabase-js');
-const formidable = require('formidable');
-const fs = require('fs');
 
-exports.handler = async (event, context) => {
-  // CORS preflight
+const MAX_FILES = 10;
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const BUCKET_NAME = 'submission-photos';
+
+exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
@@ -16,249 +18,171 @@ exports.handler = async (event, context) => {
   }
 
   if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      body: JSON.stringify({ success: false, message: 'Only POST method allowed' }),
-    };
+    return jsonResponse(405, { success: false, message: 'Only POST method allowed' });
   }
 
-  let token;
   try {
-    const authHeader = event.headers.authorization || event.headers.Authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new Error('Missing bearer token');
+    const authHeader = event.headers.authorization || event.headers.Authorization || '';
+    if (!authHeader.startsWith('Bearer ')) {
+      return jsonResponse(401, { success: false, message: 'Missing or invalid authorization header' });
     }
-    token = authHeader.split(' ')[1];
-  } catch (e) {
-    return {
-      statusCode: 401,
-      body: JSON.stringify({ success: false, message: 'Missing or invalid authorization header' }),
-    };
-  }
 
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
+    const token = authHeader.replace('Bearer ', '').trim();
 
-  if (!supabaseUrl || !supabaseServiceKey) {
-    console.error('Missing Supabase environment variables');
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ success: false, message: 'Server configuration error' }),
-    };
-  }
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
 
-  const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-      detectSessionInUrl: false,
-    },
-  });
-
-  let user;
-  try {
-    const { data: userData, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !userData?.user) {
-      throw new Error('Invalid token');
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return jsonResponse(500, { success: false, message: 'Server configuration error' });
     }
-    user = userData.user;
-  } catch (err) {
-    return {
-      statusCode: 401,
-      body: JSON.stringify({ success: false, message: 'Invalid or expired token' }),
-    };
-  }
 
-  const userEmail = user.email;
-
-  // Parse multipart/form-data
-  let fields, filesObj;
-  try {
-    const form = formidable({
-      keepExtensions: true,
-      maxFileSize: 5 * 1024 * 1024, // 5MB per file
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+        detectSessionInUrl: false,
+      },
     });
 
-    const parseResult = await new Promise((resolve, reject) => {
-      form.parse(event, (err, flds, fls) => {
-        if (err) reject(err);
-        else resolve({ fields: flds, files: fls });
-      });
-    });
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser(token);
 
-    fields = parseResult.fields;
-    filesObj = parseResult.files;
-  } catch (parseErr) {
-    console.error('Form parse error:', parseErr);
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ success: false, message: 'Failed to parse upload data' }),
-    };
-  }
-
-  const submissionId = Array.isArray(fields.submissionId)
-    ? fields.submissionId[0]
-    : fields.submissionId;
-
-  if (!submissionId) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ success: false, message: 'submissionId is required' }),
-    };
-  }
-
-  // Collect all uploaded files (handles any field name used by frontend)
-  let uploadedFiles = [];
-  if (filesObj) {
-    Object.keys(filesObj).forEach((key) => {
-      const fileList = filesObj[key];
-      if (Array.isArray(fileList)) {
-        uploadedFiles = uploadedFiles.concat(fileList);
-      } else if (fileList) {
-        uploadedFiles.push(fileList);
-      }
-    });
-  }
-
-  if (uploadedFiles.length === 0) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ success: false, message: 'No photo files provided' }),
-    };
-  }
-
-  if (uploadedFiles.length > 10) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ success: false, message: 'Maximum 10 photos per upload' }),
-    };
-  }
-
-  // Validate file types
-  const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
-  for (const file of uploadedFiles) {
-    if (!allowedMimeTypes.includes(file.mimetype)) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({
-          success: false,
-          message: `Invalid file type: ${file.mimetype || 'unknown'}. Only JPEG, PNG, and WebP allowed.`,
-        }),
-      };
+    if (authError || !user?.email) {
+      return jsonResponse(401, { success: false, message: 'Invalid or expired token' });
     }
-  }
 
-  // Verify submission exists and belongs to this user
-  let submission;
-  try {
-    const { data, error } = await supabase
+    let body;
+    try {
+      body = JSON.parse(event.body || '{}');
+    } catch {
+      return jsonResponse(400, { success: false, message: 'Invalid JSON body' });
+    }
+
+    const submissionId = body.submissionId;
+    const files = Array.isArray(body.files) ? body.files : [];
+
+    if (!submissionId) {
+      return jsonResponse(400, { success: false, message: 'submissionId is required' });
+    }
+
+    if (!files.length) {
+      return jsonResponse(400, { success: false, message: 'No photo files provided' });
+    }
+
+    if (files.length > MAX_FILES) {
+      return jsonResponse(400, { success: false, message: `Maximum ${MAX_FILES} photos per upload` });
+    }
+
+    const { data: submission, error: fetchError } = await supabase
       .from('submissions')
       .select('id, customer_email, photo_urls')
       .eq('id', submissionId)
       .single();
 
-    if (error || !data) {
-      throw new Error('Submission not found');
-    }
-    submission = data;
-  } catch (err) {
-    return {
-      statusCode: 404,
-      body: JSON.stringify({ success: false, message: 'Submission not found' }),
-    };
-  }
-
-  if (submission.customer_email !== userEmail) {
-    return {
-      statusCode: 403,
-      body: JSON.stringify({ success: false, message: 'You do not have permission to upload photos for this submission' }),
-    };
-  }
-
-  // Upload files to Supabase Storage (same pattern used elsewhere in the project)
-  const BUCKET_NAME = 'submission-photos';
-  const newPhotoUrls = [];
-
-  for (const file of uploadedFiles) {
-    const timestamp = Date.now();
-    const randomSuffix = Math.random().toString(36).substring(2, 10);
-    const ext = file.originalFilename
-      ? file.originalFilename.split('.').pop().toLowerCase()
-      : 'jpg';
-    const safeExt = ['jpg', 'jpeg', 'png', 'webp'].includes(ext) ? ext : 'jpg';
-    const filePath = `${submissionId}/${timestamp}-${randomSuffix}.${safeExt}`;
-
-    let fileBuffer;
-    try {
-      fileBuffer = fs.readFileSync(file.filepath);
-    } catch (readErr) {
-      console.error('Failed to read uploaded file:', readErr);
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ success: false, message: 'Failed to process uploaded file' }),
-      };
+    if (fetchError || !submission) {
+      return jsonResponse(404, { success: false, message: 'Submission not found' });
     }
 
-    const { error: uploadError } = await supabase.storage
-      .from(BUCKET_NAME)
-      .upload(filePath, fileBuffer, {
-        contentType: file.mimetype,
-        upsert: false,
-      });
-
-    if (uploadError) {
-      console.error('Storage upload failed:', uploadError);
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ success: false, message: 'Failed to upload photo to storage' }),
-      };
+    if (String(submission.customer_email || '').trim().toLowerCase() !== String(user.email || '').trim().toLowerCase()) {
+      return jsonResponse(403, { success: false, message: 'You do not have permission to upload photos for this submission' });
     }
 
-    const { data: urlData } = supabase.storage.from(BUCKET_NAME).getPublicUrl(filePath);
-    newPhotoUrls.push(urlData.publicUrl);
-  }
-// Build updated photo_urls (preserve existing, append new, handle string vs array safely)
-let currentPhotoUrls = [];
+    const newPhotoUrls = [];
 
-if (submission.photo_urls) {
-  if (Array.isArray(submission.photo_urls)) {
-    currentPhotoUrls = [...submission.photo_urls];
+    for (const file of files) {
+      const name = String(file.name || 'photo').trim();
+      const type = String(file.type || '').trim();
+      const size = Number(file.size || 0);
+      const dataUrl = String(file.dataUrl || '');
 
-  } else if (typeof submission.photo_urls === 'string') {
-    const raw = submission.photo_urls.trim();
-
-    try {
-      const parsed = JSON.parse(raw);
-
-      if (Array.isArray(parsed)) {
-        currentPhotoUrls = parsed
-          .map(url => String(url).trim())
-          .filter(url => url.length > 0);
-      } else {
-        throw new Error('Not an array');
+      if (!ALLOWED_TYPES.includes(type)) {
+        return jsonResponse(400, {
+          success: false,
+          message: `Invalid file type: ${type || 'unknown'}. Only JPEG, PNG, and WebP allowed.`,
+        });
       }
 
-    } catch {
-      // fallback: comma-separated string
-      currentPhotoUrls = raw
-        .split(',')
-        .map(url => url.trim())
-        .filter(url => url.length > 0);
+      if (!size || size > MAX_FILE_SIZE) {
+        return jsonResponse(400, {
+          success: false,
+          message: `${name} is too large. Max size is 5MB.`,
+        });
+      }
+
+      if (!dataUrl.startsWith('data:')) {
+        return jsonResponse(400, {
+          success: false,
+          message: `Invalid image payload for ${name}`,
+        });
+      }
+
+      const base64 = dataUrl.split(',')[1];
+      if (!base64) {
+        return jsonResponse(400, {
+          success: false,
+          message: `Could not read image data for ${name}`,
+        });
+      }
+
+      const buffer = Buffer.from(base64, 'base64');
+      const ext = getExtension(type);
+      const safeBaseName = slugify(name.replace(/\.[^/.]+$/, '')) || 'photo';
+      const filePath = `${submissionId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeBaseName}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from(BUCKET_NAME)
+        .upload(filePath, buffer, {
+          contentType: type,
+          upsert: false,
+        });
+
+      if (uploadError) {
+        console.error('Storage upload failed:', uploadError);
+        return jsonResponse(500, { success: false, message: `Failed to upload ${name}` });
+      }
+
+      const { data: publicData } = supabase.storage
+        .from(BUCKET_NAME)
+        .getPublicUrl(filePath);
+
+      newPhotoUrls.push(publicData.publicUrl);
     }
-  }
-}
 
-// Deduplicate + append new
-const updatedPhotoUrls = [...currentPhotoUrls];
+    let currentPhotoUrls = [];
 
-for (const url of newPhotoUrls) {
-  if (!updatedPhotoUrls.includes(url)) {
-    updatedPhotoUrls.push(url);
-  }
-}
+    if (submission.photo_urls) {
+      if (Array.isArray(submission.photo_urls)) {
+        currentPhotoUrls = [...submission.photo_urls];
+      } else if (typeof submission.photo_urls === 'string') {
+        const raw = submission.photo_urls.trim();
 
-  // Update submission record
-  try {
+        try {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            currentPhotoUrls = parsed
+              .map((url) => String(url).trim())
+              .filter((url) => url.length > 0);
+          } else {
+            throw new Error('Not an array');
+          }
+        } catch {
+          currentPhotoUrls = raw
+            .split(',')
+            .map((url) => url.trim())
+            .filter((url) => url.length > 0);
+        }
+      }
+    }
+
+    const updatedPhotoUrls = [...currentPhotoUrls];
+    for (const url of newPhotoUrls) {
+      if (!updatedPhotoUrls.includes(url)) {
+        updatedPhotoUrls.push(url);
+      }
+    }
+
     const { error: updateError } = await supabase
       .from('submissions')
       .update({
@@ -268,27 +192,42 @@ for (const url of newPhotoUrls) {
       .eq('id', submissionId);
 
     if (updateError) {
-      throw updateError;
+      console.error('Database update error:', updateError);
+      return jsonResponse(500, { success: false, message: 'Failed to update submission record' });
     }
-  } catch (updateErr) {
-    console.error('Database update error:', updateErr);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ success: false, message: 'Failed to update submission record' }),
-    };
-  }
 
-  // Success response
+    return jsonResponse(200, {
+      success: true,
+      message: 'Photos uploaded successfully',
+      photo_urls: updatedPhotoUrls,
+    });
+  } catch (error) {
+    console.error('upload-customer-submission-photos unexpected error:', error);
+    return jsonResponse(500, { success: false, message: 'Server error' });
+  }
+};
+
+function jsonResponse(statusCode, payload) {
   return {
-    statusCode: 200,
+    statusCode,
     headers: {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
     },
-    body: JSON.stringify({
-      success: true,
-      message: 'Photos uploaded successfully',
-      photo_urls: updatedPhotoUrls,
-    }),
+    body: JSON.stringify(payload),
   };
-};
+}
+
+function getExtension(type) {
+  if (type === 'image/jpeg') return 'jpg';
+  if (type === 'image/png') return 'png';
+  if (type === 'image/webp') return 'webp';
+  return 'jpg';
+}
+
+function slugify(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}

@@ -802,49 +802,76 @@ if (identityTitleEl) {
         countEl.textContent = `${count} file${count !== 1 ? 's' : ''} selected`;
       }
     }
-    async function uploadSubmissionPhotos(submissionId) {
-      if (!currentSession?.access_token) {
-        alert('No active session. Please log in again.');
-        return;
-      }
-      const files = selectedUploadFilesBySubmission[submissionId] || [];
-      if (files.length === 0) {
-        alert('Please select at least one photo to upload.');
-        return;
-      }
-      uploadingSubmissionId = submissionId;
-      renderMyTrades(currentSubmissions);
-      const formData = new FormData();
-      formData.append('submissionId', submissionId);
-      files.forEach(file => {
-        formData.append('photos', file);
-      });
-      try {
-        const res = await fetch('/.netlify/functions/upload-customer-submission-photos', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${currentSession.access_token}`,
-          },
-          body: formData,
-        });
-        if (!res.ok) {
-          const errorData = await res.json().catch(() => ({}));
-          throw new Error(errorData.message || 'Upload failed');
-        }
-        delete selectedUploadFilesBySubmission[submissionId];
-        const submissions = await loadMySubmissions();
-        currentSubmissions = submissions;
-        renderTradeKPIs(submissions);
-        renderRecentActivity(submissions);
-        renderMyTrades(submissions);
-      } catch (err) {
-        console.error('Photo upload error:', err);
-        alert(`Failed to upload photos: ${err.message}`);
-      } finally {
-        uploadingSubmissionId = null;
-        renderMyTrades(currentSubmissions);
-      }
+  async function uploadSubmissionPhotos(submissionId) {
+  if (!currentSession?.access_token) {
+    alert('No active session. Please log in again.');
+    return;
+  }
+
+  const files = selectedUploadFilesBySubmission[submissionId] || [];
+  if (files.length === 0) {
+    alert('Please select at least one photo to upload.');
+    return;
+  }
+
+  uploadingSubmissionId = submissionId;
+  renderMyTrades(currentSubmissions);
+
+  try {
+    const encodedFiles = await Promise.all(
+      files.map(file => fileToPayload(file))
+    );
+
+    const res = await fetch('/.netlify/functions/upload-customer-submission-photos', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${currentSession.access_token}`,
+      },
+      body: JSON.stringify({
+        submissionId,
+        files: encodedFiles,
+      }),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Upload failed');
     }
+
+    delete selectedUploadFilesBySubmission[submissionId];
+
+    const submissions = await loadMySubmissions();
+    currentSubmissions = submissions;
+    renderTradeKPIs(submissions);
+    renderRecentActivity(submissions);
+    renderMyTrades(submissions);
+  } catch (err) {
+    console.error('Photo upload error:', err);
+    alert(`Failed to upload photos: ${err.message}`);
+  } finally {
+    uploadingSubmissionId = null;
+    renderMyTrades(currentSubmissions);
+  }
+}
+
+function fileToPayload(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      resolve({
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        dataUrl: reader.result,
+      });
+    };
+
+    reader.onerror = () => reject(new Error(`Failed to read file: ${file.name}`));
+    reader.readAsDataURL(file);
+  });
+}
     window.acceptTradeOffer = acceptTradeOffer;
     window.declineTradeOffer = declineTradeOffer;
     window.setSubmissionUploadFiles = setSubmissionUploadFiles;
