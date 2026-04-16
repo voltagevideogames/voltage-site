@@ -1,4 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
+const fetch = require('node-fetch');
 
 const ALLOWED_STATUSES = ['pending', 'review', 'counter_sent', 'accepted', 'received', 'completed', 'rejected'];
 
