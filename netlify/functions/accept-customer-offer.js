@@ -45,7 +45,16 @@ exports.handler = async (event) => {
 
     const { data: submission, error: fetchError } = await supabase
       .from('submissions')
-      .select('id, customer_email, status')
+      .select(`
+        id,
+        customer_email,
+        status,
+        game_title_or_description,
+        item_count,
+        final_cash_offer,
+        final_credit_offer,
+        preferred_payout
+      `)
       .eq('id', submissionId)
       .single();
 
@@ -71,10 +80,42 @@ exports.handler = async (event) => {
       return jsonResponse(500, { error: 'Failed to accept offer' });
     }
 
+    // Fire stub email event
+    try {
+      const siteUrl =
+        process.env.URL ||
+        process.env.DEPLOY_PRIME_URL ||
+        'http://localhost:8888';
+
+      await fetch(`${siteUrl}/.netlify/functions/send-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'offer_accepted_confirmation',
+          to: submission.customer_email,
+          customer_email: submission.customer_email,
+          submission_id: submission.id,
+          subject: 'Voltage: Offer Accepted',
+          template_data: {
+            submission_id: submission.id,
+            title: submission.game_title_or_description,
+            item_count: submission.item_count || 1,
+            final_cash_offer: submission.final_cash_offer,
+            final_credit_offer: submission.final_credit_offer,
+            preferred_payout: submission.preferred_payout || null
+          }
+        })
+      });
+    } catch (emailError) {
+      console.error('Acceptance email trigger failed:', emailError);
+      // Do not fail the acceptance flow
+    }
+
     return jsonResponse(200, {
       success: true,
       message: 'Offer accepted',
       status: 'accepted',
+      email_event_triggered: 'offer_accepted_confirmation'
     });
   } catch (error) {
     console.error('accept-customer-offer unexpected error:', error);
